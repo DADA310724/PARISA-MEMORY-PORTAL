@@ -59,10 +59,10 @@ outputType = "webview"
 name = "API Server"
 author = "agent"
 
-[[workflows.workflow.tasks]]
-task = "shell.exec"
-args = "PORT=8080 node --enable-source-maps artifacts/api-server/dist/index.mjs"
-waitForPort = 8080
-
 [workflows.workflow.metadata]
 outputType = "console"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "PORT=8080 node --enable-source-maps artifacts/api-server/dist/index.js"
+waitForPort = 8080
