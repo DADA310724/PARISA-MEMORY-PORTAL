@@ -298,8 +298,9 @@ export default function AdminSettings() {
   const [editTab, setEditTab] = useState<"main" | "sub">("main");
   const [subButtons, setSubButtons] = useState<SubButton[]>([]);
   const [subLoading, setSubLoading] = useState(false);
-  const [newSub, setNewSub] = useState<Partial<SubButton>>({ label: "", logo_key: "folder", drive_folder_id: "", last_message: "", badge: 0, order: 1 });
+  const [newSub, setNewSub] = useState<Partial<SubButton>>({ label: "", logo_key: "folder", drive_folder_id: "", link_value: "", last_message: "", badge: 0, order: 1 });
   const [editingSubId, setEditingSubId] = useState<string | null>(null);
+  const [subLinkType, setSubLinkType] = useState<"drive_folder" | "external">("drive_folder");
 
   useEffect(() => {
     if (!isAdmin) { navigate("/"); return; }
@@ -465,8 +466,9 @@ export default function AdminSettings() {
         label: newSub.label.trim(),
         logo_key: newSub.logo_key || "folder",
         icon: newSub.logo_key || "folder",
-        link_type: "drive_folder",
-        drive_folder_id: newSub.drive_folder_id || "",
+        link_type: subLinkType,
+        drive_folder_id: subLinkType === "drive_folder" ? (newSub.drive_folder_id || "") : "",
+        link_value: subLinkType === "external" ? (newSub.link_value || "") : "",
         last_message: newSub.last_message || "",
         badge: Number(newSub.badge) || 0,
         order: editingSubId
@@ -477,8 +479,9 @@ export default function AdminSettings() {
       await saveSubButton(editingCustomFolder, sub);
       const updated = await getSubButtons(editingCustomFolder);
       setSubButtons(updated);
-      setNewSub({ label: "", logo_key: "folder", drive_folder_id: "", last_message: "", badge: 0, order: updated.length + 1 });
+      setNewSub({ label: "", logo_key: "folder", drive_folder_id: "", link_value: "", last_message: "", badge: 0, order: updated.length + 1 });
       setEditingSubId(null);
+      setSubLinkType("drive_folder");
       showMsg("✅ সাব-ফোল্ডার সেভ হয়েছে");
     } catch (e) { showMsg("❌ সেভ ব্যর্থ: " + (e as Error).message); }
     finally { setSaving(false); }
@@ -704,7 +707,7 @@ export default function AdminSettings() {
                                 <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white" style={{ background: 'rgba(0,212,170,0.6)' }}>{s.badge}</span>
                               )}
                               <div className="flex gap-1 flex-shrink-0">
-                                <button onClick={() => { setEditingSubId(s.id); setNewSub({ label: s.label, logo_key: s.logo_key || s.icon || "folder", drive_folder_id: s.drive_folder_id || "", last_message: s.last_message || "", badge: s.badge || 0, order: s.order }); }}
+                                <button onClick={() => { setEditingSubId(s.id); setSubLinkType(s.link_type === "external" ? "external" : "drive_folder"); setNewSub({ label: s.label, logo_key: s.logo_key || s.icon || "folder", drive_folder_id: s.drive_folder_id || "", link_value: s.link_value || "", last_message: s.last_message || "", badge: s.badge || 0, order: s.order }); }}
                                   className="text-[10px] px-2 py-1 rounded-lg text-cyan-400"
                                   style={{ background: 'rgba(0,212,170,0.1)', border: '1px solid rgba(0,212,170,0.2)' }}>✏️</button>
                                 <button onClick={() => removeSub(s.id)}
@@ -734,10 +737,32 @@ export default function AdminSettings() {
                             ))}
                           </div>
                         </div>
-                        <input type="text" value={newSub.drive_folder_id || ""} onChange={e => setNewSub(s => ({ ...s, drive_folder_id: e.target.value }))}
-                          placeholder="Google Drive Folder ID"
-                          className="w-full rounded-xl px-3 py-2.5 text-white text-xs focus:outline-none font-mono"
-                          style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }} />
+                        <div>
+                          <p className="text-white/40 text-[10px] mb-1.5">ধরন</p>
+                          <div className="grid grid-cols-2 gap-1.5">
+                            {[
+                              { val: "drive_folder" as const, label: "📁 Google Drive" },
+                              { val: "external" as const, label: "🌐 External URL" },
+                            ].map(t => (
+                              <button key={t.val} onClick={() => setSubLinkType(t.val)}
+                                className="py-2 rounded-lg text-xs transition-all font-medium"
+                                style={subLinkType === t.val ? { background: 'rgba(0,212,170,0.2)', border: '1px solid rgba(0,212,170,0.5)', color: '#00d4aa' } : { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}>
+                                {t.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                        {subLinkType === "drive_folder" ? (
+                          <input type="text" value={newSub.drive_folder_id || ""} onChange={e => setNewSub(s => ({ ...s, drive_folder_id: e.target.value }))}
+                            placeholder="Google Drive Folder ID"
+                            className="w-full rounded-xl px-3 py-2.5 text-white text-xs focus:outline-none font-mono"
+                            style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }} />
+                        ) : (
+                          <input type="text" value={newSub.link_value || ""} onChange={e => setNewSub(s => ({ ...s, link_value: e.target.value }))}
+                            placeholder="https://example.com বা যেকোনো URL"
+                            className="w-full rounded-xl px-3 py-2.5 text-white text-xs focus:outline-none font-mono"
+                            style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }} />
+                        )}
                         <input type="text" value={newSub.last_message || ""} onChange={e => setNewSub(s => ({ ...s, last_message: e.target.value }))}
                           placeholder="Last Message (দেখানোর জন্য)"
                           className="w-full rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none"
@@ -754,7 +779,7 @@ export default function AdminSettings() {
                         </div>
                         <div className="flex gap-2">
                           {editingSubId && (
-                            <button onClick={() => { setEditingSubId(null); setNewSub({ label: "", logo_key: "folder", drive_folder_id: "", last_message: "", badge: 0, order: subButtons.length + 1 }); }}
+                            <button onClick={() => { setEditingSubId(null); setSubLinkType("drive_folder"); setNewSub({ label: "", logo_key: "folder", drive_folder_id: "", link_value: "", last_message: "", badge: 0, order: subButtons.length + 1 }); }}
                               className="flex-1 py-2 rounded-xl text-xs text-white/50"
                               style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}>বাতিল</button>
                           )}

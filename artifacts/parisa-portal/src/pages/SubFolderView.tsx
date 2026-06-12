@@ -55,7 +55,7 @@ export default function SubFolderView() {
 
   return (
     <div className="w-full pb-12 max-w-2xl mx-auto">
-      <div className="sticky top-[57px] z-30 flex items-center gap-3 px-3 py-3"
+      <div className="sticky top-0 z-30 flex items-center gap-3 px-3 py-3"
         style={{
           background: "linear-gradient(180deg, rgba(12,10,28,0.97) 0%, rgba(12,10,28,0.92) 100%)",
           backdropFilter: "blur(20px)",
@@ -117,7 +117,6 @@ export default function SubFolderView() {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2">
                     <p className="font-semibold text-white text-[15px] truncate leading-tight">{sub.label}</p>
-                    {sub.updated_at && <span className="text-[10px] text-white/35 shrink-0">{timeAgo(sub.updated_at)}</span>}
                   </div>
                   <p className="text-[12px] text-white/45 truncate mt-0.5 font-['Hind_Siliguri']">
                     {sub.last_message ?? sub.description ?? "ক্লিক করুন খুলতে"}

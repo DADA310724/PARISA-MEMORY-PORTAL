@@ -64,11 +64,22 @@ export default function FolderView() {
     try {
       const { files: f } = await listFolder(folderId);
       setFiles(f);
-      // Save file listing to Firebase for AI context awareness
+      // Save file listing to Firebase for AI context + sync file count to button
       try {
         const db = await ensureFirebase();
         const summary = f.slice(0, 100).map(file => ({ name: file.name, type: (file.mimeType || "").split("/")[1] || "file" }));
         await set(ref(db, `folder_files/${folderId}`), { files: summary, count: f.length, updatedAt: Date.now() });
+        // Update the matching button's file_count on the dashboard
+        const btnSnap = await get(ref(db, "buttons"));
+        const btnVal = btnSnap.val() as Record<string, { drive_folder_id?: string; file_count?: number }> | null;
+        if (btnVal) {
+          for (const [id, btn] of Object.entries(btnVal)) {
+            if (btn.drive_folder_id === folderId && btn.file_count !== f.length) {
+              await set(ref(db, `buttons/${id}/file_count`), f.length);
+              break;
+            }
+          }
+        }
       } catch {}
     } catch (e: unknown) {
       const raw = e instanceof Error ? e.message : "ফোল্ডার লোড ব্যর্থ";
@@ -319,7 +330,7 @@ export default function FolderView() {
               </div>
             )}
 
-            {/* Videos — 5-6 column grid like photos */}
+            {/* Videos — 5-6 column grid with thumbnail */}
             {files.filter(isVideo).length > 0 && (
               <div>
                 <p className="text-xs text-purple-300/60 uppercase tracking-wider mb-2 font-medium">ভিডিও ({files.filter(isVideo).length})</p>
@@ -327,13 +338,16 @@ export default function FolderView() {
                   {files.filter(isVideo).map((f, i) => (
                     <motion.div key={f.id} initial={{ opacity:0, scale:0.92 }} animate={{ opacity:1, scale:1 }} transition={{ delay: i * 0.03 }}
                       onClick={() => openViewer(f)}
-                      className="aspect-square rounded-xl overflow-hidden cursor-pointer relative"
+                      className="aspect-square rounded-xl overflow-hidden cursor-pointer relative group"
                       style={{ background:'rgba(156,39,176,0.15)', border:'1px solid rgba(156,39,176,0.25)' }}>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 p-1">
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm" style={{ background:'rgba(156,39,176,0.5)' }}>▶</div>
-                        <p className="text-[7px] text-white/60 truncate w-full text-center leading-tight">{f.name.replace(/\.[^.]+$/, "")}</p>
+                      {f.thumbnailLink && (
+                        <img src={f.thumbnailLink} alt={f.name} className="w-full h-full object-cover absolute inset-0 group-hover:scale-105 transition-transform duration-300" loading="lazy" />
+                      )}
+                      <div className="absolute inset-0 flex flex-col items-center justify-center gap-1 p-1" style={{ background: f.thumbnailLink ? 'rgba(0,0,0,0.35)' : undefined }}>
+                        <div className="w-8 h-8 rounded-full flex items-center justify-center text-sm" style={{ background:'rgba(156,39,176,0.7)', boxShadow:'0 0 10px rgba(156,39,176,0.6)' }}>▶</div>
+                        {!f.thumbnailLink && <p className="text-[7px] text-white/60 truncate w-full text-center leading-tight">{f.name.replace(/\.[^.]+$/, "")}</p>}
                       </div>
-                      <p className="absolute bottom-0 left-0 right-0 text-[7px] text-white/40 truncate px-1 pb-0.5 bg-black/40">{formatSize(f.size)}</p>
+                      <p className="absolute bottom-0 left-0 right-0 text-[7px] text-white/70 truncate px-1 pb-0.5 bg-black/60">{formatSize(f.size)}</p>
                     </motion.div>
                   ))}
                 </div>
@@ -454,6 +468,7 @@ export default function FolderView() {
                 <video
                   src={proxyUrl(viewerFile.id)}
                   controls autoPlay playsInline
+                  preload="metadata"
                   controlsList="nodownload nofullscreen noremoteplayback"
                   disablePictureInPicture
                   className="max-w-full rounded-xl"
@@ -469,25 +484,20 @@ export default function FolderView() {
                 <div className="w-full max-w-sm rounded-2xl p-8 text-center" style={{ background:'rgba(255,143,0,0.1)', border:'1px solid rgba(255,143,0,0.3)' }}>
                   <motion.div animate={{ scale:[1,1.1,1] }} transition={{ repeat:Infinity, duration:1.5 }} className="text-6xl mb-4">🎵</motion.div>
                   <p className="text-white font-medium mb-6 text-sm truncate">{viewerFile.name}</p>
-                  <audio src={proxyUrl(viewerFile.id)} controls autoPlay className="w-full" controlsList="nodownload noplaybackrate" onContextMenu={e => e.preventDefault()} />
+                  <audio src={proxyUrl(viewerFile.id)} controls autoPlay preload="metadata" className="w-full" controlsList="nodownload noplaybackrate" onContextMenu={e => e.preventDefault()} />
                 </div>
               </div>
             )}
 
-            {/* PDF — native embed, no URL bar */}
+            {/* PDF — Google Docs embedded viewer, has search, no edit/Drive URL */}
             {viewerType === 'pdf' && (
-              <div className="flex-1 overflow-hidden bg-[#1a1a2e]">
-                <object
-                  data={`${proxyUrl(viewerFile.id)}#toolbar=0&navpanes=0&scrollbar=1`}
-                  type="application/pdf"
-                  className="w-full h-full border-0"
-                >
-                  <embed
-                    src={`${proxyUrl(viewerFile.id)}#toolbar=0&navpanes=0`}
-                    type="application/pdf"
-                    className="w-full h-full border-0"
-                  />
-                </object>
+              <div className="flex-1 overflow-hidden bg-[#1a1a2e] flex flex-col">
+                <iframe
+                  src={`https://docs.google.com/viewer?url=${encodeURIComponent(window.location.origin + proxyUrl(viewerFile.id))}&embedded=true`}
+                  className="w-full flex-1 border-0"
+                  title={viewerFile.name}
+                  allow="autoplay"
+                />
               </div>
             )}
 
