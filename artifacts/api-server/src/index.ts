@@ -1,12 +1,16 @@
 import express from "express";
 import type { Request, Response, NextFunction } from "express";
 import { createServer } from "http";
+import { existsSync } from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 import { configRouter } from "./routes/config.js";
 import { driveRouter } from "./routes/drive.js";
 import { aiRouter } from "./routes/ai.js";
 import { telegramRouter } from "./routes/telegram.js";
 import { oauthRouter } from "./routes/oauth.js";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT ? Number(process.env.PORT) : 8080;
 
@@ -31,10 +35,23 @@ app.get("/api/healthz", (_req: Request, res: Response) => {
   res.json({ status: "ok" });
 });
 
+app.get("/", (_req: Request, res: Response) => {
+  res.json({ status: "ok" });
+});
+
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   console.error(err);
   res.status(500).json({ error: err.message ?? "Internal server error" });
 });
+
+const staticDir = path.resolve(__dirname, "../../parisa-portal/dist/public");
+if (existsSync(staticDir)) {
+  app.use(express.static(staticDir));
+  app.get("*", (_req: Request, res: Response) => {
+    res.sendFile(path.join(staticDir, "index.html"));
+  });
+  console.log(`Serving static files from ${staticDir}`);
+}
 
 const server = createServer(app);
 server.listen(PORT, "0.0.0.0", () => {

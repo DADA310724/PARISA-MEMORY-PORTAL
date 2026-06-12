@@ -117,6 +117,31 @@ driveRouter.get("/ready", async (_req: Request, res: Response) => {
   }
 });
 
+async function countFilesRecursive(folderId: string, token: string, depth = 0): Promise<number> {
+  if (depth > 4) return 0;
+  let total = 0;
+  let pageToken: string | undefined;
+  do {
+    const url = new URL("https://www.googleapis.com/drive/v3/files");
+    url.searchParams.set("q", `'${folderId}' in parents and trashed=false`);
+    url.searchParams.set("fields", "nextPageToken,files(id,mimeType)");
+    url.searchParams.set("pageSize", "1000");
+    if (pageToken) url.searchParams.set("pageToken", pageToken);
+    const resp = await fetch(url.toString(), { headers: { Authorization: `Bearer ${token}` } });
+    if (!resp.ok) break;
+    const data = await resp.json() as { files: { id: string; mimeType: string }[]; nextPageToken?: string };
+    for (const file of data.files) {
+      if (file.mimeType === "application/vnd.google-apps.folder") {
+        total += await countFilesRecursive(file.id, token, depth + 1);
+      } else {
+        total++;
+      }
+    }
+    pageToken = data.nextPageToken;
+  } while (pageToken);
+  return total;
+}
+
 driveRouter.post("/count-folders", async (req: Request, res: Response) => {
   const { folderIds } = req.body as { folderIds?: string[] };
   if (!Array.isArray(folderIds) || folderIds.length === 0) {
@@ -129,23 +154,7 @@ driveRouter.post("/count-folders", async (req: Request, res: Response) => {
     await Promise.all(
       folderIds.map(async (folderId) => {
         try {
-          let count = 0;
-          let pageToken: string | undefined;
-          do {
-            const url = new URL("https://www.googleapis.com/drive/v3/files");
-            url.searchParams.set("q", `'${folderId}' in parents and trashed=false`);
-            url.searchParams.set("fields", "nextPageToken,files(id)");
-            url.searchParams.set("pageSize", "1000");
-            if (pageToken) url.searchParams.set("pageToken", pageToken);
-            const resp = await fetch(url.toString(), {
-              headers: { Authorization: `Bearer ${token}` },
-            });
-            if (!resp.ok) break;
-            const data = await resp.json() as { files: { id: string }[]; nextPageToken?: string };
-            count += data.files.length;
-            pageToken = data.nextPageToken;
-          } while (pageToken);
-          counts[folderId] = count;
+          counts[folderId] = await countFilesRecursive(folderId, token);
         } catch {
           counts[folderId] = 0;
         }

@@ -775,13 +775,9 @@ export default function AdminSettings() {
                           className="w-full rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none"
                           style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', fontFamily: "'Hind Siliguri', sans-serif" }} />
                         <div className="flex gap-2">
-                          <input type="number" value={newSub.badge || 0} onChange={e => setNewSub(s => ({ ...s, badge: Number(e.target.value) }))}
-                            placeholder="Badge"
-                            className="flex-1 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none"
-                            style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }} min={0} />
                           <input type="number" value={newSub.order || 1} onChange={e => setNewSub(s => ({ ...s, order: Number(e.target.value) }))}
                             placeholder="ক্রম"
-                            className="flex-1 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none"
+                            className="w-full rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none"
                             style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }} min={1} />
                         </div>
                         <div className="flex gap-2">

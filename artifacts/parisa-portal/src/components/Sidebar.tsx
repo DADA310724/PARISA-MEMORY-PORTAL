@@ -217,21 +217,23 @@ export function Sidebar({ onClose }: SidebarProps) {
         <a href="https://t.me/DADA310724" target="_blank" rel="noopener noreferrer"
           className="px-4 py-2.5 flex items-center justify-between hover:bg-white/5 transition-all"
         >
-          <p className="text-[10px] text-white/35 font-medium tracking-wider uppercase">Development by DADA</p>
+          <p className="text-[10px] font-medium tracking-[0.2em] uppercase" style={{ color: "rgba(255,255,255,0.35)" }}>
+            Development by <span style={{ color: "rgba(0,212,170,0.8)", fontWeight: 700 }}>DADA</span>
+          </p>
           <div
-            className="w-7 h-7 rounded-xl flex items-center justify-center flex-shrink-0"
+            className="flex items-center justify-center flex-shrink-0"
             style={{
-              background: "rgba(33,150,243,0.08)",
-              border: "1px solid rgba(33,150,243,0.25)",
+              width: 32, height: 32, borderRadius: 10,
+              background: "rgba(33,150,243,0.1)",
+              border: "1px solid rgba(33,186,252,0.3)",
               backdropFilter: "blur(12px)",
-              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.1), 0 2px 8px rgba(33,150,243,0.15)",
+              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.15), 0 2px 10px rgba(33,186,252,0.2)",
             }}
           >
-            <SiTelegram className="w-3.5 h-3.5" style={{ color: "rgba(33,186,252,0.8)" }} />
+            <SiTelegram style={{ width: 16, height: 16, color: "rgba(33,186,252,0.9)" }} />
           </div>
         </a>
-        <div className="px-4 pb-3 flex items-center justify-between">
-          <span className="text-[9px] text-white/20 font-mono tracking-widest uppercase">PARISA PORTAL</span>
+        <div className="px-4 pb-3 flex items-center justify-end">
           <span className="text-[9px] font-mono px-1.5 py-0.5 rounded"
             style={{ background: "rgba(0,212,170,0.08)", border: "1px solid rgba(0,212,170,0.2)", color: "rgba(0,212,170,0.5)" }}>
             v{APP_VERSION}
