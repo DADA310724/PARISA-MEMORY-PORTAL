@@ -1,5 +1,6 @@
 import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { SplashScreen } from "@/components/SplashScreen";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -115,11 +116,22 @@ ensureFirebase().then((db) => {
 }).catch(() => {});
 
 function App() {
+  const [splash, setSplash] = useState(() => {
+    // Show splash only on fresh open, not on hot-reload in dev
+    return !sessionStorage.getItem("parisa_splash_done");
+  });
+
+  function handleSplashDone() {
+    sessionStorage.setItem("parisa_splash_done", "1");
+    setSplash(false);
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AppProvider>
           <SecurityWrapper>
+            {splash && <SplashScreen onDone={handleSplashDone} />}
             <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
               <Routes />
             </WouterRouter>
