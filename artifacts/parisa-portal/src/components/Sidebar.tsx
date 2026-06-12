@@ -3,6 +3,7 @@ import { Settings, LogOut, Home, ChevronRight, MessageSquare } from "lucide-reac
 import { SiTelegram } from "react-icons/si";
 import { useApp } from "@/contexts/AppContext";
 import { AppLogo } from "@/components/AppLogo";
+import { APP_VERSION } from "@/lib/version";
 
 interface SidebarProps {
   onClose?: () => void;
@@ -212,16 +213,24 @@ export function Sidebar({ onClose }: SidebarProps) {
       </nav>
 
       {/* Footer */}
-      <a href="https://t.me/DADA310724" target="_blank" rel="noopener noreferrer"
-        className="px-4 py-3 flex items-center gap-2.5 hover:bg-white/5 transition-all"
-        style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}
-      >
-        <div className="w-7 h-7 rounded-full flex items-center justify-center"
-          style={{ background: "rgba(33,150,243,0.2)" }}>
-          <SiTelegram className="w-3.5 h-3.5 text-blue-400" />
+      <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+        <a href="https://t.me/DADA310724" target="_blank" rel="noopener noreferrer"
+          className="px-4 py-2.5 flex items-center gap-2.5 hover:bg-white/5 transition-all"
+        >
+          <div className="w-7 h-7 rounded-full flex items-center justify-center"
+            style={{ background: "rgba(33,150,243,0.2)" }}>
+            <SiTelegram className="w-3.5 h-3.5 text-blue-400" />
+          </div>
+          <p className="text-[10px] text-white/30 font-medium tracking-wider uppercase">Development by DADA</p>
+        </a>
+        <div className="px-4 pb-3 flex items-center justify-between">
+          <span className="text-[9px] text-white/20 font-mono tracking-widest uppercase">PARISA PORTAL</span>
+          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded"
+            style={{ background: "rgba(0,212,170,0.08)", border: "1px solid rgba(0,212,170,0.2)", color: "rgba(0,212,170,0.5)" }}>
+            v{APP_VERSION}
+          </span>
         </div>
-        <p className="text-[10px] text-white/30 font-medium tracking-wider uppercase">Development by DADA</p>
-      </a>
+      </div>
     </aside>
   );
 }
