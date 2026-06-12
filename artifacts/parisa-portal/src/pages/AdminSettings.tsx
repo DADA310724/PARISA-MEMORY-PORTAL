@@ -290,6 +290,9 @@ export default function AdminSettings() {
   const [driveReady, setDriveReady] = useState<boolean | null>(null);
   const [driveChecking, setDriveChecking] = useState(false);
   const [saEmail, setSaEmail] = useState("");
+  const [driveFolderTest, setDriveFolderTest] = useState<{ ok: boolean; count?: number; error?: string } | null>(null);
+  const [driveFolderTesting, setDriveFolderTesting] = useState(false);
+  const [parentFolderId, setParentFolderId] = useState("");
 
   const [newFolder, setNewFolder] = useState<Partial<CustomFolder>>({
     name: "", icon: "folder", color: "#00d4aa", linkType: "drive", folderId: "", description: "",
@@ -318,12 +321,14 @@ export default function AdminSettings() {
   useEffect(() => {
     if (tab !== "drive") return;
     setDriveChecking(true);
+    setDriveFolderTest(null);
     Promise.all([
       api<{ ready: boolean }>("/drive/ready").catch(() => ({ ready: false })),
-      api<{ hasSA?: boolean; saEmail?: string }>("/config").catch(() => ({})),
+      api<{ hasSA?: boolean; saEmail?: string; driveParentFolderId?: string }>("/config").catch(() => ({})),
     ]).then(([driveResp, cfgResp]) => {
       setDriveReady(driveResp.ready);
       if (cfgResp.saEmail) setSaEmail(cfgResp.saEmail);
+      if (cfgResp.driveParentFolderId) setParentFolderId(cfgResp.driveParentFolderId);
     }).finally(() => setDriveChecking(false));
   }, [tab]);
 
