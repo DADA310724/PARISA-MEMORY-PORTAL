@@ -45,7 +45,7 @@ export function Sidebar({ onClose }: SidebarProps) {
       className="h-full w-72 shrink-0 flex flex-col"
       data-testid="sidebar"
       style={{
-        background: "linear-gradient(180deg, rgba(0,40,52,0.97) 0%, rgba(0,28,42,0.99) 100%)",
+        background: "linear-gradient(180deg, rgba(0,72,95,0.97) 0%, rgba(0,52,75,0.99) 100%)",
         borderRight: "1px solid rgba(0,212,170,0.22)",
         backdropFilter: "blur(24px)",
       }}
