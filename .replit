@@ -24,8 +24,8 @@ channel = "stable-25_05"
 
 [deployment]
 deploymentTarget = "autoscale"
-run = ["bash", "-c", "node --enable-source-maps artifacts/api-server/dist/index.js & PORT=23236 BASE_PATH=/ pnpm --filter @workspace/parisa-portal run serve"]
-build = ["bash", "-c", "pnpm --filter @workspace/api-server run build && PORT=23236 BASE_PATH=/ pnpm --filter @workspace/parisa-portal run build"]
+run = ["bash", "-c", "node --enable-source-maps artifacts/api-server/dist/index.js"]
+build = ["bash", "-c", "PORT=8080 BASE_PATH=/ pnpm --filter @workspace/parisa-portal run build && pnpm --filter @workspace/api-server run build"]
 
 [workflows]
 runButton = "Project"
