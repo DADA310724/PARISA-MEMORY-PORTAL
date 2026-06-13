@@ -1,5 +1,5 @@
 // PARISA MEMORY PORTAL — Service Worker v1.2
-const CACHE_NAME = "parisa-v1.2";
+const CACHE_NAME = "parisa-v1.3";
 const STATIC_ASSETS = [
   "/",
   "/manifest.webmanifest",

@@ -53,12 +53,10 @@ export function Sidebar({ onClose }: SidebarProps) {
       {/* Header */}
       <div className="px-4 pt-5 pb-4 flex items-center justify-between"
         style={{ borderBottom: "1px solid hsl(var(--primary) / 0.1)" }}>
-        <div>
-          <h2 className="font-black tracking-wider text-base leading-tight whitespace-nowrap"
-            style={{ textShadow: "0 0 10px var(--neon-glow)" }}>
-            <span style={{ color: "hsl(var(--primary))" }}>PARISA</span>
-            {" "}
-            <span style={{ color: "hsl(var(--primary))" }}>MEMORY PORTAL</span>
+        <div className="min-w-0 mr-2">
+          <h2 className="font-black tracking-wide text-[13px] leading-tight whitespace-nowrap"
+            style={{ textShadow: "0 0 10px var(--neon-glow)", color: "hsl(var(--primary))" }}>
+            PARISA MEMORY PORTAL
           </h2>
         </div>
         {onClose && (

@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { loginUser, loginAdmin, notifyTelegram } from "@/lib/auth";
 import { useApp } from "@/contexts/AppContext";
 
-const QUOTE = "মায়া কখনোই কাটানো যায় না..\nএটা মৃত্যুর আগ পর্যন্ত থেকে যায়...😘😘";
+const QUOTE = "মায়া কখনোই কাটানো যায় না..\nএটা মৃত্যুর আগ পর্যন্ত থেকে যায়...";
 
 export default function LoginPage() {
   const { setAuth } = useApp();
