@@ -45,17 +45,17 @@ export function Sidebar({ onClose }: SidebarProps) {
       className="h-full w-72 shrink-0 flex flex-col"
       data-testid="sidebar"
       style={{
-        background: "linear-gradient(180deg, rgba(4,14,14,0.97) 0%, rgba(2,10,10,0.99) 100%)",
-        borderRight: "1px solid rgba(0,212,170,0.22)",
+        background: "linear-gradient(180deg, hsl(var(--background)) 0%, hsl(var(--background)) 100%)",
+        borderRight: "1px solid hsl(var(--primary) / 0.22)",
         backdropFilter: "blur(24px)",
       }}
     >
       {/* Header */}
       <div className="px-4 pt-5 pb-4 flex items-center justify-between"
-        style={{ borderBottom: "1px solid rgba(0,212,170,0.1)" }}>
+        style={{ borderBottom: "1px solid hsl(var(--primary) / 0.1)" }}>
         <div>
           <h2 className="font-black tracking-wider text-base leading-tight"
-            style={{ color: "#00e5ff", textShadow: "0 0 10px rgba(0,229,255,0.5)" }}>
+            style={{ color: "hsl(var(--primary))", textShadow: "0 0 10px var(--neon-glow)" }}>
             PARISA
           </h2>
           <p className="text-[10px] font-bold tracking-[0.2em] text-white/50 uppercase">MEMORY PORTAL</p>
@@ -81,8 +81,8 @@ export function Sidebar({ onClose }: SidebarProps) {
             onClick={() => go("/dashboard")}
             className="w-full flex items-center gap-3 px-2 py-2 rounded-2xl transition-all"
             style={{
-              background: location === "/" || location === "/dashboard" ? "rgba(0,212,170,0.08)" : "transparent",
-              border: location === "/" || location === "/dashboard" ? "1px solid rgba(0,212,170,0.2)" : "1px solid transparent",
+              background: location === "/" || location === "/dashboard" ? "hsl(var(--primary) / 0.08)" : "transparent",
+              border: location === "/" || location === "/dashboard" ? "1px solid hsl(var(--primary) / 0.2)" : "1px solid transparent",
             }}
           >
             <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
@@ -91,7 +91,7 @@ export function Sidebar({ onClose }: SidebarProps) {
             </div>
             <div className="flex-1 text-left min-w-0">
               <p className="text-sm font-semibold truncate"
-                style={{ color: location === "/dashboard" ? "#00e5ff" : "rgba(255,255,255,0.88)" }}>
+                style={{ color: location === "/dashboard" ? "hsl(var(--primary))" : "rgba(255,255,255,0.88)" }}>
                 Home Dashboard
               </p>
               <p className="text-[10px] text-white/35 truncate" style={{ fontFamily: "'Hind Siliguri',sans-serif" }}>
@@ -106,8 +106,8 @@ export function Sidebar({ onClose }: SidebarProps) {
             onClick={() => go("/ai-chat")}
             className="w-full flex items-center gap-3 px-2 py-2 rounded-2xl transition-all"
             style={{
-              background: location === "/ai-chat" ? "rgba(0,212,170,0.08)" : "transparent",
-              border: location === "/ai-chat" ? "1px solid rgba(0,212,170,0.2)" : "1px solid transparent",
+              background: location === "/ai-chat" ? "hsl(var(--primary) / 0.08)" : "transparent",
+              border: location === "/ai-chat" ? "1px solid hsl(var(--primary) / 0.2)" : "1px solid transparent",
             }}
           >
             <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
@@ -116,7 +116,7 @@ export function Sidebar({ onClose }: SidebarProps) {
             </div>
             <div className="flex-1 text-left min-w-0">
               <p className="text-sm font-semibold truncate"
-                style={{ color: location === "/ai-chat" ? "#00e5ff" : "rgba(255,255,255,0.88)" }}>
+                style={{ color: location === "/ai-chat" ? "hsl(var(--primary))" : "rgba(255,255,255,0.88)" }}>
                 PARISA AI
               </p>
               <p className="text-[10px] text-white/35 truncate" style={{ fontFamily: "'Hind Siliguri',sans-serif" }}>
@@ -137,8 +137,8 @@ export function Sidebar({ onClose }: SidebarProps) {
                 onClick={() => navigateToButton(btn)}
                 className="w-full flex items-center gap-3 px-2 py-2 rounded-2xl transition-all"
                 style={{
-                  background: isActive ? "rgba(0,212,170,0.08)" : "transparent",
-                  border: isActive ? "1px solid rgba(0,212,170,0.2)" : "1px solid transparent",
+                  background: isActive ? "hsl(var(--primary) / 0.08)" : "transparent",
+                  border: isActive ? "1px solid hsl(var(--primary) / 0.2)" : "1px solid transparent",
                 }}
               >
                 <AppLogo
@@ -149,7 +149,7 @@ export function Sidebar({ onClose }: SidebarProps) {
                 />
                 <div className="flex-1 text-left min-w-0">
                   <p className="text-sm font-semibold truncate"
-                    style={{ color: isActive ? "#00e5ff" : "rgba(255,255,255,0.88)" }}>
+                    style={{ color: isActive ? "hsl(var(--primary))" : "rgba(255,255,255,0.88)" }}>
                     {btn.label}
                   </p>
                   {btn.description && (
@@ -173,8 +173,8 @@ export function Sidebar({ onClose }: SidebarProps) {
                 onClick={() => go("/admin")}
                 className="w-full flex items-center gap-3 px-2 py-2 rounded-2xl hover:bg-white/5 transition-all"
                 style={{
-                  background: location === "/admin" ? "rgba(0,212,170,0.08)" : "transparent",
-                  border: location === "/admin" ? "1px solid rgba(0,212,170,0.2)" : "1px solid transparent",
+                  background: location === "/admin" ? "hsl(var(--primary) / 0.08)" : "transparent",
+                  border: location === "/admin" ? "1px solid hsl(var(--primary) / 0.2)" : "1px solid transparent",
                 }}
               >
                 <div className="w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0"
@@ -213,12 +213,12 @@ export function Sidebar({ onClose }: SidebarProps) {
       </nav>
 
       {/* Footer */}
-      <div style={{ borderTop: "1px solid rgba(0,212,170,0.1)" }}>
+      <div style={{ borderTop: "1px solid hsl(var(--primary) / 0.1)" }}>
         <a href="https://t.me/DADA310724" target="_blank" rel="noopener noreferrer"
           className="px-4 py-2 flex items-center justify-between hover:bg-white/5 transition-all"
         >
           <p className="text-[10px] font-medium tracking-[0.2em] uppercase" style={{ color: "rgba(255,255,255,0.35)" }}>
-            Development by <span style={{ color: "rgba(0,212,170,0.8)", fontWeight: 700 }}>DADA</span>
+            Development by <span style={{ color: "hsl(var(--primary) / 0.85)", fontWeight: 700 }}>DADA</span>
           </p>
           <div
             className="flex items-center justify-center flex-shrink-0"
@@ -235,7 +235,7 @@ export function Sidebar({ onClose }: SidebarProps) {
         </a>
         <div className="pb-2 flex items-center justify-center">
           <span className="text-[9px] font-mono px-1.5 py-0.5 rounded"
-            style={{ background: "rgba(0,212,170,0.08)", border: "1px solid rgba(0,212,170,0.2)", color: "rgba(0,212,170,0.5)" }}>
+            style={{ background: "hsl(var(--primary) / 0.08)", border: "1px solid hsl(var(--primary) / 0.2)", color: "hsl(var(--primary) / 0.5)" }}>
             v{APP_VERSION}
           </span>
         </div>
