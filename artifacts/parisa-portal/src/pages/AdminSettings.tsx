@@ -552,11 +552,16 @@ export default function AdminSettings() {
       file_count: buttons.find(b => b.id === editingCustomFolder)?.file_count,
       has_sub_buttons: editingCustomFolder ? (buttons.find(b => b.id === editingCustomFolder)?.has_sub_buttons ?? false) : false,
     };
-    // Optimistic UI reset — Firebase syncs in background
     setNewFolder({ name: "", icon: "folder", color: "#00d4aa", linkType: "drive", folderId: "", description: "" });
     setEditingCustomFolder(null);
-    showMsg("✅ সেভ হয়েছে! Dashboard-এ দেখুন।");
-    saveButton(btn).catch(e => showMsg("⚠️ Firebase sync ব্যর্থ: " + (e as Error).message));
+    try {
+      await saveButton(btn);
+      showMsg("✅ ফোল্ডার সেভ হয়েছে! Dashboard-এ দেখুন।");
+    } catch (e) {
+      const msg = (e as Error).message || String(e);
+      showMsg("❌ সেভ ব্যর্থ: " + msg);
+      console.error("saveButton failed:", e);
+    }
   };
 
   const deleteCustomFolder = async (id: string) => {

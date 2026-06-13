@@ -199,12 +199,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   async function saveButton(b: DashboardButton) {
     const db = await ensureFirebase();
+    // Firebase RTDB rejects undefined values — strip them first
+    const clean = JSON.parse(JSON.stringify(b)) as DashboardButton;
     if (!b.id) {
-      const r = await fbPush(ref(db, "buttons"), b);
+      const r = await fbPush(ref(db, "buttons"), clean);
       const id = r.key!;
-      await fbSet(ref(db, `buttons/${id}`), { ...b, id });
+      await fbSet(ref(db, `buttons/${id}`), { ...clean, id });
     } else {
-      await fbSet(ref(db, `buttons/${b.id}`), b);
+      await fbSet(ref(db, `buttons/${b.id}`), clean);
     }
   }
 
@@ -230,12 +232,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   async function saveSubButton(buttonId: string, sub: SubButton) {
     const db = await ensureFirebase();
+    // Firebase RTDB rejects undefined values — strip them first
+    const clean = JSON.parse(JSON.stringify(sub)) as SubButton;
     if (!sub.id) {
-      const r = await fbPush(ref(db, `sub_buttons/${buttonId}`), sub);
+      const r = await fbPush(ref(db, `sub_buttons/${buttonId}`), clean);
       const id = r.key!;
-      await fbSet(ref(db, `sub_buttons/${buttonId}/${id}`), { ...sub, id });
+      await fbSet(ref(db, `sub_buttons/${buttonId}/${id}`), { ...clean, id });
     } else {
-      await fbSet(ref(db, `sub_buttons/${buttonId}/${sub.id}`), sub);
+      await fbSet(ref(db, `sub_buttons/${buttonId}/${sub.id}`), clean);
     }
     const parentBtn = buttons.find((b) => b.id === buttonId);
     if (parentBtn && !parentBtn.has_sub_buttons) {
