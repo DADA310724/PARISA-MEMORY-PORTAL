@@ -824,7 +824,7 @@ export default function AIChatPage() {
                     {v.label}
                   </button>
                 ))}
-                <button onClick={() => speakText("আমি পারিসা রুবেলের স্ত্রী আমাদের ভালোবাসা চিরকাল টিকে থাকবে", voiceGender)}
+                <button onClick={() => speakText("আসসালামু আলাইকুম আমি পারিসা মেমোরি পোর্টালের ড্যাশবোর্ডের সহকারী আপনার ভয়েস চেক করা হচ্ছে", voiceGender)}
                   style={{ padding: "10px 14px", borderRadius: 10, background: "rgba(180,240,250,.05)", border: "1px solid rgba(180,240,250,.14)", color: "#d8f3fb", cursor: "pointer", fontFamily: "'Hind Siliguri',sans-serif" }}>
                   ভয়েস টেস্ট করুন
                 </button>
@@ -924,13 +924,19 @@ export default function AIChatPage() {
               <SvgIcon d="M21.44 11.05L12.25 20.24a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" size={18} stroke="currentColor" />
             </IcBtn>
             <IcBtn onClick={() => openCam(camFacing)} title="ক্যামেরা">
-              <SvgIcon d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z" size={18} stroke="currentColor" />
+              <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
+                <circle cx="12" cy="13" r="4"/>
+              </svg>
             </IcBtn>
             <IcBtn onClick={startAudioCall} title="অডিও কল" style={{ color: "rgba(0,229,180,.85)" }}>
               <SvgIcon d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.13.96.37 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.33 1.85.57 2.81.7A2 2 0 0122 16.92z" size={18} stroke="rgba(0,229,180,.85)" />
             </IcBtn>
             <IcBtn onClick={startVideoCall} title="ভিডিও কল" style={{ color: "rgba(100,200,255,.85)" }}>
-              <SvgIcon points="23 7 16 12 23 17 23 7" size={18} stroke="rgba(100,200,255,.85)" fill="rgba(100,200,255,.85)" sw={0} />
+              <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="rgba(100,200,255,.85)" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="23 7 16 12 23 17 23 7" fill="rgba(100,200,255,.85)" stroke="none"/>
+                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+              </svg>
             </IcBtn>
           </div>
           <div className="parisa-composer-inner">
@@ -1005,11 +1011,6 @@ function MessageBubble({ msg, onSpeak, onRetry }: {
               <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>
               ভয়েস
             </button>
-            {onRetry && (
-              <button onClick={onRetry} style={{ background: "rgba(180,240,250,.04)", border: "1px solid rgba(180,240,250,.12)", color: "#d8f3fb", padding: "6px 9px", borderRadius: 8, cursor: "pointer", fontSize: 12, fontFamily: "'Hind Siliguri',sans-serif" }}>
-                আবার চেষ্টা
-              </button>
-            )}
           </div>
         )}
       </div>

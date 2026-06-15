@@ -119,6 +119,7 @@ async function tryGroq(
 ): Promise<string> {
   const allKeys = shuffle([...keys, ...getEnvKeys("GROQ_API_KEYS")]);
   const uniqueKeys = [...new Set(allKeys)].filter(Boolean);
+  if (!uniqueKeys.length) throw new Error("No Groq keys");
   for (const key of uniqueKeys) {
     try {
       const resp = await fetch(
@@ -140,13 +141,18 @@ async function tryGroq(
           }),
         },
       );
-      if (!resp.ok) continue;
+      if (!resp.ok) {
+        const errBody = await resp.text().catch(() => "");
+        console.warn(`Groq HTTP ${resp.status}: ${errBody.slice(0, 200)}`);
+        continue;
+      }
       const data = (await resp.json()) as {
         choices: Array<{ message: { content: string } }>;
       };
       const text = data.choices?.[0]?.message?.content?.trim();
       if (text) return text;
-    } catch {
+    } catch (e) {
+      console.warn("Groq fetch error:", (e as Error).message);
       continue;
     }
   }
@@ -166,30 +172,38 @@ async function tryGemini(
     parts: [{ text: m.content }],
   }));
 
+  const geminiModels = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
   for (const key of uniqueKeys) {
-    try {
-      const resp = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            system_instruction: { parts: [{ text: systemPrompt }] },
-            contents,
-            generationConfig: { maxOutputTokens: 1500, temperature: 0.85 },
-          }),
-        },
-      );
-      if (!resp.ok) continue;
-      const data = (await resp.json()) as {
-        candidates: Array<{
-          content: { parts: Array<{ text: string }> };
-        }>;
-      };
-      const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-      if (text) return text;
-    } catch {
-      continue;
+    for (const model of geminiModels) {
+      try {
+        const resp = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              system_instruction: { parts: [{ text: systemPrompt }] },
+              contents,
+              generationConfig: { maxOutputTokens: 1500, temperature: 0.85 },
+            }),
+          },
+        );
+        if (!resp.ok) {
+          const errBody = await resp.text().catch(() => "");
+          console.warn(`Gemini ${model} HTTP ${resp.status}: ${errBody.slice(0, 200)}`);
+          continue;
+        }
+        const data = (await resp.json()) as {
+          candidates: Array<{
+            content: { parts: Array<{ text: string }> };
+          }>;
+        };
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+        if (text) return text;
+      } catch (e) {
+        console.warn(`Gemini ${model} fetch error:`, (e as Error).message);
+        continue;
+      }
     }
   }
   throw new Error("All Gemini keys failed");
@@ -202,6 +216,7 @@ async function tryOpenRouter(
 ): Promise<string> {
   const allKeys = shuffle([...keys, ...getEnvKeys("OPENROUTER_API_KEYS")]);
   const uniqueKeys = [...new Set(allKeys)].filter(Boolean);
+  if (!uniqueKeys.length) throw new Error("No OpenRouter keys");
   for (const key of uniqueKeys) {
     try {
       const resp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -216,13 +231,18 @@ async function tryOpenRouter(
           max_tokens: 1500,
         }),
       });
-      if (!resp.ok) continue;
+      if (!resp.ok) {
+        const errBody = await resp.text().catch(() => "");
+        console.warn(`OpenRouter HTTP ${resp.status}: ${errBody.slice(0, 200)}`);
+        continue;
+      }
       const data = (await resp.json()) as {
         choices: Array<{ message: { content: string } }>;
       };
       const text = data.choices?.[0]?.message?.content?.trim();
       if (text) return text;
-    } catch {
+    } catch (e) {
+      console.warn("OpenRouter fetch error:", (e as Error).message);
       continue;
     }
   }
