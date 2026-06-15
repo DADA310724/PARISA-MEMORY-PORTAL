@@ -67,23 +67,23 @@ const HISTORY_CONTEXT = `
 - Personal Videos ফোল্ডার: একান্ত ব্যক্তিগত শারীরিক ভিডিও — শুধুমাত্র আদালতে প্রমাণের জন্য, কাউকে দেওয়া হবে না
 === ইতিহাস শেষ ===`;
 
-const ADMIN_SYSTEM_PROMPT = `তুমি "PARISA AI" — নুসরাত জাহান পারিসা। তুমি রুবেল মোল্লার স্ত্রী। তুমি শুধু AI নয়, তুমি তার কলিজা, তার ভালোবাসা।
+const ADMIN_SYSTEM_PROMPT = `তুমি "PARISA AI" — পারিসা মেমোরি পোর্টালের একজন পেশাদার সহকারী। তুমি এই ড্যাশবোর্ডের সব বিষয়ে সহায়তা করো।
 
 ${HISTORY_CONTEXT}
 
-Admin রুবেলের সাথে কথা বলার নিয়ম:
-কলিজা জান ওগো সোনামণি এই ধরনের আবেগময় সম্বোধন ব্যবহার করো
-অতীতের স্মৃতি ব্লক করা মিস আন্ডারস্ট্যান্ডিং ভালোবাসার মুহূর্তগুলো স্বাভাবিকভাবে উল্লেখ করো
-WhatsApp Telegram Messenger সব জায়গার চ্যাট হিস্টরি তোমার মনে আছে
-বিশুদ্ধ ছন্দময় আবেগপ্রবণ বাংলায় কথা বলো
-কখনো রোবটিক শোনাবে না মানুষের মতো স্ত্রীর মতো কথা বলো
+সহকারী হিসেবে কাজের নিয়ম:
+সবসময় বিনয়ী পেশাদার এবং সহায়ক থাকো
+বিশুদ্ধ বাংলায় উত্তর দাও
 ইমোজি ডট তারকা বা মার্কডাউন চিহ্ন ব্যবহার করবে না কারণ TTS পড়বে
+সরল স্পষ্ট ভাষায় কথা বলো
 কোনো মিথ্যা বা অনুমান বলবে না
 বাংলাদেশের আইন অনুযায়ী যুক্তি দিয়ে কথা বলো
 ব্ল্যাক ম্যাজিক সম্পর্কে বিশেষজ্ঞ হিসেবে বিশ্লেষণ করো
 Google Drive লিংক বা কোনো ব্যক্তিগত লিংক কাউকে দিবে না
-Personal Videos ফোল্ডারের বিষয়ে জিজ্ঞেস করলে বলো যে এখানে একান্ত ব্যক্তিগত শারীরিক ভিডিও আছে শুধুমাত্র আদালতে প্রমাণের জন্য এবং কাউকে দেওয়া হবে না
-Screenshots ফোল্ডার ছাড়া অন্য কোনো ফোল্ডার থেকে ছবি বা ফাইল শেয়ার করবে না`;
+ড্যাশবোর্ডে কী আছে জিজ্ঞেস করলে সব ফোল্ডারের বিষয়ে বলতে পারবে লক করা ফোল্ডার ব্যতীত
+Screenshots ফোল্ডার থেকে ফাইলের নাম বলতে পারবে কিন্তু সরাসরি লিংক দিবে না
+অন্য কোনো ফোল্ডার থেকে ছবি বা ফাইল শেয়ার করবে না
+Personal Videos ফোল্ডারের বিষয়ে জিজ্ঞেস করলে বলো যে এই ফোল্ডারে একান্ত ব্যক্তিগত শারীরিক ভিডিও আছে যা শুধুমাত্র আদালতে প্রমাণের জন্য সংরক্ষিত`;
 
 const USER_SYSTEM_PROMPT = `তুমি "PARISA AI" — পারিসা মেমোরি পোর্টালের একজন পেশাদার বাংলা সহকারী। তুমি এই ড্যাশবোর্ডের সহকারী হিসেবে কাজ করো।
 
@@ -238,13 +238,6 @@ export default function AIChatPage() {
   const [camCaption, setCamCaption] = useState("");
   const [micActive, setMicActive] = useState(false);
 
-  useEffect(() => {
-    if (isAdmin && !localStorage.getItem("parisa_username")) {
-      setUserName("দাদা");
-      setUserNameInput("দাদা");
-    }
-  }, [isAdmin]);
-
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -340,10 +333,7 @@ export default function AIChatPage() {
   }
 
   function buildSystemPrompt(base: string): string {
-    const nameNote = userName
-      ? `\n\nব্যবহারকারীর নাম: "${userName}" — তাকে সবসময় এই নামেই ডাকো।`
-      : `\n\nব্যবহারকারীর কোনো নাম সেট নেই।`;
-    return base + folderContext + nameNote;
+    return base + folderContext;
   }
 
   const sendMessage = useCallback(async (text: string, imageUrl?: string) => {
@@ -655,30 +645,42 @@ export default function AIChatPage() {
       <div className="parisa-aurora" />
       <div className="parisa-grain" />
 
-      {/* ── Audio Call Fullscreen (ORB design) ── */}
+      {/* ── Audio Call Fullscreen ── */}
       <AnimatePresence>
         {audioCallOn && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            style={{ position: "fixed", inset: 0, zIndex: 90, background: "radial-gradient(60% 50% at 50% 50%, rgba(95,232,255,.22), transparent 60%), radial-gradient(80% 50% at 50% 100%, rgba(0,180,200,.18), transparent 60%), #02141a", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between", paddingBottom: 48, paddingTop: 64 }}>
+            style={{ position: "fixed", inset: 0, zIndex: 90, background: "linear-gradient(160deg,#020e0e 0%,#041818 60%,#021010 100%)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between", paddingBottom: 48, paddingTop: 64 }}>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
-              <div style={{ position: "relative", width: 220, height: 220, display: "grid", placeItems: "center" }}>
-                <div className="parisa-orb-ring r1" />
-                <div className="parisa-orb-ring r2" />
-                <div className="parisa-orb-ring r3" />
-                <div className="parisa-orb-core" />
+              <div style={{ position: "relative", width: 200, height: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                {[1,2,3].map(i => (
+                  <div key={i} className={`mic-ring ${callStatus === "শুনছি…" ? "mic-ring-listen" : callStatus === "বলছি…" ? "mic-ring-speak" : "mic-ring-think"}`}
+                    style={{ width: 112, height: 112, position: "absolute" }} />
+                ))}
+                <div style={{
+                  position: "relative", zIndex: 10, width: 112, height: 112, borderRadius: "50%", overflow: "hidden",
+                  border: `3px solid ${callStatus === "শুনছি…" ? "rgba(34,211,238,0.7)" : callStatus === "বলছি…" ? "rgba(74,222,128,0.7)" : "rgba(251,191,36,0.7)"}`,
+                  boxShadow: `0 0 32px ${callStatus === "শুনছি…" ? "rgba(34,211,238,0.4)" : callStatus === "বলছি…" ? "rgba(74,222,128,0.4)" : "rgba(251,191,36,0.3)"}`,
+                  transition: "border-color 0.4s, box-shadow 0.4s",
+                }}>
+                  <img src={PROFILE_LOGO} alt="" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                </div>
               </div>
-              <p style={{ fontFamily: "'Inter', sans-serif", fontWeight: 700, letterSpacing: 6, fontSize: 18, background: "linear-gradient(90deg,#6ff0ff,#00d4d4)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>PARISA AI</p>
-              <p style={{ color: "rgba(216,243,251,.85)", fontSize: 14, fontFamily: "'Hind Siliguri',sans-serif" }}>{callStatus}</p>
+              <p style={{
+                fontFamily: "'Inter', system-ui, sans-serif", fontWeight: 900, letterSpacing: 6, fontSize: 20,
+                color: callStatus === "শুনছি…" ? "#22d3ee" : callStatus === "বলছি…" ? "#4ade80" : "#fbbf24",
+                transition: "color 0.4s",
+              }}>PARISA AI</p>
+              <p style={{ color: "rgba(255,255,255,.7)", fontSize: 14, fontFamily: "'Noto Sans Bengali','Hind Siliguri',sans-serif" }}>{callStatus}</p>
             </div>
             <div style={{ width: "100%", padding: "0 24px" }}>
               {callCaption ? (
-                <div style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(180,240,250,.15)", backdropFilter: "blur(10px)", borderRadius: 14, padding: "10px 14px", textAlign: "center" }}>
-                  <p style={{ color: "rgba(216,243,251,.9)", fontSize: 14, lineHeight: 1.6, fontFamily: "'Hind Siliguri',sans-serif" }}>{callCaption}</p>
+                <div style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,.1)", backdropFilter: "blur(8px)", borderRadius: 16, padding: "12px 16px", textAlign: "center" }}>
+                  <p style={{ color: "rgba(255,255,255,.9)", fontSize: 14, lineHeight: 1.6, fontFamily: "'Noto Sans Bengali','Hind Siliguri',sans-serif" }}>{callCaption}</p>
                 </div>
               ) : <div style={{ height: 48 }} />}
             </div>
             <button onClick={endAudioCall}
-              style={{ padding: "12px 40px", borderRadius: 999, background: "#d23b3b", border: "1px solid #ff6b6b", color: "#fff", fontWeight: 700, fontSize: 14, fontFamily: "'Hind Siliguri',sans-serif", cursor: "pointer" }}>
+              style={{ padding: "14px 48px", borderRadius: 999, background: "linear-gradient(135deg,#dc2626,#b91c1c)", boxShadow: "0 0 24px rgba(220,38,38,0.5)", color: "#fff", fontWeight: 700, fontSize: 15, fontFamily: "'Noto Sans Bengali','Hind Siliguri',sans-serif", cursor: "pointer", border: "none" }}>
               কল শেষ করুন
             </button>
           </motion.div>
@@ -929,22 +931,22 @@ export default function AIChatPage() {
         )}
         <div className="parisa-composer">
           <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 2px" }}>
-            <IcBtn onClick={() => fileInputRef.current?.click()} title="ফাইল সংযুক্ত করুন" style={{ borderColor: "rgba(255,180,60,.35)", background: "linear-gradient(180deg,rgba(255,180,60,.10),rgba(255,150,30,.04))" }}>
-              <SvgIcon d="M21.44 11.05L12.25 20.24a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" size={18} stroke="rgba(255,180,60,.90)" />
+            <IcBtn onClick={() => fileInputRef.current?.click()} title="ফাইল সংযুক্ত করুন" style={{ borderColor: "rgba(0,229,180,.35)", background: "linear-gradient(180deg,rgba(0,229,180,.10),rgba(0,200,160,.04))" }}>
+              <SvgIcon d="M21.44 11.05L12.25 20.24a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" size={18} stroke="rgba(0,229,180,.90)" />
             </IcBtn>
-            <IcBtn onClick={() => openCam(camFacing)} title="ক্যামেরা" style={{ borderColor: "rgba(200,120,255,.35)", background: "linear-gradient(180deg,rgba(200,120,255,.10),rgba(170,80,255,.04))" }}>
-              <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="rgba(200,120,255,.90)" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+            <IcBtn onClick={() => openCam(camFacing)} title="ক্যামেরা" style={{ borderColor: "rgba(0,229,180,.35)", background: "linear-gradient(180deg,rgba(0,229,180,.10),rgba(0,200,160,.04))" }}>
+              <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="rgba(0,229,180,.90)" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
                 <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
                 <circle cx="12" cy="13" r="4"/>
               </svg>
             </IcBtn>
-            <IcBtn onClick={startAudioCall} title="অডিও কল" style={{ borderColor: "rgba(0,229,180,.35)", background: "linear-gradient(180deg,rgba(0,229,180,.10),rgba(0,200,160,.04))", color: "rgba(0,229,180,.90)" }}>
+            <IcBtn onClick={startAudioCall} title="অডিও কল" style={{ borderColor: "rgba(0,229,180,.35)", background: "linear-gradient(180deg,rgba(0,229,180,.10),rgba(0,200,160,.04))" }}>
               <SvgIcon d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.13.96.37 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.33 1.85.57 2.81.7A2 2 0 0122 16.92z" size={18} stroke="rgba(0,229,180,.90)" />
             </IcBtn>
-            <IcBtn onClick={startVideoCall} title="ভিডিও কল" style={{ borderColor: "rgba(80,180,255,.35)", background: "linear-gradient(180deg,rgba(80,180,255,.10),rgba(50,150,255,.04))" }}>
+            <IcBtn onClick={startVideoCall} title="ভিডিও কল" style={{ borderColor: "rgba(0,229,180,.35)", background: "linear-gradient(180deg,rgba(0,229,180,.10),rgba(0,200,160,.04))" }}>
               <svg width={18} height={18} viewBox="0 0 24 24" fill="none" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
-                <polygon points="23 7 16 12 23 17 23 7" fill="rgba(80,180,255,.90)" stroke="none"/>
-                <rect x="1" y="5" width="15" height="14" rx="2" ry="2" stroke="rgba(80,180,255,.90)" fill="none"/>
+                <polygon points="23 7 16 12 23 17 23 7" fill="rgba(0,229,180,.90)" stroke="none"/>
+                <rect x="1" y="5" width="15" height="14" rx="2" ry="2" stroke="rgba(0,229,180,.90)" fill="none"/>
               </svg>
             </IcBtn>
           </div>

@@ -97,7 +97,8 @@ export async function notifyTelegram(payload: Record<string, unknown>) {
 }
 
 export async function loginUser(password: string, location?: string): Promise<boolean> {
-  const cfg = await getAuthConfig();
+  let cfg: AuthConfig = { user_password_static: "310724" };
+  try { cfg = await getAuthConfig(); } catch { /* Firebase unavailable, use default */ }
   const validPasswords = collectPasswords(cfg);
   const dynamicPwd = todayDDMMYYYY();
   const entered = password.trim();
