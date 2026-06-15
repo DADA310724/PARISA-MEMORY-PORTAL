@@ -77,7 +77,6 @@ export default function DashboardPage() {
               title="PARISA AI খুলুন">
               <Logo size={110} withRing={false} glow={false} />
             </div>
-            <div className="absolute -right-2 top-3 text-xl animate-pulse" style={{ filter: "drop-shadow(0 0 6px #ff2d78)" }}>😘</div>
           </div>
           <motion.p initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
             className="mt-4 text-sm font-medium text-center px-4 text-neon-green whitespace-nowrap overflow-hidden text-ellipsis max-w-full"
