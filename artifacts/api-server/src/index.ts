@@ -9,6 +9,7 @@ import { driveRouter } from "./routes/drive.js";
 import { aiRouter } from "./routes/ai.js";
 import { telegramRouter } from "./routes/telegram.js";
 import { oauthRouter } from "./routes/oauth.js";
+import { voiceRouter } from "./routes/voice.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -30,6 +31,7 @@ app.use("/api/drive", driveRouter);
 app.use("/api/ai", aiRouter);
 app.use("/api/telegram", telegramRouter);
 app.use("/api/oauth", oauthRouter);
+app.use("/api/voice", voiceRouter);
 
 app.get("/api/healthz", (_req: Request, res: Response) => {
   res.json({ status: "ok" });

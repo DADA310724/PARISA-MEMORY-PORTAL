@@ -65,3 +65,13 @@ description: Summary of all implemented features across sessions for parisa-port
 **Why real API test**: fake setTimeout gave false "ok" status regardless of key validity; real test catches 401/403.
 **Why hexToHsl**: CSS vars use HSL format (e.g. "174 82% 48%"); color picker gives hex; conversion needed.
 **Why PDF overlay white div**: Google Docs viewer ↗ button is cross-origin (can't CSS-target); white div same bg color as viewer toolbar covers it.
+
+## Session 5 (Microsoft Edge TTS + Settings UI)
+- **Microsoft Edge TTS server-side**: `msedge-tts` npm package added to api-server; new route `artifacts/api-server/src/routes/voice.ts` at `POST /api/voice`; takes `{ text, gender }`, streams MP3 audio back. Voices: bn-BD-NabanitaNeural (female) / bn-BD-PradeepNeural (male).
+- **AIChat TTS replaced**: removed `window.speechSynthesis` / `getMicrosoftVoice` / `buildUtterances`; `speakText()` and `speakAndWait()` now call `/api/voice` endpoint and play audio blob via `new Audio(url)`. Module-level `_currentAudio` ref for stop/cancel.
+- **Settings modal redesign**: radio button style (filled teal circle on left) matching user screenshot; placeholder "যেমন: দাদা" instead of default value; সেভ button teal gradient.
+- **Username default removed**: username is empty by default (no "দাদা" hardcode); system prompt says "সাধারণভাবে ডাকো" when no name set.
+- **GitHub push**: all files pushed via Python+GitHub API (pnpm-lock.yaml too large for curl — use Python urllib).
+
+**Why server-side TTS**: `window.speechSynthesis` Microsoft Neural voices not available on Android/mobile browsers; server-side edge-tts is reliable everywhere.
+**Why module-level `_currentAudio`**: React refs can't be used in module-scope async functions; module var works for stop/cancel across calls.

@@ -118,32 +118,6 @@ Google Drive লিংক বা কোনো ব্যক্তিগত লি
 Screenshots ফোল্ডার ছাড়া অন্য কোনো ফোল্ডার থেকে ছবি বা ফাইল শেয়ার করবে না
 Personal Videos ফোল্ডারের বিষয়ে জিজ্ঞেস করলে বলো যে এই ফোল্ডারে একান্ত ব্যক্তিগত শারীরিক ভিডিও আছে যা শুধুমাত্র আদালতে প্রমাণের জন্য সংরক্ষিত এবং এটি কোনো ব্যবহারকারীর জন্য প্রযোজ্য নয়`;
 
-function getMicrosoftVoice(gender: "female" | "male" = "female") {
-  if (!("speechSynthesis" in window)) return null;
-  const voices = window.speechSynthesis.getVoices();
-  if (!voices.length) return null;
-  const femaleNames = [
-    "Microsoft Nabanita", "NabanitaNeural", "Nabanita",
-    "bn-BD-NabanitaNeural", "bn-IN-TanishaaNeural", "Tanishaa",
-  ];
-  const maleNames = [
-    "Microsoft Pradeep", "PradeepNeural", "Pradeep",
-    "bn-BD-PradeepNeural", "bn-IN-BashkarNeural", "Bashkar",
-  ];
-  const targets = gender === "female" ? femaleNames : maleNames;
-  for (const name of targets) {
-    const v = voices.find(v => v.name.toLowerCase().includes(name.toLowerCase()));
-    if (v) return v;
-  }
-  let v = voices.find(v => v.lang === "bn-BD");
-  if (!v) v = voices.find(v => v.lang === "bn-IN");
-  if (!v) v = voices.find(v => v.lang.startsWith("bn"));
-  if (!v && gender === "female") v = voices.find(v => v.lang.startsWith("hi") && v.name.toLowerCase().includes("female"));
-  if (!v) v = voices.find(v => v.lang.startsWith("hi"));
-  if (!v && voices.length > 0) v = voices[0];
-  return v ?? null;
-}
-
 function cleanForTTS(text: string): string {
   return text
     .replace(/[\u{1F300}-\u{1FAFF}]/gu, " ")
@@ -158,87 +132,60 @@ function cleanForTTS(text: string): string {
     .trim();
 }
 
-function buildUtterances(text: string, voiceGender: "female" | "male"): SpeechSynthesisUtterance[] {
-  const parts = text.split(/([?!।]+)/);
-  const utts: SpeechSynthesisUtterance[] = [];
-  for (let i = 0; i < parts.length; i += 2) {
-    const seg = parts[i] || "";
-    const term = parts[i + 1] || "";
-    const clean = cleanForTTS(seg + term.replace(/[?!।]/g, ""));
-    if (!clean.trim()) continue;
-    const utt = new SpeechSynthesisUtterance(clean);
-    const voice = getMicrosoftVoice(voiceGender);
-    if (voice) utt.voice = voice;
-    utt.lang = "bn-BD";
-    utt.volume = 1;
-    if (term.includes("?")) {
-      utt.rate = 0.9;
-      utt.pitch = 1.3;
-    } else if (term.includes("!")) {
-      utt.rate = 1.0;
-      utt.pitch = 1.15;
-    } else {
-      utt.rate = 0.88;
-      utt.pitch = 1.05;
-    }
-    utts.push(utt);
+let _currentAudio: HTMLAudioElement | null = null;
+
+function stopSpeech() {
+  try { window.speechSynthesis?.cancel(); } catch {}
+  if (_currentAudio) {
+    try { _currentAudio.pause(); } catch {}
+    _currentAudio = null;
   }
-  if (utts.length === 0) {
-    const clean = cleanForTTS(text);
-    if (clean.trim()) {
-      const utt = new SpeechSynthesisUtterance(clean);
-      const voice = getMicrosoftVoice(voiceGender);
-      if (voice) utt.voice = voice;
-      utt.lang = "bn-BD"; utt.rate = 0.88; utt.pitch = 1.05; utt.volume = 1;
-      utts.push(utt);
-    }
-  }
-  return utts;
 }
 
-function speakText(text: string, voiceGender: "female" | "male" = "female") {
+async function speakText(text: string, _voiceGender: "female" | "male" = "female") {
   try {
-    if (!("speechSynthesis" in window)) return;
-    window.speechSynthesis.cancel();
-    const utts = buildUtterances(text, voiceGender);
-    if (!utts.length) return;
-    const voices = window.speechSynthesis.getVoices();
-    const doSpeak = () => utts.forEach(u => window.speechSynthesis.speak(u));
-    if (voices.length > 0) doSpeak();
-    else {
-      let fired = false;
-      const onReady = () => { if (fired) return; fired = true; window.speechSynthesis.removeEventListener("voiceschanged", onReady); doSpeak(); };
-      window.speechSynthesis.addEventListener("voiceschanged", onReady);
-      setTimeout(onReady, 1500);
-    }
+    stopSpeech();
+    const clean = cleanForTTS(text);
+    if (!clean.trim()) return;
+    const res = await fetch("/api/voice", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: clean.slice(0, 2000), gender: _voiceGender }),
+    });
+    if (!res.ok) return;
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    _currentAudio = audio;
+    audio.onended = () => { URL.revokeObjectURL(url); _currentAudio = null; };
+    audio.onerror = () => { URL.revokeObjectURL(url); _currentAudio = null; };
+    await audio.play().catch(() => {});
   } catch {}
 }
 
 function speakAndWait(text: string, voiceGender: "female" | "male"): Promise<void> {
   return new Promise(resolve => {
-    try {
-      if (!("speechSynthesis" in window)) { resolve(); return; }
-      window.speechSynthesis.cancel();
-      const clean = cleanForTTS(text);
-      if (!clean.trim()) { resolve(); return; }
-      const utt = new SpeechSynthesisUtterance(clean);
-      const voice = getMicrosoftVoice(voiceGender);
-      if (voice) utt.voice = voice;
-      utt.lang = "bn-BD"; utt.rate = 0.88; utt.pitch = 1.05; utt.volume = 1;
-      utt.onend = () => resolve();
-      utt.onerror = () => resolve();
-      const voices = window.speechSynthesis.getVoices();
-      if (voices.length > 0) window.speechSynthesis.speak(utt);
-      else {
-        window.speechSynthesis.addEventListener("voiceschanged", () => window.speechSynthesis.speak(utt), { once: true });
-        setTimeout(() => resolve(), 30000);
-      }
-    } catch { resolve(); }
+    (async () => {
+      try {
+        stopSpeech();
+        const clean = cleanForTTS(text);
+        if (!clean.trim()) { resolve(); return; }
+        const res = await fetch("/api/voice", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: clean.slice(0, 2000), gender: voiceGender }),
+        });
+        if (!res.ok) { resolve(); return; }
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const audio = new Audio(url);
+        _currentAudio = audio;
+        audio.onended = () => { URL.revokeObjectURL(url); _currentAudio = null; resolve(); };
+        audio.onerror = () => { URL.revokeObjectURL(url); _currentAudio = null; resolve(); };
+        await audio.play().catch(() => resolve());
+      } catch { resolve(); }
+    })();
   });
-}
-
-function stopSpeech() {
-  try { window.speechSynthesis?.cancel(); } catch {}
 }
 
 function loadSessions(): ChatSession[] {
@@ -351,13 +298,6 @@ export default function AIChatPage() {
     return () => { unsub?.(); };
   }, []);
 
-  useEffect(() => {
-    if (!("speechSynthesis" in window)) return;
-    const loadVoices = () => window.speechSynthesis.getVoices();
-    loadVoices();
-    window.speechSynthesis.addEventListener("voiceschanged", loadVoices);
-    return () => window.speechSynthesis.removeEventListener("voiceschanged", loadVoices);
-  }, []);
 
   useEffect(() => {
     let unsubButtons: (() => void) | undefined;
@@ -929,49 +869,51 @@ export default function AIChatPage() {
 
               <div className="space-y-4">
                 <div>
-                  <p className="text-white/50 text-xs mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>ভয়েস নির্বাচন করুন</p>
+                  <p className="text-white/60 text-sm mb-3" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>ভয়েস নির্বাচন করুন</p>
                   {[
-                    { val: "female", label: "PARISA (Female)", sub: "bn-BD-NabanitaNeural" },
-                    { val: "male",   label: "RUBEL (Male)",    sub: "bn-BD-PradeepNeural" },
+                    { val: "female", label: "PARISA (Female)" },
+                    { val: "male",   label: "RUBEL (Male)" },
                   ].map(v => (
                     <button key={v.val} onClick={() => setVoiceGender(v.val as "female" | "male")}
-                      className="w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all mb-2"
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-all mb-2"
                       style={{
-                        background: voiceGender === v.val ? "rgba(0,212,170,0.12)" : "rgba(255,255,255,0.04)",
-                        border: `1px solid ${voiceGender === v.val ? "rgba(0,212,170,0.4)" : "rgba(255,255,255,0.08)"}`,
+                        background: "rgba(255,255,255,0.06)",
+                        border: `1px solid ${voiceGender === v.val ? "rgba(0,212,170,0.5)" : "rgba(255,255,255,0.1)"}`,
                       }}>
-                      <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm"
-                        style={{ background: voiceGender === v.val ? "rgba(0,212,170,0.2)" : "rgba(255,255,255,0.06)", color: "#00d4aa" }}>
-                        🎙️
+                      <div className="w-5 h-5 rounded-full flex-shrink-0 flex items-center justify-center"
+                        style={{
+                          border: `2px solid ${voiceGender === v.val ? "#00d4aa" : "rgba(255,255,255,0.4)"}`,
+                          background: voiceGender === v.val ? "#00d4aa" : "transparent",
+                        }}>
+                        {voiceGender === v.val && (
+                          <div className="w-2 h-2 rounded-full bg-white" />
+                        )}
                       </div>
-                      <div>
-                        <p className="text-white text-xs font-medium">{v.label}</p>
-                        <p className="text-white/35 text-[10px] font-mono">{v.sub}</p>
-                      </div>
-                      {voiceGender === v.val && <span className="ml-auto text-cyan-400 text-sm">✓</span>}
+                      <span className="text-sm" style={{ color: "rgba(255,255,255,0.5)" }}>🎙️</span>
+                      <p className="text-white text-sm font-medium" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>{v.label}</p>
                     </button>
                   ))}
                   <button
                     onClick={() => speakText("আমি পারিসা রুবেলের স্ত্রী আমাদের ভালোবাসা চিরকাল টিকে থাকবে", voiceGender)}
-                    className="w-full py-2.5 rounded-xl text-xs font-bold transition-all active:scale-[0.97]"
-                    style={{ background: "rgba(0,212,170,0.08)", border: "1px solid rgba(0,212,170,0.25)", color: "#00d4aa", fontFamily: "'Hind Siliguri', sans-serif" }}>
-                    ভয়েস টেষ্ট করুন
+                    className="py-2.5 px-4 rounded-xl text-sm font-medium transition-all active:scale-[0.97]"
+                    style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.8)", fontFamily: "'Hind Siliguri', sans-serif" }}>
+                    ভয়েস টেস্ট করুন
                   </button>
                 </div>
 
                 <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 16 }}>
-                  <p className="text-white/50 text-xs mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                  <p className="text-white/60 text-sm mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
                     আপনার নাম (AI আপনাকে এই নামে ডাকবে)
                   </p>
                   <input
                     type="text"
                     value={userNameInput}
                     onChange={e => setUserNameInput(e.target.value)}
-                    placeholder="নাম লিখুন..."
+                    placeholder="যেমন: দাদা"
                     className="w-full rounded-xl px-4 py-3 text-white text-sm focus:outline-none"
                     style={{
                       background: "rgba(255,255,255,0.06)",
-                      border: "1px solid rgba(0,212,170,0.2)",
+                      border: "1px solid rgba(255,255,255,0.12)",
                       fontFamily: "'Hind Siliguri', sans-serif",
                     }}
                   />
@@ -979,13 +921,13 @@ export default function AIChatPage() {
 
                 <div className="flex gap-3 pt-1">
                   <button onClick={resetUserName}
-                    className="flex-1 py-3 rounded-xl text-sm font-bold transition-all active:scale-95"
-                    style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.7)", fontFamily: "'Hind Siliguri', sans-serif" }}>
+                    className="px-6 py-3 rounded-xl text-sm font-medium transition-all active:scale-95"
+                    style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.75)", fontFamily: "'Hind Siliguri', sans-serif" }}>
                     রিসেট
                   </button>
                   <button onClick={saveUserName}
-                    className="flex-[2] py-3 rounded-xl text-sm font-bold transition-all active:scale-95"
-                    style={{ background: "linear-gradient(135deg, rgba(0,180,140,0.85), rgba(0,140,100,0.8))", border: "1px solid rgba(0,212,170,0.4)", color: "#fff", fontFamily: "'Hind Siliguri', sans-serif" }}>
+                    className="flex-1 py-3 rounded-xl text-sm font-bold transition-all active:scale-95"
+                    style={{ background: "linear-gradient(135deg, #00b48a, #008c6a)", border: "1px solid rgba(0,212,170,0.5)", color: "#fff", fontFamily: "'Hind Siliguri', sans-serif" }}>
                     সেভ
                   </button>
                 </div>
