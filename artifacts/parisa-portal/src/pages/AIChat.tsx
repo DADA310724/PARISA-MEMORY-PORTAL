@@ -437,17 +437,20 @@ export default function AIChatPage() {
   function buildScreenshotContext(): string {
     const entries = Object.entries(screenshotIndex).filter(([, files]) => files.length > 0);
     if (entries.length === 0) return "";
-    const lines = ["\n\n=== স্ক্রিনশট ইন্ডেক্স (Screenshots ফোল্ডার) ==="];
-    lines.push("নির্দিষ্ট স্ক্রিনশট দেখাতে চাইলে এই ফরম্যাট ব্যবহার করো: <<IMG:fileId>>");
-    lines.push("তারিখ মিলিয়ে দেখাও। সর্বোচ্চ ৩টি একসাথে দেখাবে। কোনো Drive লিংক দিবে না।\n");
+    const lines = ["\n\n=== স্ক্রিনশট ইন্ডেক্স ==="];
+    lines.push("<<IMG:fileId>> ফরম্যাটে দেখাও। সর্বোচ্চ ৩টি। Drive লিংক দিবে না।\n");
     for (const [folder, files] of entries) {
-      lines.push(`${folder} (${files.length}টি):`);
-      files.forEach(f => {
+      // সর্বশেষ ১০টি ফাইল নাও — prompt ছোট রাখতে
+      const recent = [...files].sort((a, b) =>
+        (b.modifiedTime ?? "").localeCompare(a.modifiedTime ?? "")
+      ).slice(0, 10);
+      lines.push(`${folder}:`);
+      recent.forEach(f => {
         const d = f.modifiedTime ? f.modifiedTime.slice(0, 10) : "";
-        lines.push(`  ${f.name} | তারিখ: ${d} | <<IMG:${f.id}>>`);
+        lines.push(`  ${f.name}|${d}|<<IMG:${f.id}>>`);
       });
     }
-    lines.push("=== স্ক্রিনশট শেষ ===");
+    lines.push("=== শেষ ===");
     return lines.join("\n");
   }
 

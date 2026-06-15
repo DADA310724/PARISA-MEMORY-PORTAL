@@ -233,40 +233,48 @@ async function tryGroq(
   const allKeys = shuffle([...keys, ...getEnvKeys("GROQ_API_KEYS")]);
   const uniqueKeys = [...new Set(allKeys)].filter(Boolean);
   if (!uniqueKeys.length) throw new Error("No Groq keys");
+  // Use smaller/faster models first to avoid 413 token limit errors
+  const groqModels = ["llama-3.1-8b-instant", "llama3-8b-8192", "llama-3.3-70b-versatile"];
+  // Truncate system prompt to ~5000 chars to stay within token limits
+  const safePrompt = systemPrompt.length > 5000
+    ? systemPrompt.slice(0, 5000) + "\n[প্রম্পট সংক্ষিপ্ত করা হয়েছে]"
+    : systemPrompt;
   for (const key of uniqueKeys) {
-    try {
-      const resp = await fetch(
-        "https://api.groq.com/openai/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${key}`,
+    for (const model of groqModels) {
+      try {
+        const resp = await fetch(
+          "https://api.groq.com/openai/v1/chat/completions",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${key}`,
+            },
+            body: JSON.stringify({
+              model,
+              messages: [
+                { role: "system", content: safePrompt },
+                ...messages,
+              ],
+              max_tokens: 1200,
+              temperature: 0.85,
+            }),
           },
-          body: JSON.stringify({
-            model: "llama-3.3-70b-versatile",
-            messages: [
-              { role: "system", content: systemPrompt },
-              ...messages,
-            ],
-            max_tokens: 1500,
-            temperature: 0.85,
-          }),
-        },
-      );
-      if (!resp.ok) {
-        const errBody = await resp.text().catch(() => "");
-        console.warn(`Groq HTTP ${resp.status}: ${errBody.slice(0, 200)}`);
+        );
+        if (!resp.ok) {
+          const errBody = await resp.text().catch(() => "");
+          console.warn(`Groq ${model} HTTP ${resp.status}: ${errBody.slice(0, 200)}`);
+          continue;
+        }
+        const data = (await resp.json()) as {
+          choices: Array<{ message: { content: string } }>;
+        };
+        const text = data.choices?.[0]?.message?.content?.trim();
+        if (text) return text;
+      } catch (e) {
+        console.warn(`Groq ${model} fetch error:`, (e as Error).message);
         continue;
       }
-      const data = (await resp.json()) as {
-        choices: Array<{ message: { content: string } }>;
-      };
-      const text = data.choices?.[0]?.message?.content?.trim();
-      if (text) return text;
-    } catch (e) {
-      console.warn("Groq fetch error:", (e as Error).message);
-      continue;
     }
   }
   throw new Error("All Groq keys failed");
@@ -285,7 +293,7 @@ async function tryGemini(
     parts: [{ text: m.content }],
   }));
 
-  const geminiModels = ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"];
+  const geminiModels = ["gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-flash-latest"];
   for (const key of uniqueKeys) {
     for (const model of geminiModels) {
       try {
