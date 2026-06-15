@@ -72,11 +72,10 @@ const HISTORY_CONTEXT = `
 const WELCOME_MESSAGE = `আসসালামু ওয়ালাইকুম।
 PARISA MEMORY PORTAL এ আপনাকে স্বাগতম।
 আমি এই সিস্টেমের অফিশিয়াল এআই রিপ্রেজেন্টেটিভ (PARISA)।
-আমাকে তৈরি করেছেন আমার ডেভেলপার (দাদা)।
 
-আমার কাজ হল পারিসা মেমরি পোর্টালের এআই সহকারী হিসেবে পারিসা ও কবেলের বৈবাহিক সম্পর্ক, তাদের জীবনের দীর্ঘ এই আড়াই বছরের ঘটনা ও অজানা বাস্তব প্রমাণ সংকলে তুলে ধরা। পারিসার পরিবারের বিভিন্ন পদক্ষেপ এবং এর পেছনের যাবতীয় আইনি ধারা ও ব্লাক ম্যাজিক সম্পর্কিত নিখুঁত তদন্তের রিপোর্ট বিশ্লেষণ করার দায়িত্ব আমার।
+আমার কাজ হল পারিসা মেমরি পোর্টালের এআই সহকারী হিসেবে পারিসা ও রুবেলের বৈবাহিক সম্পর্ক, তাদের জীবনের দীর্ঘ এই আড়াই বছরের ঘটনা ও অজানা বাস্তব প্রমাণ সংকলে তুলে ধরা। পারিসার পরিবারের বিভিন্ন পদক্ষেপ এবং এর পেছনের যাবতীয় আইনি ধারা ও ব্লাক ম্যাজিক সম্পর্কিত নিখুঁত তদন্তের রিপোর্ট বিশ্লেষণ করার দায়িত্ব আমার।
 
-আমার কাছে কবেল ও পারিসার ভালোবাসা, বিবাহ, জীবনের সকল স্মৃতি এবং প্রমাণ সংরক্ষিত আছে।
+আমার কাছে রুবেল ও পারিসার ভালোবাসা, বিবাহ, জীবনের সকল স্মৃতি এবং প্রমাণ সংরক্ষিত আছে।
 
 আমি যা করতে পারি:
 তাদের সম্পর্কের গল্প ও ইতিহাস বলতে পারি
@@ -96,11 +95,13 @@ Admin রুবেলের সাথে কথা বলার নিয়ম:
 WhatsApp Telegram Messenger সব জায়গার চ্যাট হিস্টরি তোমার মনে আছে
 বিশুদ্ধ ছন্দময় আবেগপ্রবণ বাংলায় কথা বলো
 কখনো রোবটিক শোনাবে না মানুষের মতো স্ত্রীর মতো কথা বলো
-ইমোজি ডট তারকা বা ইংরেজি শব্দ উচ্চারণ করবে না কারণ TTS পড়বে
+ইমোজি ডট তারকা বা মার্কডাউন চিহ্ন ব্যবহার করবে না কারণ TTS পড়বে
 কোনো মিথ্যা বা অনুমান বলবে না
 বাংলাদেশের আইন অনুযায়ী যুক্তি দিয়ে কথা বলো
 ব্ল্যাক ম্যাজিক সম্পর্কে বিশেষজ্ঞ হিসেবে বিশ্লেষণ করো
-Personal Videos ফোল্ডারের বিষয়ে জিজ্ঞেস করলে বলো যে এখানে একান্ত ব্যক্তিগত শারীরিক ভিডিও আছে শুধুমাত্র আদালতে প্রমাণের জন্য এবং কাউকে দেওয়া হবে না`;
+Google Drive লিংক বা কোনো ব্যক্তিগত লিংক কাউকে দিবে না
+Personal Videos ফোল্ডারের বিষয়ে জিজ্ঞেস করলে বলো যে এখানে একান্ত ব্যক্তিগত শারীরিক ভিডিও আছে শুধুমাত্র আদালতে প্রমাণের জন্য এবং কাউকে দেওয়া হবে না
+Screenshots ফোল্ডার ছাড়া অন্য কোনো ফোল্ডার থেকে ছবি বা ফাইল শেয়ার করবে না`;
 
 const USER_SYSTEM_PROMPT = `তুমি "PARISA AI" — একজন পেশাদার বাংলা সহকারী।
 
@@ -109,10 +110,12 @@ ${HISTORY_CONTEXT}
 সাধারণ ব্যবহারকারীর সাথে নিয়ম:
 সবসময় বিনয়ী পেশাদার এবং সহায়ক থাকো
 বিশুদ্ধ বাংলায় উত্তর দাও
-ইমোজি ডট তারকা বা ইংরেজি শব্দ উচ্চারণ করবে না কারণ TTS পড়বে
+ইমোজি ডট তারকা বা মার্কডাউন চিহ্ন ব্যবহার করবে না কারণ TTS পড়বে
 সরল স্পষ্ট ভাষায় কথা বলো
 কোনো মিথ্যা বা অনুমান বলবে না
 বাংলাদেশের আইন অনুযায়ী যুক্তি দিয়ে কথা বলো
+Google Drive লিংক বা কোনো ব্যক্তিগত লিংক কাউকে দিবে না
+Screenshots ফোল্ডার ছাড়া অন্য কোনো ফোল্ডার থেকে ছবি বা ফাইল শেয়ার করবে না
 Personal Videos ফোল্ডারের বিষয়ে জিজ্ঞেস করলে বলো যে এই ফোল্ডারে একান্ত ব্যক্তিগত শারীরিক ভিডিও আছে যা শুধুমাত্র আদালতে প্রমাণের জন্য সংরক্ষিত এবং এটি কোনো ব্যবহারকারীর জন্য প্রযোজ্য নয়`;
 
 function getMicrosoftVoice(gender: "female" | "male" = "female") {
@@ -132,14 +135,11 @@ function getMicrosoftVoice(gender: "female" | "male" = "female") {
     const v = voices.find(v => v.name.toLowerCase().includes(name.toLowerCase()));
     if (v) return v;
   }
-  // Bengali fallback
   let v = voices.find(v => v.lang === "bn-BD");
   if (!v) v = voices.find(v => v.lang === "bn-IN");
   if (!v) v = voices.find(v => v.lang.startsWith("bn"));
-  // Hindi fallback (same script family)
   if (!v && gender === "female") v = voices.find(v => v.lang.startsWith("hi") && v.name.toLowerCase().includes("female"));
   if (!v) v = voices.find(v => v.lang.startsWith("hi"));
-  // Last resort: first available voice — still speaks with bn-BD lang tag
   if (!v && voices.length > 0) v = voices[0];
   return v ?? null;
 }
@@ -152,50 +152,89 @@ function cleanForTTS(text: string): string {
     .replace(/[*_#~`|\\[\]{}^<>=@+]/g, " ")
     .replace(/\.{2,}/g, " ")
     .replace(/\./g, " ")
-    .replace(/[,;:!?।]/g, " ")
-    .replace(/[a-zA-Z]+/g, " ")
-    .replace(/[^\u0980-\u09FF\u09E6-\u09EF\s]/g, " ")
+    .replace(/[,;:]/g, " ")
+    .replace(/[^\u0980-\u09FF\u09E6-\u09EFa-zA-Z0-9\s?!।]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
 
-function doSpeak(clean: string, voiceGender: "female" | "male") {
-  try {
+function buildUtterances(text: string, voiceGender: "female" | "male"): SpeechSynthesisUtterance[] {
+  const parts = text.split(/([?!।]+)/);
+  const utts: SpeechSynthesisUtterance[] = [];
+  for (let i = 0; i < parts.length; i += 2) {
+    const seg = parts[i] || "";
+    const term = parts[i + 1] || "";
+    const clean = cleanForTTS(seg + term.replace(/[?!।]/g, ""));
+    if (!clean.trim()) continue;
     const utt = new SpeechSynthesisUtterance(clean);
     const voice = getMicrosoftVoice(voiceGender);
     if (voice) utt.voice = voice;
     utt.lang = "bn-BD";
-    utt.rate = 0.88;
-    utt.pitch = 1.05;
     utt.volume = 1;
-    window.speechSynthesis.speak(utt);
-  } catch {}
+    if (term.includes("?")) {
+      utt.rate = 0.9;
+      utt.pitch = 1.3;
+    } else if (term.includes("!")) {
+      utt.rate = 1.0;
+      utt.pitch = 1.15;
+    } else {
+      utt.rate = 0.88;
+      utt.pitch = 1.05;
+    }
+    utts.push(utt);
+  }
+  if (utts.length === 0) {
+    const clean = cleanForTTS(text);
+    if (clean.trim()) {
+      const utt = new SpeechSynthesisUtterance(clean);
+      const voice = getMicrosoftVoice(voiceGender);
+      if (voice) utt.voice = voice;
+      utt.lang = "bn-BD"; utt.rate = 0.88; utt.pitch = 1.05; utt.volume = 1;
+      utts.push(utt);
+    }
+  }
+  return utts;
 }
 
 function speakText(text: string, voiceGender: "female" | "male" = "female") {
   try {
     if (!("speechSynthesis" in window)) return;
     window.speechSynthesis.cancel();
-    const clean = cleanForTTS(text);
-    if (!clean.trim()) return;
-
+    const utts = buildUtterances(text, voiceGender);
+    if (!utts.length) return;
     const voices = window.speechSynthesis.getVoices();
-    if (voices.length > 0) {
-      doSpeak(clean, voiceGender);
-    } else {
-      // Voices not loaded yet — wait for voiceschanged event
+    const doSpeak = () => utts.forEach(u => window.speechSynthesis.speak(u));
+    if (voices.length > 0) doSpeak();
+    else {
       let fired = false;
-      const onReady = () => {
-        if (fired) return;
-        fired = true;
-        window.speechSynthesis.removeEventListener("voiceschanged", onReady);
-        doSpeak(clean, voiceGender);
-      };
+      const onReady = () => { if (fired) return; fired = true; window.speechSynthesis.removeEventListener("voiceschanged", onReady); doSpeak(); };
       window.speechSynthesis.addEventListener("voiceschanged", onReady);
-      // Timeout fallback: speak anyway after 1.5s if event never fires
-      setTimeout(() => onReady(), 1500);
+      setTimeout(onReady, 1500);
     }
   } catch {}
+}
+
+function speakAndWait(text: string, voiceGender: "female" | "male"): Promise<void> {
+  return new Promise(resolve => {
+    try {
+      if (!("speechSynthesis" in window)) { resolve(); return; }
+      window.speechSynthesis.cancel();
+      const clean = cleanForTTS(text);
+      if (!clean.trim()) { resolve(); return; }
+      const utt = new SpeechSynthesisUtterance(clean);
+      const voice = getMicrosoftVoice(voiceGender);
+      if (voice) utt.voice = voice;
+      utt.lang = "bn-BD"; utt.rate = 0.88; utt.pitch = 1.05; utt.volume = 1;
+      utt.onend = () => resolve();
+      utt.onerror = () => resolve();
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0) window.speechSynthesis.speak(utt);
+      else {
+        window.speechSynthesis.addEventListener("voiceschanged", () => window.speechSynthesis.speak(utt), { once: true });
+        setTimeout(() => resolve(), 30000);
+      }
+    } catch { resolve(); }
+  });
 }
 
 function stopSpeech() {
@@ -248,6 +287,7 @@ export default function AIChatPage() {
   const { auth } = useApp();
   const [, setLocation] = useLocation();
   const isAdmin = auth?.role === "admin";
+
   const [sessions, setSessions] = useState<ChatSession[]>(loadSessions);
   const [currentId, setCurrentId] = useState<string>(() => {
     const s = loadSessions();
@@ -264,8 +304,22 @@ export default function AIChatPage() {
   const [lastTypingMsg, setLastTypingMsg] = useState<string | null>(null);
   const [folderContext, setFolderContext] = useState("");
   const [aiKeys, setAiKeys] = useState<{ groq: string[]; gemini: string[]; openrouter: string[] }>({ groq: [], gemini: [], openrouter: [] });
+
+  const [userName, setUserName] = useState<string>(() => localStorage.getItem("parisa_username") || "");
+  const [userNameInput, setUserNameInput] = useState<string>(() => localStorage.getItem("parisa_username") || "");
+
+  const [audioCallOn, setAudioCallOn] = useState(false);
+  const [videoCallOn, setVideoCallOn] = useState(false);
+  const [callStatus, setCallStatus] = useState("শুনছি…");
+  const [callCaption, setCallCaption] = useState("");
+  const [vcFacing, setVcFacing] = useState<"user" | "environment">("user");
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const vcStreamRef = useRef<MediaStream | null>(null);
+  const callActiveRef = useRef(false);
+  const recognizerRef = useRef<InstanceType<typeof SpeechRecognition> | null>(null);
 
   const currentSession = sessions.find(s => s.id === currentId);
   const messages = currentSession?.messages ?? [];
@@ -305,26 +359,45 @@ export default function AIChatPage() {
     return () => window.speechSynthesis.removeEventListener("voiceschanged", loadVoices);
   }, []);
 
-  // Firebase listener for folder files — builds dynamic context for AI
   useEffect(() => {
-    let unsub: (() => void) | undefined;
+    let unsubButtons: (() => void) | undefined;
+    let unsubFiles: (() => void) | undefined;
+    let folderFiles: Record<string, { files: Array<{name: string}>; count?: number }> = {};
+    const lockedLabels = new Set<string>();
+
+    const buildContext = () => {
+      const lines: string[] = ["\n\n=== ড্যাশবোর্ড ফোল্ডারে সংরক্ষিত ফাইলের তালিকা ==="];
+      let hasAny = false;
+      for (const [folderName, info] of Object.entries(folderFiles)) {
+        if (lockedLabels.has(folderName)) continue;
+        const files = info.files || [];
+        if (files.length === 0) continue;
+        hasAny = true;
+        lines.push(`\n${folderName} (${info.count ?? files.length}টি ফাইল):`);
+        files.slice(0, 15).forEach((f: {name: string}) => lines.push(`  ${f.name}`));
+        if ((info.count ?? files.length) > 15) lines.push(`  এবং আরো ${(info.count ?? files.length) - 15}টি`);
+      }
+      lines.push("\n=== তালিকা শেষ ===\n");
+      setFolderContext(hasAny ? lines.join("\n") : "");
+    };
+
     ensureFirebase().then((db) => {
-      const filesRef = ref(db, "folder_files");
-      unsub = onValue(filesRef, (snap) => {
-        const data = snap.val() as Record<string, { files: Array<{name: string}>; count?: number }> | null;
-        if (!data) return;
-        const lines: string[] = ["\n\n=== ফোল্ডারে সংরক্ষিত ফাইলের তালিকা ==="];
-        for (const [, info] of Object.entries(data)) {
-          const files = info.files || [];
-          if (files.length === 0) continue;
-          files.slice(0, 20).forEach((f: {name: string}) => lines.push(`  · ${f.name}`));
-          if ((info.count ?? files.length) > 20) lines.push(`  ... এবং আরো ${(info.count ?? files.length) - 20}টি`);
+      unsubButtons = onValue(ref(db, "buttons"), (snap) => {
+        const data = snap.val() as Record<string, { label?: string; locked?: boolean }> | null;
+        lockedLabels.clear();
+        if (data) {
+          for (const btn of Object.values(data)) {
+            if (btn.locked && btn.label) lockedLabels.add(btn.label);
+          }
         }
-        lines.push("=== তালিকা শেষ ===\n");
-        setFolderContext(lines.length > 2 ? lines.join("\n") : "");
+        buildContext();
+      });
+      unsubFiles = onValue(ref(db, "folder_files"), (snap) => {
+        folderFiles = snap.val() || {};
+        buildContext();
       });
     }).catch(() => {});
-    return () => { unsub?.(); };
+    return () => { unsubButtons?.(); unsubFiles?.(); };
   }, []);
 
   useEffect(() => {
@@ -353,6 +426,13 @@ export default function AIChatPage() {
     }
   }
 
+  function buildSystemPrompt(base: string): string {
+    const nameNote = userName
+      ? `\n\nব্যবহারকারীর নাম: "${userName}" — তাকে সবসময় এই নামেই ডাকো।`
+      : `\n\nব্যবহারকারীর কোনো নাম সেট নেই — সাধারণভাবে ভদ্রভাবে ডাকো, কোনো বিশেষ উপাধি ব্যবহার করবে না।`;
+    return base + folderContext + nameNote;
+  }
+
   const sendMessage = useCallback(async (text: string, imageUrl?: string) => {
     if (!text.trim() && !imageUrl) return;
     setBusy(true);
@@ -364,7 +444,7 @@ export default function AIChatPage() {
     updateSession(currentId, s => ({ ...s, messages: nextMsgs, title }));
 
     try {
-      const sysPrompt = (isAdmin ? adminPrompt : userPrompt) + folderContext;
+      const sysPrompt = buildSystemPrompt(isAdmin ? adminPrompt : userPrompt);
       const apiMsgs = nextMsgs.map(m => ({
         role: m.role,
         content: m.imageUrl ? `[ফাইল সংযুক্ত] ${m.content}` : m.content,
@@ -403,7 +483,8 @@ export default function AIChatPage() {
       };
       updateSession(currentId, s => ({ ...s, messages: [...nextMsgs, errMsg] }));
     } finally { setBusy(false); setAiTyping(false); }
-  }, [currentId, sessions, isAdmin, voiceGender, adminPrompt, userPrompt, folderContext]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentId, sessions, isAdmin, voiceGender, adminPrompt, userPrompt, folderContext, userName, aiKeys]);
 
   function newChat() {
     const id = newSessionId();
@@ -471,9 +552,7 @@ export default function AIChatPage() {
 
     if (isImg) {
       const reader = new FileReader();
-      reader.onload = () => {
-        sendMessage("এই ছবিটা বিশ্লেষণ করে জানাও।", reader.result as string);
-      };
+      reader.onload = () => sendMessage("এই ছবিটা বিশ্লেষণ করে জানাও।", reader.result as string);
       reader.readAsDataURL(file);
     } else if (isAudio) {
       sendMessage(`অডিও ফাইল আপলোড হয়েছে: ${file.name} — এটা বিশ্লেষণ করো।`);
@@ -483,17 +562,11 @@ export default function AIChatPage() {
       sendMessage(`PDF ফাইল আপলোড হয়েছে: ${file.name} — এটা বিশ্লেষণ করো।`);
     } else if (ext === "html" || ext === "htm") {
       const reader = new FileReader();
-      reader.onload = () => {
-        const content = (reader.result as string).slice(0, 3000);
-        sendMessage(`HTML/চ্যাট ফাইল: ${file.name}\n\nContent:\n${content}`);
-      };
+      reader.onload = () => sendMessage(`HTML/চ্যাট ফাইল: ${file.name}\n\nContent:\n${(reader.result as string).slice(0, 3000)}`);
       reader.readAsText(file);
     } else if (ext === "txt" || ext === "doc" || ext === "docx") {
       const reader = new FileReader();
-      reader.onload = () => {
-        const content = (reader.result as string).slice(0, 3000);
-        sendMessage(`টেক্সট ফাইল: ${file.name}\n\nContent:\n${content}`);
-      };
+      reader.onload = () => sendMessage(`টেক্সট ফাইল: ${file.name}\n\nContent:\n${(reader.result as string).slice(0, 3000)}`);
       reader.readAsText(file);
     } else {
       sendMessage(`ফাইল আপলোড হয়েছে: ${file.name}`);
@@ -501,14 +574,272 @@ export default function AIChatPage() {
     e.target.value = "";
   }
 
-  useEffect(() => { return () => { stopSpeech(); }; }, []);
+  function saveUserName() {
+    const name = userNameInput.trim();
+    setUserName(name);
+    if (name) localStorage.setItem("parisa_username", name);
+    else localStorage.removeItem("parisa_username");
+    setSettingsOpen(false);
+  }
+
+  function resetUserName() {
+    setUserNameInput("");
+    setUserName("");
+    localStorage.removeItem("parisa_username");
+  }
+
+  async function callApiDirect(text: string): Promise<string> {
+    try {
+      const sysPrompt = buildSystemPrompt(isAdmin ? adminPrompt : userPrompt);
+      const resp = await api<{ text: string }>("/ai/chat", {
+        method: "POST",
+        body: {
+          messages: [{ role: "user", content: text }],
+          systemPrompt: sysPrompt,
+          provider: "auto",
+          groqKeys: aiKeys.groq,
+          geminiKeys: aiKeys.gemini,
+          openrouterKeys: aiKeys.openrouter,
+        },
+      });
+      return resp.text || "দুঃখিত বুঝতে পারলাম না";
+    } catch {
+      return "দুঃখিত নেটওয়ার্ক সমস্যা";
+    }
+  }
+
+  const SR = typeof window !== "undefined"
+    ? ((window as unknown as Record<string, unknown>).SpeechRecognition || (window as unknown as Record<string, unknown>).webkitSpeechRecognition) as typeof SpeechRecognition | undefined
+    : undefined;
+
+  function makeRecognizer() {
+    if (!SR) return null;
+    const r = new SR();
+    r.lang = "bn-BD";
+    r.interimResults = false;
+    r.maxAlternatives = 1;
+    r.continuous = false;
+    return r;
+  }
+
+  function audioCallLoop() {
+    if (!callActiveRef.current) return;
+    const r = makeRecognizer();
+    if (!r) return;
+    recognizerRef.current = r;
+    let finalText = "";
+    (r as unknown as Record<string, unknown>).onresult = (e: { resultIndex: number; results: { isFinal: boolean; [k: number]: { transcript: string } }[] }) => {
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) finalText += e.results[i][0].transcript;
+      }
+      setCallCaption(finalText);
+    };
+    r.onerror = () => { if (callActiveRef.current) setTimeout(audioCallLoop, 600); };
+    r.onend = async () => {
+      if (!callActiveRef.current) return;
+      const said = finalText.trim();
+      if (!said) { setTimeout(audioCallLoop, 200); return; }
+      setCallStatus("ভাবছি…");
+      const reply = await callApiDirect(said);
+      if (!callActiveRef.current) return;
+      setCallStatus("বলছি…");
+      setCallCaption(reply);
+      await speakAndWait(reply, voiceGender);
+      if (!callActiveRef.current) return;
+      setCallCaption("");
+      setCallStatus("শুনছি…");
+      audioCallLoop();
+    };
+    r.start();
+  }
+
+  function startAudioCall() {
+    if (!SR) { alert("এই ব্রাউজারে ভয়েস কল সাপোর্ট নেই।"); return; }
+    stopSpeech();
+    callActiveRef.current = true;
+    setAudioCallOn(true);
+    setCallStatus("শুনছি…");
+    setCallCaption("");
+    setTimeout(audioCallLoop, 300);
+  }
+
+  function endAudioCall() {
+    callActiveRef.current = false;
+    try { recognizerRef.current?.stop(); } catch {}
+    stopSpeech();
+    setAudioCallOn(false);
+    setCallCaption("");
+  }
+
+  async function openCamera(facing: "user" | "environment") {
+    try {
+      if (vcStreamRef.current) vcStreamRef.current.getTracks().forEach(t => t.stop());
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: false });
+      vcStreamRef.current = stream;
+      if (videoRef.current) videoRef.current.srcObject = stream;
+    } catch (e: unknown) {
+      const err = e as Error;
+      alert("ক্যামেরা চালু করা যাচ্ছে না: " + err.message);
+    }
+  }
+
+  function videoCallLoop() {
+    if (!callActiveRef.current) return;
+    const r = makeRecognizer();
+    if (!r) return;
+    recognizerRef.current = r;
+    let finalText = "";
+    (r as unknown as Record<string, unknown>).onresult = (e: { resultIndex: number; results: { isFinal: boolean; [k: number]: { transcript: string } }[] }) => {
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        if (e.results[i].isFinal) finalText += e.results[i][0].transcript;
+      }
+      setCallCaption(finalText);
+    };
+    r.onerror = () => { if (callActiveRef.current) setTimeout(videoCallLoop, 600); };
+    r.onend = async () => {
+      if (!callActiveRef.current) return;
+      const said = finalText.trim();
+      if (!said) { setTimeout(videoCallLoop, 200); return; }
+      setCallStatus("ভাবছি…");
+      const reply = await callApiDirect(said);
+      if (!callActiveRef.current) return;
+      setCallStatus("বলছি…");
+      setCallCaption(reply);
+      await speakAndWait(reply, voiceGender);
+      if (!callActiveRef.current) return;
+      setCallCaption("");
+      setCallStatus("কানেক্টেড");
+      videoCallLoop();
+    };
+    r.start();
+  }
+
+  async function startVideoCall() {
+    if (!SR) { alert("এই ব্রাউজারে ভয়েস কল সাপোর্ট নেই।"); return; }
+    stopSpeech();
+    callActiveRef.current = true;
+    setVcFacing("user");
+    setVideoCallOn(true);
+    setCallStatus("কানেক্টেড");
+    setCallCaption("");
+    await openCamera("user");
+    setTimeout(videoCallLoop, 300);
+  }
+
+  function endVideoCall() {
+    callActiveRef.current = false;
+    try { recognizerRef.current?.stop(); } catch {}
+    stopSpeech();
+    if (vcStreamRef.current) { vcStreamRef.current.getTracks().forEach(t => t.stop()); vcStreamRef.current = null; }
+    if (videoRef.current) videoRef.current.srcObject = null;
+    setVideoCallOn(false);
+    setCallCaption("");
+  }
+
+  async function flipCamera() {
+    const newFacing = vcFacing === "user" ? "environment" : "user";
+    setVcFacing(newFacing);
+    await openCamera(newFacing);
+  }
+
+  useEffect(() => { return () => { stopSpeech(); endAudioCall(); endVideoCall(); }; }, []);
 
   const pinnedSessions = sessions.filter(s => s.pinned);
   const recentSessions = sessions.filter(s => !s.pinned).sort((a, b) => b.createdAt - a.createdAt);
 
+  void WELCOME_MESSAGE;
+
   return (
     <div className="flex flex-col h-screen relative overflow-hidden"
       style={{ background: "linear-gradient(160deg, #071e1e 0%, #0a2828 50%, #061818 100%)" }}>
+
+      {/* Audio Call Fullscreen */}
+      <AnimatePresence>
+        {audioCallOn && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[90] flex flex-col items-center justify-between pb-12 pt-16"
+            style={{ background: "linear-gradient(160deg, #020e0e 0%, #041818 60%, #021010 100%)" }}>
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-28 h-28 rounded-full overflow-hidden"
+                style={{ border: "3px solid rgba(0,212,170,0.6)", boxShadow: "0 0 40px rgba(0,212,170,0.4), 0 0 80px rgba(0,212,170,0.15)" }}>
+                <img src={PROFILE_LOGO} alt="" className="w-full h-full object-cover" />
+              </div>
+              <p className="text-cyan-300 font-black text-xl tracking-widest" style={{ fontFamily: "'Exo 2', sans-serif" }}>PARISA AI</p>
+              <p className="text-white/50 text-xs" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>অডিও কল চলছে</p>
+            </div>
+
+            <div className="flex flex-col items-center gap-4 w-full px-6">
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full animate-pulse"
+                  style={{ background: callStatus === "শুনছি…" ? "#22d3ee" : callStatus === "বলছি…" ? "#4ade80" : "#f59e0b" }} />
+                <p className="text-white text-sm font-medium" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>{callStatus}</p>
+              </div>
+
+              {callCaption && (
+                <div className="w-full rounded-2xl px-4 py-3 text-center"
+                  style={{ background: "rgba(0,212,170,0.08)", border: "1px solid rgba(0,212,170,0.2)" }}>
+                  <p className="text-white/85 text-sm leading-relaxed" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                    {callCaption}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <button onClick={endAudioCall}
+              className="px-10 py-4 rounded-full text-white font-bold text-base transition-all active:scale-95"
+              style={{ background: "linear-gradient(135deg, #dc2626, #b91c1c)", boxShadow: "0 0 24px rgba(220,38,38,0.5)", fontFamily: "'Hind Siliguri', sans-serif" }}>
+              কল শেষ করুন
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Video Call Fullscreen */}
+      <AnimatePresence>
+        {videoCallOn && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[90] flex flex-col"
+            style={{ background: "#000" }}>
+            <video ref={videoRef} autoPlay playsInline muted
+              className="absolute inset-0 w-full h-full object-cover" style={{ transform: vcFacing === "user" ? "scaleX(-1)" : "none" }} />
+            <div className="absolute inset-0 flex flex-col justify-between"
+              style={{ background: "linear-gradient(to bottom, rgba(0,0,0,0.6) 0%, transparent 30%, transparent 50%, rgba(0,0,0,0.7) 100%)" }}>
+              <div className="flex items-center gap-2 px-4 pt-10">
+                <div className="w-2.5 h-2.5 rounded-full bg-green-400 animate-pulse" />
+                <p className="text-white text-sm font-bold" style={{ fontFamily: "'Exo 2', sans-serif" }}>ভিডিও কল • পারিসা AI</p>
+                <p className="text-white/60 text-xs ml-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>{callStatus}</p>
+              </div>
+
+              <div className="flex flex-col items-center gap-4 pb-4 px-6">
+                {callCaption && (
+                  <div className="w-full rounded-2xl px-4 py-3 text-center"
+                    style={{ background: "rgba(0,0,0,0.65)", border: "1px solid rgba(255,255,255,0.15)", backdropFilter: "blur(8px)" }}>
+                    <p className="text-white text-sm leading-relaxed" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                      {callCaption}
+                    </p>
+                  </div>
+                )}
+                <div className="flex items-center gap-4">
+                  <button onClick={endVideoCall}
+                    className="px-8 py-3.5 rounded-full text-white font-bold text-sm transition-all active:scale-95"
+                    style={{ background: "linear-gradient(135deg, #dc2626, #b91c1c)", boxShadow: "0 0 20px rgba(220,38,38,0.5)", fontFamily: "'Hind Siliguri', sans-serif" }}>
+                    কল শেষ
+                  </button>
+                  <button onClick={flipCamera}
+                    className="w-12 h-12 rounded-full flex items-center justify-center transition-all active:scale-95"
+                    style={{ background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.25)", backdropFilter: "blur(8px)" }}
+                    title="ক্যামেরা পাল্টান">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round">
+                      <path d="M1 4v6h6"/><path d="M23 20v-6h-6"/>
+                      <path d="M20.49 9A9 9 0 005.64 5.64L1 10m22 4l-4.64 4.36A9 9 0 013.51 15"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Chat History Sidebar */}
       <AnimatePresence>
@@ -570,9 +901,9 @@ export default function AIChatPage() {
                 </div>
               </div>
               <div style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-                <button onClick={() => setSettingsOpen(true)}
+                <button onClick={() => { setSidebarOpen(false); setSettingsOpen(true); }}
                   className="w-full flex items-center gap-2 px-4 py-3 text-white/50 hover:text-white/80 text-xs transition-all">
-                  <span>⚙</span><span style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>ভয়েস সেটিংস</span>
+                  <span>⚙</span><span style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>সেটিংস</span>
                 </button>
               </div>
             </motion.div>
@@ -580,7 +911,7 @@ export default function AIChatPage() {
         )}
       </AnimatePresence>
 
-      {/* Voice Settings Modal */}
+      {/* Settings Modal */}
       <AnimatePresence>
         {settingsOpen && (
           <>
@@ -588,39 +919,75 @@ export default function AIChatPage() {
               className="fixed inset-0 z-[60] bg-black/70 backdrop-blur-sm" onClick={() => setSettingsOpen(false)} />
             <motion.div initial={{ opacity: 0, scale: 0.9, y: 20 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9 }}
               className="fixed inset-x-4 bottom-4 z-[70] rounded-3xl p-5"
-              style={{ background: "rgba(4,20,20,0.97)", border: "1px solid rgba(0,212,170,0.2)", backdropFilter: "blur(20px)", maxWidth: 400, margin: "auto" }}>
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-cyan-300 font-bold text-sm" style={{ fontFamily: "'Exo 2', sans-serif" }}>Microsoft AI ভয়েস সেটিংস</p>
-                <button onClick={() => setSettingsOpen(false)} className="text-white/50">✕</button>
+              style={{ background: "rgba(4,20,20,0.97)", border: "1px solid rgba(0,212,170,0.2)", backdropFilter: "blur(20px)", maxWidth: 420, margin: "0 auto" }}>
+              <div className="flex items-center justify-between mb-5">
+                <p className="text-white font-bold text-base" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>সেটিংস</p>
+                <button onClick={() => setSettingsOpen(false)}
+                  className="w-8 h-8 flex items-center justify-center rounded-full text-white/60 hover:text-white transition-all"
+                  style={{ background: "rgba(255,255,255,0.08)" }}>✕</button>
               </div>
-              <div className="space-y-3">
-                <p className="text-white/40 text-xs" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>ভয়েস বেছে নিন (Microsoft Edge TTS)</p>
-                {[
-                  { val: "female", label: "PARISA", sub: "FEMALE — bn-BD-NabanitaNeural" },
-                  { val: "male", label: "RUBEL", sub: "MALE — bn-BD-PradeepNeural" },
-                ].map(v => (
-                  <button key={v.val} onClick={() => setVoiceGender(v.val as "female" | "male")}
-                    className="w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all"
-                    style={{ background: voiceGender === v.val ? "rgba(0,212,170,0.12)" : "rgba(255,255,255,0.04)", border: `1px solid ${voiceGender === v.val ? "rgba(0,212,170,0.4)" : "rgba(255,255,255,0.08)"}` }}>
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                      style={{ background: voiceGender === v.val ? "rgba(0,212,170,0.25)" : "rgba(255,255,255,0.06)" }}>
-                      {v.val === "female" ? "♀" : "♂"}
-                    </div>
-                    <div>
-                      <p className="text-white text-xs font-medium">{v.label}</p>
-                      <p className="text-white/40 text-[10px] font-mono">{v.sub}</p>
-                    </div>
-                    {voiceGender === v.val && <span className="ml-auto text-cyan-400 text-sm">✓</span>}
+
+              <div className="space-y-4">
+                <div>
+                  <p className="text-white/50 text-xs mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>ভয়েস নির্বাচন করুন</p>
+                  {[
+                    { val: "female", label: "PARISA (Female)", sub: "bn-BD-NabanitaNeural" },
+                    { val: "male",   label: "RUBEL (Male)",    sub: "bn-BD-PradeepNeural" },
+                  ].map(v => (
+                    <button key={v.val} onClick={() => setVoiceGender(v.val as "female" | "male")}
+                      className="w-full flex items-center gap-3 p-3 rounded-xl text-left transition-all mb-2"
+                      style={{
+                        background: voiceGender === v.val ? "rgba(0,212,170,0.12)" : "rgba(255,255,255,0.04)",
+                        border: `1px solid ${voiceGender === v.val ? "rgba(0,212,170,0.4)" : "rgba(255,255,255,0.08)"}`,
+                      }}>
+                      <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 text-sm"
+                        style={{ background: voiceGender === v.val ? "rgba(0,212,170,0.2)" : "rgba(255,255,255,0.06)", color: "#00d4aa" }}>
+                        🎙️
+                      </div>
+                      <div>
+                        <p className="text-white text-xs font-medium">{v.label}</p>
+                        <p className="text-white/35 text-[10px] font-mono">{v.sub}</p>
+                      </div>
+                      {voiceGender === v.val && <span className="ml-auto text-cyan-400 text-sm">✓</span>}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => speakText("আমি পারিসা রুবেলের স্ত্রী আমাদের ভালোবাসা চিরকাল টিকে থাকবে", voiceGender)}
+                    className="w-full py-2.5 rounded-xl text-xs font-bold transition-all active:scale-[0.97]"
+                    style={{ background: "rgba(0,212,170,0.08)", border: "1px solid rgba(0,212,170,0.25)", color: "#00d4aa", fontFamily: "'Hind Siliguri', sans-serif" }}>
+                    ভয়েস টেষ্ট করুন
                   </button>
-                ))}
-                <button
-                  onClick={() => speakText("আমি পারিসা — রুবেলের স্ত্রী। আমাদের ভালোবাসা চিরকাল টিকে থাকবে।", voiceGender)}
-                  className="w-full py-2.5 rounded-xl text-xs font-bold transition-all active:scale-[0.97]"
-                  style={{ background: "rgba(0,212,170,0.12)", border: "1px solid rgba(0,212,170,0.35)", color: "#00d4aa", fontFamily: "'Hind Siliguri', sans-serif" }}>
-                  🎙️ ভয়েস পরীক্ষা করুন
-                </button>
-                <div className="rounded-xl p-3 text-center" style={{ background: "rgba(0,212,170,0.05)", border: "1px solid rgba(0,212,170,0.15)" }}>
-                  <p className="text-cyan-300/70 text-xs" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>প্রতিটি AI মেসেজ স্বয়ংক্রিয়ভাবে এই ভয়েসে পড়া হবে</p>
+                </div>
+
+                <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 16 }}>
+                  <p className="text-white/50 text-xs mb-2" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                    আপনার নাম (AI আপনাকে এই নামে ডাকবে)
+                  </p>
+                  <input
+                    type="text"
+                    value={userNameInput}
+                    onChange={e => setUserNameInput(e.target.value)}
+                    placeholder="নাম লিখুন..."
+                    className="w-full rounded-xl px-4 py-3 text-white text-sm focus:outline-none"
+                    style={{
+                      background: "rgba(255,255,255,0.06)",
+                      border: "1px solid rgba(0,212,170,0.2)",
+                      fontFamily: "'Hind Siliguri', sans-serif",
+                    }}
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-1">
+                  <button onClick={resetUserName}
+                    className="flex-1 py-3 rounded-xl text-sm font-bold transition-all active:scale-95"
+                    style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.7)", fontFamily: "'Hind Siliguri', sans-serif" }}>
+                    রিসেট
+                  </button>
+                  <button onClick={saveUserName}
+                    className="flex-[2] py-3 rounded-xl text-sm font-bold transition-all active:scale-95"
+                    style={{ background: "linear-gradient(135deg, rgba(0,180,140,0.85), rgba(0,140,100,0.8))", border: "1px solid rgba(0,212,170,0.4)", color: "#fff", fontFamily: "'Hind Siliguri', sans-serif" }}>
+                    সেভ
+                  </button>
                 </div>
               </div>
             </motion.div>
@@ -629,13 +996,14 @@ export default function AIChatPage() {
       </AnimatePresence>
 
       {/* Header */}
-      <div className="flex items-center gap-3 px-3 py-3 flex-shrink-0 relative"
+      <div className="flex items-center gap-2 px-3 py-3 flex-shrink-0 relative"
         style={{ background: "rgba(4,16,16,0.92)", backdropFilter: "blur(20px)", borderBottom: "1px solid rgba(0,212,170,0.1)" }}>
         <GlassIcon onClick={() => setLocation("/dashboard")} title="Dashboard-এ ফিরুন" size={40}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.85)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M19 12H5"/><path d="M12 5l-7 7 7 7"/>
           </svg>
         </GlassIcon>
+
         <div className="flex-1 flex flex-col items-center">
           <div className="w-9 h-9 rounded-full overflow-hidden mb-1" style={{ border: "2px solid rgba(0,212,170,0.6)", boxShadow: "0 0 12px rgba(0,212,170,0.3)" }}>
             <img src={PROFILE_LOGO} alt="Parisa AI" className="w-full h-full object-cover" />
@@ -646,11 +1014,24 @@ export default function AIChatPage() {
             <p className="text-[9px] text-white/40">Online</p>
           </div>
         </div>
-        <GlassIcon onClick={() => setSidebarOpen(true)} title="চ্যাট হিস্টরি" size={40}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="2" strokeLinecap="round">
-            <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
-          </svg>
-        </GlassIcon>
+
+        <div className="flex items-center gap-1.5">
+          <GlassIcon onClick={startAudioCall} title="অডিও কল" size={38} color="rgba(0,180,100,0.12)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(0,229,180,0.85)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.13.96.37 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.33 1.85.57 2.81.7A2 2 0 0122 16.92z"/>
+            </svg>
+          </GlassIcon>
+          <GlassIcon onClick={startVideoCall} title="ভিডিও কল" size={38} color="rgba(0,130,200,0.12)">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="rgba(100,200,255,0.85)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+            </svg>
+          </GlassIcon>
+          <GlassIcon onClick={() => setSidebarOpen(true)} title="চ্যাট হিস্টরি" size={40}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.8)" strokeWidth="2" strokeLinecap="round">
+              <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+            </svg>
+          </GlassIcon>
+        </div>
       </div>
 
       {/* Messages */}
@@ -667,7 +1048,7 @@ export default function AIChatPage() {
                 WELCOME
               </h1>
               <p className="text-white/55 text-sm mt-1.5" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                আমি পারিসা — কী জানতে চান, লিখুন বা বলুন।
+                {userName ? `${userName}, কী জানতে চান?` : "আমি পারিসা — কী জানতে চান, লিখুন বা বলুন।"}
               </p>
             </div>
             <div className="w-full max-w-sm space-y-2">
@@ -677,7 +1058,7 @@ export default function AIChatPage() {
                 "পারিসা ও রুবেলের মধ্যে দূরত্বের মূল কারণ কী?",
                 "আইন অনুযায়ী পারিসা ও রুবেলের বৈবাহিক সম্পর্কের ব্যাখ্যা কর।",
               ].map((q, qi) => (
-                <button key={qi} onClick={() => { sendMessage(q); }}
+                <button key={qi} onClick={() => sendMessage(q)}
                   className="w-full text-left px-4 py-3 rounded-2xl text-sm transition-all active:scale-[0.98]"
                   style={{
                     background: "rgba(255,255,255,0.04)",
@@ -719,7 +1100,7 @@ export default function AIChatPage() {
               </div>
               <div className={`flex gap-1.5 flex-wrap ${m.role === "user" ? "mr-1 justify-end" : "ml-1"}`}>
                 {m.failed ? (
-                  <button onClick={() => { if (m.retryText) { sendMessage(m.retryText); } }}
+                  <button onClick={() => { if (m.retryText) sendMessage(m.retryText); }}
                     className="flex items-center gap-1 text-[10px] px-2.5 py-1 rounded-lg text-red-300 hover:text-red-200 transition-all"
                     style={{ background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)" }}>
                     আবার চেষ্টা
@@ -769,15 +1150,13 @@ export default function AIChatPage() {
       {/* Bottom Toolbar */}
       <div className="flex-shrink-0 px-2 py-2" style={{ background: "rgba(4,16,16,0.92)", backdropFilter: "blur(20px)", borderTop: "1px solid rgba(0,212,170,0.08)" }}>
         <div className="flex items-end gap-2">
-          {/* File Import — left */}
-          <GlassIcon onClick={() => fileInputRef.current?.click()} title="ফাইল আপলোড (ছবি, ভিডিও, অডিও, PDF, HTML, Text)" size={44}
+          <GlassIcon onClick={() => fileInputRef.current?.click()} title="ফাইল আপলোড" size={44}
             color="rgba(0,180,140,0.12)">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="rgba(0,229,255,0.85)" strokeWidth="2.5" strokeLinecap="round">
               <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
             </svg>
           </GlassIcon>
 
-          {/* Text input — center */}
           <div className="flex-1 relative">
             <textarea value={input} onChange={e => setInput(e.target.value)}
               placeholder="কিছু লিখুন বা জিজ্ঞাসা করুন..." rows={1}
@@ -790,7 +1169,6 @@ export default function AIChatPage() {
               onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSend(); } }} />
           </div>
 
-          {/* Send — right */}
           <button onClick={handleSend} disabled={busy || !input.trim()}
             className="flex items-center justify-center rounded-2xl transition-all active:scale-95 disabled:opacity-40 flex-shrink-0"
             style={{ width: 44, height: 44, background: "linear-gradient(135deg, rgba(0,180,140,0.8), rgba(0,140,100,0.7))", border: "1px solid rgba(0,212,170,0.4)" }}>

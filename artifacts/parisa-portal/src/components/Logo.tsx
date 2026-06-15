@@ -15,8 +15,8 @@ export function Logo({
   withRing = true,
   glow = false,
 }: LogoProps) {
-  const { config } = useApp();
-  const url = config?.logoUrl || "https://i.ibb.co/Z1WPYY7P/x.jpg";
+  void useApp();
+  const url = "https://i.ibb.co/Z1WPYY7P/x.jpg";
 
   if (glow) {
     const wrapSize = size + 80;
