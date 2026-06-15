@@ -14,10 +14,11 @@ interface Props {
 }
 
 export function PdfViewer({ url, title, onClose }: Props) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const textLayerRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const renderTaskRef = useRef<pdfjsLib.RenderTask | null>(null);
+  const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([]);
+  const textLayerRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const pageWrapperRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const renderTaskRefs = useRef<(pdfjsLib.RenderTask | null)[]>([]);
 
   const [pdfDoc, setPdfDoc] = useState<pdfjsLib.PDFDocumentProxy | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -25,6 +26,7 @@ export function PdfViewer({ url, title, onClose }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [pageInput, setPageInput] = useState("1");
+  const [rendered, setRendered] = useState(false);
 
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -42,6 +44,7 @@ export function PdfViewer({ url, title, onClose }: Props) {
     setTotalPages(0);
     setMatches([]);
     setMatchIdx(0);
+    setRendered(false);
 
     const task = pdfjsLib.getDocument({ url, withCredentials: false });
     task.promise
@@ -50,26 +53,28 @@ export function PdfViewer({ url, title, onClose }: Props) {
     return () => { task.destroy(); };
   }, [url]);
 
-  /* ── Render page + text layer ── */
-  const renderPage = useCallback(async (
+  /* ── Render one page ── */
+  const renderPageAt = useCallback(async (
     doc: pdfjsLib.PDFDocumentProxy,
     pageNum: number,
     query: string,
     activeMatchItems: MatchItem[],
     activeMatchIdx: number,
   ) => {
-    if (!canvasRef.current || !containerRef.current) return;
+    const canvas = canvasRefs.current[pageNum - 1];
+    const tlDiv = textLayerRefs.current[pageNum - 1];
+    const wrapperDiv = pageWrapperRefs.current[pageNum - 1];
+    if (!canvas || !wrapperDiv) return;
 
-    if (renderTaskRef.current) {
-      try { renderTaskRef.current.cancel(); } catch {}
+    if (renderTaskRefs.current[pageNum - 1]) {
+      try { renderTaskRefs.current[pageNum - 1]!.cancel(); } catch {}
     }
 
     const page = await doc.getPage(pageNum);
-    const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const containerWidth = containerRef.current.clientWidth;
+    const containerWidth = wrapperDiv.clientWidth || containerRef.current?.clientWidth || 360;
     const unscaled = page.getViewport({ scale: 1 });
     const dpr = window.devicePixelRatio || 1;
     const scale = (containerWidth / unscaled.width) * dpr;
@@ -84,15 +89,14 @@ export function PdfViewer({ url, title, onClose }: Props) {
     canvas.style.height = `${logicalH}px`;
 
     try {
-      renderTaskRef.current = page.render({ canvasContext: ctx, viewport, canvas });
-      await renderTaskRef.current.promise;
+      renderTaskRefs.current[pageNum - 1] = page.render({ canvasContext: ctx, viewport, canvas });
+      await renderTaskRefs.current[pageNum - 1]!.promise;
     } catch (e: unknown) {
       if ((e as { name?: string })?.name !== "RenderingCancelledException") console.error("Render error", e);
+      return;
     }
 
-    /* ── Text layer ── */
-    if (!textLayerRef.current) return;
-    const tlDiv = textLayerRef.current;
+    if (!tlDiv) return;
     tlDiv.innerHTML = "";
     tlDiv.style.width = `${logicalW}px`;
     tlDiv.style.height = `${logicalH}px`;
@@ -103,17 +107,18 @@ export function PdfViewer({ url, title, onClose }: Props) {
     const textContent = await page.getTextContent();
     const items = textContent.items as Array<{ str: string; transform: number[]; width: number; height: number }>;
     const pageMatchIndices = new Set<number>();
-    if (activeMatchItems.length) {
-      activeMatchItems.forEach((m, mi) => {
-        if (m.page === pageNum) pageMatchIndices.add(m.itemIdx);
-      });
-    }
+    activeMatchItems.forEach((m) => {
+      if (m.page === pageNum) pageMatchIndices.add(m.itemIdx);
+    });
 
     items.forEach((item, idx) => {
       if (!item.str.trim()) return;
       const strLower = item.str.toLowerCase();
       const hasMatch = strLower.includes(qLower);
-      const isActive = pageMatchIndices.has(idx) && activeMatchItems[activeMatchIdx]?.page === pageNum && activeMatchItems[activeMatchIdx]?.itemIdx === idx;
+      const isActive =
+        pageMatchIndices.has(idx) &&
+        activeMatchItems[activeMatchIdx]?.page === pageNum &&
+        activeMatchItems[activeMatchIdx]?.itemIdx === idx;
 
       const tx = pdfjsLib.Util.transform(viewport.transform, item.transform);
       const angle = Math.atan2(tx[1], tx[0]);
@@ -138,18 +143,63 @@ export function PdfViewer({ url, title, onClose }: Props) {
             : "background:rgba(255,220,0,0.45);color:transparent;border-radius:2px;"
           : "color:transparent",
       ].join(";");
-
       tlDiv.appendChild(span);
     });
   }, []);
 
+  /* ── Render all pages after PDF loads ── */
   useEffect(() => {
-    if (!pdfDoc) return;
-    setPageInput(String(currentPage));
-    renderPage(pdfDoc, currentPage, searchQuery, matches, matchIdx);
-  }, [pdfDoc, currentPage, renderPage, searchQuery, matches, matchIdx]);
+    if (!pdfDoc || totalPages === 0 || loading) return;
+    canvasRefs.current = new Array(totalPages).fill(null);
+    textLayerRefs.current = new Array(totalPages).fill(null);
+    pageWrapperRefs.current = new Array(totalPages).fill(null);
+    renderTaskRefs.current = new Array(totalPages).fill(null);
 
-  /* ── Search all pages ── */
+    const doRender = async () => {
+      await new Promise((r) => setTimeout(r, 60));
+      for (let i = 1; i <= totalPages; i++) {
+        await renderPageAt(pdfDoc, i, "", [], 0);
+      }
+      setRendered(true);
+    };
+    doRender();
+  }, [pdfDoc, totalPages, loading, renderPageAt]);
+
+  /* ── Re-render pages with search highlights when matches change ── */
+  useEffect(() => {
+    if (!pdfDoc || !rendered || matches.length === 0) return;
+    const pagesToUpdate = new Set(matches.map((m) => m.page));
+    pagesToUpdate.forEach(async (pageNum) => {
+      await renderPageAt(pdfDoc, pageNum, searchQuery, matches, matchIdx);
+    });
+  }, [matches, matchIdx]);
+
+  /* ── IntersectionObserver for current page tracking ── */
+  useEffect(() => {
+    if (!rendered || totalPages === 0 || !containerRef.current) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        let maxRatio = 0;
+        let visiblePage = -1;
+        entries.forEach((entry) => {
+          if (entry.intersectionRatio > maxRatio) {
+            maxRatio = entry.intersectionRatio;
+            const idx = pageWrapperRefs.current.indexOf(entry.target as HTMLDivElement);
+            if (idx >= 0) visiblePage = idx + 1;
+          }
+        });
+        if (visiblePage > 0) {
+          setCurrentPage(visiblePage);
+          setPageInput(String(visiblePage));
+        }
+      },
+      { root: containerRef.current, threshold: [0.1, 0.3, 0.5, 1.0] },
+    );
+    pageWrapperRefs.current.forEach((el) => { if (el) observer.observe(el); });
+    return () => observer.disconnect();
+  }, [rendered, totalPages]);
+
+  /* ── Search ── */
   const handleSearch = useCallback(async () => {
     if (!pdfDoc || !searchQuery.trim()) return;
     setSearching(true);
@@ -174,18 +224,25 @@ export function PdfViewer({ url, title, onClose }: Props) {
     if (found.length === 0) { setNoResults(true); return; }
     setMatches(found);
     setMatchIdx(0);
-    setCurrentPage(found[0].page);
+    setTimeout(() => {
+      pageWrapperRefs.current[found[0].page - 1]?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 200);
   }, [pdfDoc, searchQuery]);
 
   const goToMatch = (idx: number) => {
     if (idx < 0 || idx >= matches.length) return;
     setMatchIdx(idx);
-    setCurrentPage(matches[idx].page);
+    setTimeout(() => {
+      pageWrapperRefs.current[matches[idx].page - 1]?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 50);
   };
 
   const jumpToPage = () => {
     const n = parseInt(pageInput);
-    if (n >= 1 && n <= totalPages) setCurrentPage(n);
+    if (n >= 1 && n <= totalPages) {
+      setCurrentPage(n);
+      pageWrapperRefs.current[n - 1]?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
   };
 
   return (
@@ -293,10 +350,10 @@ export function PdfViewer({ url, title, onClose }: Props) {
         </div>
       )}
 
-      {/* ── Canvas Area ── */}
+      {/* ── Vertical scroll canvas area ── */}
       <div
         ref={containerRef}
-        className="flex-1 overflow-auto flex flex-col items-center py-3 gap-3"
+        className="flex-1 overflow-y-auto flex flex-col items-stretch py-3 gap-3 px-2"
         style={{ background: "#374151" }}
         onContextMenu={(e) => e.preventDefault()}
       >
@@ -308,6 +365,7 @@ export function PdfViewer({ url, title, onClose }: Props) {
             </div>
           </div>
         )}
+
         {error && (
           <div className="flex items-center justify-center flex-1 px-6">
             <div className="text-center space-y-3">
@@ -321,43 +379,39 @@ export function PdfViewer({ url, title, onClose }: Props) {
             </div>
           </div>
         )}
-        {!loading && !error && (
-          <div className="relative shadow-2xl rounded" style={{ background: "#ffffff" }}>
-            <canvas ref={canvasRef} className="block" />
+
+        {!loading && !error && Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+          <div
+            key={pageNum}
+            ref={(el) => { pageWrapperRefs.current[pageNum - 1] = el; }}
+            className="flex flex-col items-center w-full"
+          >
             <div
-              ref={textLayerRef}
-              className="absolute inset-0 overflow-hidden"
-              style={{ userSelect: "none", pointerEvents: "none" }}
-            />
+              className="mb-1 px-2 py-0.5 rounded-md text-[10px] font-mono self-center"
+              style={{ background: "rgba(0,0,0,0.4)", color: "rgba(255,255,255,0.3)" }}
+            >
+              {pageNum} / {totalPages}
+            </div>
+            <div className="relative shadow-2xl rounded overflow-hidden w-full" style={{ background: "#ffffff" }}>
+              <canvas
+                ref={(el) => { canvasRefs.current[pageNum - 1] = el; }}
+                className="block w-full"
+              />
+              <div
+                ref={(el) => { textLayerRefs.current[pageNum - 1] = el; }}
+                className="absolute inset-0 overflow-hidden"
+                style={{ userSelect: "none", pointerEvents: "none" }}
+              />
+            </div>
+          </div>
+        ))}
+
+        {!loading && !error && !rendered && totalPages > 0 && (
+          <div className="flex items-center justify-center py-4">
+            <div className="w-6 h-6 border-2 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin" />
           </div>
         )}
       </div>
-
-      {/* ── Page navigation ── */}
-      {!loading && !error && totalPages > 1 && (
-        <div
-          className="flex-shrink-0 flex items-center justify-center gap-4 py-2.5"
-          style={{ background: "rgba(10,14,31,0.97)", borderTop: "1px solid rgba(255,255,255,0.07)" }}
-        >
-          <button
-            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-white disabled:opacity-25"
-            style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)" }}
-          >
-            <ChevronLeft className="w-5 h-5" />
-          </button>
-          <span className="text-white/50 text-sm min-w-[80px] text-center">{currentPage} / {totalPages}</span>
-          <button
-            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages}
-            className="w-9 h-9 rounded-xl flex items-center justify-center text-white disabled:opacity-25"
-            style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.1)" }}
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        </div>
-      )}
     </div>
   );
 }
