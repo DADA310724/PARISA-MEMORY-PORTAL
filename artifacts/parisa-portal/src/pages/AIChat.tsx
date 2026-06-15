@@ -1005,7 +1005,7 @@ export default function AIChatPage() {
               <img src={PROFILE_LOGO} alt="পারিসা" style={{ width: "100%", height: "100%", objectFit: "cover", opacity: .22, mixBlendMode: "screen", filter: "brightness(1.3) saturate(108%) contrast(.92)" }} />
             </div>
             <div>
-              <p className="parisa-tagline" style={{ color: "rgba(216,243,251,.75)", fontSize: 14, fontFamily: "'Hind Siliguri',sans-serif" }}>মায়া কখনোই কাটানো যায় না..</p>
+              <p className="parisa-tagline" style={{ color: "rgba(216,243,251,.75)", fontSize: 14, fontFamily: "'Hind Siliguri',sans-serif" }}>মায়া কখনো কাটানো যায় না এটা মৃত্যুর আগ পর্যন্ত থেকে যায়... 😘😘</p>
               <p className="parisa-tagline t2" style={{ color: "rgba(216,243,251,.6)", fontSize: 13, fontFamily: "'Hind Siliguri',sans-serif" }}>এটা মৃত্যুর আগ পর্যন্ত থেকে যায়...</p>
             </div>
             <h1 className="parisa-brand-title" style={{ fontSize: 26, letterSpacing: 8, margin: 0 }}>WELCOME</h1>
@@ -1160,7 +1160,7 @@ function MessageBubble({ msg, onSpeak, onRetry }: {
           {isUser ? msg.content : renderMsgContent(msg.content)}
         </div>
         {!isUser && (
-          <div style={{ display: "flex", gap: 6, marginTop: 8, opacity: .85 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, opacity: .85 }}>
             <button onClick={copy} style={{ background: "rgba(180,240,250,.04)", border: "1px solid rgba(180,240,250,.12)", color: "#d8f3fb", padding: "6px 9px", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontFamily: "'Hind Siliguri',sans-serif" }}>
               <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
               {copied ? "হয়েছে" : "কপি"}
@@ -1169,11 +1169,6 @@ function MessageBubble({ msg, onSpeak, onRetry }: {
               <svg width={14} height={14} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg>
               ভয়েস
             </button>
-            {onRetry && (
-              <button onClick={onRetry} style={{ background: "rgba(180,240,250,.04)", border: "1px solid rgba(180,240,250,.12)", color: "#d8f3fb", padding: "6px 9px", borderRadius: 8, cursor: "pointer", display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontFamily: "'Hind Siliguri',sans-serif" }}>
-                আবার চেষ্টা
-              </button>
-            )}
           </div>
         )}
       </div>

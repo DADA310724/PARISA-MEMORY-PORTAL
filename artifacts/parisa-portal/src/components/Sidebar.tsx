@@ -110,10 +110,10 @@ export function Sidebar({ onClose }: SidebarProps) {
             </div>
             <div className="flex-1 text-left min-w-0">
               <p className="text-sm font-semibold truncate"
-                style={{ color: location === "/dashboard" ? "hsl(var(--primary))" : "rgba(255,255,255,0.88)" }}>
+                style={{ color: location === "/dashboard" ? "hsl(var(--primary))" : "rgba(255,255,255,0.95)" }}>
                 Home Dashboard
               </p>
-              <p className="text-[10px] text-white/35 truncate" style={{ fontFamily: "'Hind Siliguri',sans-serif" }}>
+              <p className="text-[10px] truncate" style={{ fontFamily: "'Hind Siliguri',sans-serif", color: "rgba(0,212,170,0.65)" }}>
                 মূল পেজে যান
               </p>
             </div>
@@ -135,10 +135,10 @@ export function Sidebar({ onClose }: SidebarProps) {
             </div>
             <div className="flex-1 text-left min-w-0">
               <p className="text-sm font-semibold truncate"
-                style={{ color: location === "/ai-chat" ? "hsl(var(--primary))" : "rgba(255,255,255,0.88)" }}>
+                style={{ color: location === "/ai-chat" ? "hsl(var(--primary))" : "rgba(255,255,255,0.95)" }}>
                 PARISA AI
               </p>
-              <p className="text-[10px] text-white/35 truncate" style={{ fontFamily: "'Hind Siliguri',sans-serif" }}>
+              <p className="text-[10px] truncate" style={{ fontFamily: "'Hind Siliguri',sans-serif", color: "rgba(0,212,170,0.65)" }}>
                 AI চ্যাট খুলুন
               </p>
             </div>
@@ -168,11 +168,11 @@ export function Sidebar({ onClose }: SidebarProps) {
                 />
                 <div className="flex-1 text-left min-w-0">
                   <p className="text-sm font-semibold truncate"
-                    style={{ color: isActive ? "hsl(var(--primary))" : "rgba(255,255,255,0.88)" }}>
+                    style={{ color: isActive ? "hsl(var(--primary))" : "rgba(255,255,255,0.95)" }}>
                     {btn.label}
                   </p>
                   {btn.description && (
-                    <p className="text-[10px] text-white/35 truncate" style={{ fontFamily: "'Hind Siliguri',sans-serif" }}>
+                    <p className="text-[10px] truncate" style={{ fontFamily: "'Hind Siliguri',sans-serif", color: "rgba(0,212,170,0.65)" }}>
                       {btn.description}
                     </p>
                   )}
