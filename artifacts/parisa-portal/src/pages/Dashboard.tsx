@@ -5,7 +5,7 @@ import { useApp } from "@/contexts/AppContext";
 import { Logo } from "@/components/Logo";
 import { AppLogo } from "@/components/AppLogo";
 
-const QUOTE = "মায়া কখনোই কাটানো যায় না..এটা মৃত্যুর আগ পর্যন্ত থেকে যায়..";
+const QUOTE = "মায়া কখনোই কাটানো যায় না..এটা মৃত্যুর আগ পর্যন্ত থেকে যায়..😘";
 
 const BTN_STYLE: Record<string, { border: string; badge: string; glow: string; shadow: string }> = {
   whatsapp:  { border: "rgba(37,211,102,0.35)",  badge: "rgba(37,211,102,0.2)",  glow: "rgba(37,211,102,0.15)",  shadow: "#25d366" },

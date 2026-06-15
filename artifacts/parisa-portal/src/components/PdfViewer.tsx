@@ -15,6 +15,7 @@ interface Props {
 
 export function PdfViewer({ url, title, onClose }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
+  // Per-page refs — populated via callback refs in JSX (never reset manually)
   const canvasRefs = useRef<(HTMLCanvasElement | null)[]>([]);
   const textLayerRefs = useRef<(HTMLDivElement | null)[]>([]);
   const pageWrapperRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -45,6 +46,11 @@ export function PdfViewer({ url, title, onClose }: Props) {
     setMatches([]);
     setMatchIdx(0);
     setRendered(false);
+    // Clear old refs
+    canvasRefs.current = [];
+    textLayerRefs.current = [];
+    pageWrapperRefs.current = [];
+    renderTaskRefs.current = [];
 
     const task = pdfjsLib.getDocument({ url, withCredentials: false });
     task.promise
@@ -53,7 +59,7 @@ export function PdfViewer({ url, title, onClose }: Props) {
     return () => { task.destroy(); };
   }, [url]);
 
-  /* ── Render one page ── */
+  /* ── Render one page onto its own canvas ── */
   const renderPageAt = useCallback(async (
     doc: pdfjsLib.PDFDocumentProxy,
     pageNum: number,
@@ -66,6 +72,7 @@ export function PdfViewer({ url, title, onClose }: Props) {
     const wrapperDiv = pageWrapperRefs.current[pageNum - 1];
     if (!canvas || !wrapperDiv) return;
 
+    // Cancel any previous render for this page
     if (renderTaskRefs.current[pageNum - 1]) {
       try { renderTaskRefs.current[pageNum - 1]!.cancel(); } catch {}
     }
@@ -96,6 +103,7 @@ export function PdfViewer({ url, title, onClose }: Props) {
       return;
     }
 
+    /* Text layer for search highlighting */
     if (!tlDiv) return;
     tlDiv.innerHTML = "";
     tlDiv.style.width = `${logicalW}px`;
@@ -107,9 +115,7 @@ export function PdfViewer({ url, title, onClose }: Props) {
     const textContent = await page.getTextContent();
     const items = textContent.items as Array<{ str: string; transform: number[]; width: number; height: number }>;
     const pageMatchIndices = new Set<number>();
-    activeMatchItems.forEach((m) => {
-      if (m.page === pageNum) pageMatchIndices.add(m.itemIdx);
-    });
+    activeMatchItems.forEach((m) => { if (m.page === pageNum) pageMatchIndices.add(m.itemIdx); });
 
     items.forEach((item, idx) => {
       if (!item.str.trim()) return;
@@ -147,34 +153,33 @@ export function PdfViewer({ url, title, onClose }: Props) {
     });
   }, []);
 
-  /* ── Render all pages after PDF loads ── */
+  /* ── After pages appear in DOM, render them all ── */
   useEffect(() => {
     if (!pdfDoc || totalPages === 0 || loading) return;
-    canvasRefs.current = new Array(totalPages).fill(null);
-    textLayerRefs.current = new Array(totalPages).fill(null);
-    pageWrapperRefs.current = new Array(totalPages).fill(null);
-    renderTaskRefs.current = new Array(totalPages).fill(null);
 
     const doRender = async () => {
-      await new Promise((r) => setTimeout(r, 60));
+      // Wait for React to commit the page DOM elements and populate refs
+      await new Promise((r) => setTimeout(r, 80));
       for (let i = 1; i <= totalPages; i++) {
         await renderPageAt(pdfDoc, i, "", [], 0);
       }
       setRendered(true);
     };
     doRender();
-  }, [pdfDoc, totalPages, loading, renderPageAt]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pdfDoc, totalPages, loading]);
 
-  /* ── Re-render pages with search highlights when matches change ── */
+  /* ── Re-render pages that have search highlights ── */
   useEffect(() => {
     if (!pdfDoc || !rendered || matches.length === 0) return;
     const pagesToUpdate = new Set(matches.map((m) => m.page));
     pagesToUpdate.forEach(async (pageNum) => {
       await renderPageAt(pdfDoc, pageNum, searchQuery, matches, matchIdx);
     });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matches, matchIdx]);
 
-  /* ── IntersectionObserver for current page tracking ── */
+  /* ── Track current page via IntersectionObserver ── */
   useEffect(() => {
     if (!rendered || totalPages === 0 || !containerRef.current) return;
     const observer = new IntersectionObserver(
@@ -199,7 +204,7 @@ export function PdfViewer({ url, title, onClose }: Props) {
     return () => observer.disconnect();
   }, [rendered, totalPages]);
 
-  /* ── Search ── */
+  /* ── Search all pages ── */
   const handleSearch = useCallback(async () => {
     if (!pdfDoc || !searchQuery.trim()) return;
     setSearching(true);
@@ -266,7 +271,7 @@ export function PdfViewer({ url, title, onClose }: Props) {
           {title}
         </p>
 
-        {/* Page jump */}
+        {/* Page counter + jump */}
         <div className="flex items-center gap-1 flex-shrink-0">
           <input
             value={pageInput}
@@ -350,10 +355,10 @@ export function PdfViewer({ url, title, onClose }: Props) {
         </div>
       )}
 
-      {/* ── Vertical scroll canvas area ── */}
+      {/* ── Scrollable pages area ── */}
       <div
         ref={containerRef}
-        className="flex-1 overflow-y-auto flex flex-col items-stretch py-3 gap-3 px-2"
+        className="flex-1 overflow-y-auto flex flex-col items-center py-3 gap-4"
         style={{ background: "#374151" }}
         onContextMenu={(e) => e.preventDefault()}
       >
@@ -380,35 +385,45 @@ export function PdfViewer({ url, title, onClose }: Props) {
           </div>
         )}
 
+        {/* All pages rendered vertically */}
         {!loading && !error && Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
           <div
             key={pageNum}
             ref={(el) => { pageWrapperRefs.current[pageNum - 1] = el; }}
-            className="flex flex-col items-center w-full"
+            className="w-full max-w-3xl flex flex-col items-center px-2"
           >
+            {/* Page label */}
             <div
-              className="mb-1 px-2 py-0.5 rounded-md text-[10px] font-mono self-center"
-              style={{ background: "rgba(0,0,0,0.4)", color: "rgba(255,255,255,0.3)" }}
+              className="mb-1 self-end px-2 py-0.5 rounded text-[10px] font-mono"
+              style={{ background: "rgba(0,0,0,0.35)", color: "rgba(255,255,255,0.3)" }}
             >
               {pageNum} / {totalPages}
             </div>
-            <div className="relative shadow-2xl rounded overflow-hidden w-full" style={{ background: "#ffffff" }}>
+            {/* Canvas + text layer */}
+            <div
+              className="relative shadow-2xl w-full rounded"
+              style={{ background: "#ffffff" }}
+            >
               <canvas
                 ref={(el) => { canvasRefs.current[pageNum - 1] = el; }}
-                className="block w-full"
+                className="block w-full rounded"
               />
               <div
                 ref={(el) => { textLayerRefs.current[pageNum - 1] = el; }}
-                className="absolute inset-0 overflow-hidden"
+                className="absolute inset-0 overflow-hidden rounded"
                 style={{ userSelect: "none", pointerEvents: "none" }}
               />
             </div>
           </div>
         ))}
 
+        {/* Loading spinner while pages are rendering */}
         {!loading && !error && !rendered && totalPages > 0 && (
-          <div className="flex items-center justify-center py-4">
-            <div className="w-6 h-6 border-2 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin" />
+          <div className="py-6 flex items-center gap-2">
+            <div className="w-5 h-5 border-2 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin" />
+            <p className="text-white/30 text-xs" style={{ fontFamily: "'Hind Siliguri',sans-serif" }}>
+              পেজ রেন্ডার হচ্ছে...
+            </p>
           </div>
         )}
       </div>
