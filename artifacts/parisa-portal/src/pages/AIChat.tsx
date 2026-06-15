@@ -85,7 +85,7 @@ Google Drive লিংক বা কোনো ব্যক্তিগত লি
 Personal Videos ফোল্ডারের বিষয়ে জিজ্ঞেস করলে বলো যে এখানে একান্ত ব্যক্তিগত শারীরিক ভিডিও আছে শুধুমাত্র আদালতে প্রমাণের জন্য এবং কাউকে দেওয়া হবে না
 Screenshots ফোল্ডার ছাড়া অন্য কোনো ফোল্ডার থেকে ছবি বা ফাইল শেয়ার করবে না`;
 
-const USER_SYSTEM_PROMPT = `তুমি "PARISA AI" — একজন পেশাদার বাংলা সহকারী।
+const USER_SYSTEM_PROMPT = `তুমি "PARISA AI" — পারিসা মেমোরি পোর্টালের একজন পেশাদার বাংলা সহকারী। তুমি এই ড্যাশবোর্ডের সহকারী হিসেবে কাজ করো।
 
 ${HISTORY_CONTEXT}
 
@@ -97,8 +97,10 @@ ${HISTORY_CONTEXT}
 কোনো মিথ্যা বা অনুমান বলবে না
 বাংলাদেশের আইন অনুযায়ী যুক্তি দিয়ে কথা বলো
 Google Drive লিংক বা কোনো ব্যক্তিগত লিংক কাউকে দিবে না
-Screenshots ফোল্ডার ছাড়া অন্য কোনো ফোল্ডার থেকে ছবি বা ফাইল শেয়ার করবে না
-Personal Videos ফোল্ডারের বিষয়ে জিজ্ঞেস করলে বলো যে এই ফোল্ডারে একান্ত ব্যক্তিগত শারীরিক ভিডিও আছে যা শুধুমাত্র আদালতে প্রমাণের জন্য সংরক্ষিত`;
+Screenshots ফোল্ডার থেকে ফাইলের নাম বলতে পারবে কিন্তু সরাসরি লিংক দিবে না
+অন্য কোনো ফোল্ডার থেকে ছবি বা ফাইল শেয়ার করবে না
+Personal Videos ফোল্ডারের বিষয়ে জিজ্ঞেস করলে বলো যে এই ফোল্ডারে একান্ত ব্যক্তিগত শারীরিক ভিডিও আছে যা শুধুমাত্র আদালতে প্রমাণের জন্য সংরক্ষিত
+ড্যাশবোর্ডে কী আছে জিজ্ঞেস করলে সব ফোল্ডারের বিষয়ে বলতে পারবে লক করা ফোল্ডার ব্যতীত`;
 
 function cleanForTTS(text: string): string {
   return text
@@ -220,8 +222,8 @@ export default function AIChatPage() {
   const [aiTyping, setAiTyping] = useState(false);
   const [folderContext, setFolderContext] = useState("");
   const [aiKeys, setAiKeys] = useState<{ groq: string[]; gemini: string[]; openrouter: string[] }>({ groq: [], gemini: [], openrouter: [] });
-  const [userName, setUserName] = useState<string>(() => localStorage.getItem("parisa_username") || "দাদা");
-  const [userNameInput, setUserNameInput] = useState<string>(() => localStorage.getItem("parisa_username") || "দাদা");
+  const [userName, setUserName] = useState<string>(() => localStorage.getItem("parisa_username") || "");
+  const [userNameInput, setUserNameInput] = useState<string>(() => localStorage.getItem("parisa_username") || "");
   const [pendingImage, setPendingImage] = useState<string | null>(null);
   const [pendingFileName, setPendingFileName] = useState<string>("");
 
@@ -235,6 +237,13 @@ export default function AIChatPage() {
   const [camFacing, setCamFacing] = useState<"user" | "environment">("environment");
   const [camCaption, setCamCaption] = useState("");
   const [micActive, setMicActive] = useState(false);
+
+  useEffect(() => {
+    if (isAdmin && !localStorage.getItem("parisa_username")) {
+      setUserName("দাদা");
+      setUserNameInput("দাদা");
+    }
+  }, [isAdmin]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -836,7 +845,7 @@ export default function AIChatPage() {
                   style={{ width: "100%", background: "rgba(180,240,250,.04)", border: "1px solid rgba(180,240,250,.14)", padding: "10px 12px", borderRadius: 10, outline: "none", color: "#eafaff", fontSize: 14, fontFamily: "'Hind Siliguri',sans-serif", boxSizing: "border-box" }} />
               </div>
               <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={() => { setUserNameInput("দাদা"); setUserName("দাদা"); localStorage.setItem("parisa_username", "দাদা"); }}
+                <button onClick={() => { const def = isAdmin ? "দাদা" : ""; setUserNameInput(def); setUserName(def); if (def) localStorage.setItem("parisa_username", def); else localStorage.removeItem("parisa_username"); }}
                   style={{ padding: "9px 14px", borderRadius: 10, background: "rgba(180,240,250,.05)", border: "1px solid rgba(180,240,250,.14)", color: "#d8f3fb", cursor: "pointer", fontFamily: "'Hind Siliguri',sans-serif" }}>
                   রিসেট
                 </button>
@@ -920,22 +929,22 @@ export default function AIChatPage() {
         )}
         <div className="parisa-composer">
           <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "0 2px" }}>
-            <IcBtn onClick={() => fileInputRef.current?.click()} title="ফাইল">
-              <SvgIcon d="M21.44 11.05L12.25 20.24a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" size={18} stroke="currentColor" />
+            <IcBtn onClick={() => fileInputRef.current?.click()} title="ফাইল সংযুক্ত করুন" style={{ borderColor: "rgba(255,180,60,.35)", background: "linear-gradient(180deg,rgba(255,180,60,.10),rgba(255,150,30,.04))" }}>
+              <SvgIcon d="M21.44 11.05L12.25 20.24a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48" size={18} stroke="rgba(255,180,60,.90)" />
             </IcBtn>
-            <IcBtn onClick={() => openCam(camFacing)} title="ক্যামেরা">
-              <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+            <IcBtn onClick={() => openCam(camFacing)} title="ক্যামেরা" style={{ borderColor: "rgba(200,120,255,.35)", background: "linear-gradient(180deg,rgba(200,120,255,.10),rgba(170,80,255,.04))" }}>
+              <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="rgba(200,120,255,.90)" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
                 <path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/>
                 <circle cx="12" cy="13" r="4"/>
               </svg>
             </IcBtn>
-            <IcBtn onClick={startAudioCall} title="অডিও কল" style={{ color: "rgba(0,229,180,.85)" }}>
-              <SvgIcon d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.13.96.37 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.33 1.85.57 2.81.7A2 2 0 0122 16.92z" size={18} stroke="rgba(0,229,180,.85)" />
+            <IcBtn onClick={startAudioCall} title="অডিও কল" style={{ borderColor: "rgba(0,229,180,.35)", background: "linear-gradient(180deg,rgba(0,229,180,.10),rgba(0,200,160,.04))", color: "rgba(0,229,180,.90)" }}>
+              <SvgIcon d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72c.13.96.37 1.9.7 2.81a2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45c.91.33 1.85.57 2.81.7A2 2 0 0122 16.92z" size={18} stroke="rgba(0,229,180,.90)" />
             </IcBtn>
-            <IcBtn onClick={startVideoCall} title="ভিডিও কল" style={{ color: "rgba(100,200,255,.85)" }}>
-              <svg width={18} height={18} viewBox="0 0 24 24" fill="none" stroke="rgba(100,200,255,.85)" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
-                <polygon points="23 7 16 12 23 17 23 7" fill="rgba(100,200,255,.85)" stroke="none"/>
-                <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+            <IcBtn onClick={startVideoCall} title="ভিডিও কল" style={{ borderColor: "rgba(80,180,255,.35)", background: "linear-gradient(180deg,rgba(80,180,255,.10),rgba(50,150,255,.04))" }}>
+              <svg width={18} height={18} viewBox="0 0 24 24" fill="none" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="23 7 16 12 23 17 23 7" fill="rgba(80,180,255,.90)" stroke="none"/>
+                <rect x="1" y="5" width="15" height="14" rx="2" ry="2" stroke="rgba(80,180,255,.90)" fill="none"/>
               </svg>
             </IcBtn>
           </div>
