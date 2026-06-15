@@ -317,6 +317,24 @@ driveRouter.post("/copy-from-drive", async (req: Request, res: Response) => {
   }
 });
 
+driveRouter.get("/find-file", async (req: Request, res: Response) => {
+  const folder_id = req.query.folder_id as string;
+  const name = req.query.name as string;
+  if (!folder_id || !name) { res.status(400).json({ error: "folder_id and name required" }); return; }
+  try {
+    const safeName = name.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+    const listResp = await driveGet("files", {
+      q: `'${folder_id}' in parents and name='${safeName}' and trashed=false`,
+      fields: "files(id,name,mimeType,thumbnailLink)",
+      pageSize: "5",
+    });
+    if (!listResp.ok) { res.status(404).json({ error: "Not found" }); return; }
+    const data = await listResp.json() as { files: Array<{id:string;name:string;mimeType:string;thumbnailLink?:string}> };
+    if (!data.files?.length) { res.status(404).json({ error: "File not found" }); return; }
+    res.json(data.files[0]);
+  } catch (err) { res.status(500).json({ error: String(err) }); }
+});
+
 driveRouter.post("/create-folder", async (req: Request, res: Response) => {
   const { name, parentId } = req.body as { name: string; parentId: string };
   if (!name || !parentId) { res.status(400).json({ error: "name and parentId required" }); return; }
