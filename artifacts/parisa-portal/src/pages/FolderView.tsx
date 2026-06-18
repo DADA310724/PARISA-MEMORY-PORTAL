@@ -245,8 +245,11 @@ export default function FolderView() {
 
   if (lockChecking) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-white/40 text-sm" style={{ fontFamily:"'Hind Siliguri',sans-serif" }}>🔐 নিরাপত্তা যাচাই হচ্ছে...</div>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "rgba(10,14,31,0.97)" }}>
+        <div className="text-center">
+          <div className="w-12 h-12 border-2 border-cyan-500/20 border-t-cyan-400 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-white/40 text-sm" style={{ fontFamily:"'Hind Siliguri',sans-serif" }}>লোড হচ্ছে</p>
+        </div>
       </div>
     );
   }

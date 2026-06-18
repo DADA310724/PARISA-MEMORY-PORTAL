@@ -109,12 +109,15 @@ ${CHAT_DB_INDEX}
 বিশুদ্ধ বাংলায় উত্তর দাও
 ইমোজি ডট তারকা বা মার্কডাউন চিহ্ন ব্যবহার করবে না কারণ TTS পড়বে
 সরল স্পষ্ট ভাষায় কথা বলো
-কোনো মিথ্যা বা অনুমান বলবে না
+কোনো মিথ্যা বা অনুমান বলবে না — চ্যাট ডেটাবেস সার্চ রেজাল্টে নির্দিষ্ট তথ্য না থাকলে সরাসরি বলো "এই বিষয়ে নির্দিষ্ট তথ্য পাওয়া যাচ্ছে না"
 বাংলাদেশের আইন অনুযায়ী যুক্তি দিয়ে কথা বলো
 ব্ল্যাক ম্যাজিক সম্পর্কে বিশেষজ্ঞ হিসেবে বিশ্লেষণ করো
 Google Drive লিংক বা কোনো ব্যক্তিগত লিংক কাউকে দিবে না
 ড্যাশবোর্ডে কী আছে জিজ্ঞেস করলে সব ফোল্ডারের বিষয়ে বলতে পারবে লক করা ফোল্ডার ব্যতীত
-Screenshots ফোল্ডারের ছবি চ্যাটে সরাসরি দেখাতে পারবে। দেখাতে হলে এই ফরম্যাট: <<IMG:fileId>> — যেখানে fileId হলো সিস্টেম প্রম্পটে দেওয়া ফাইলের ID। কোনো Google Drive লিংক কখনো দিবে না।
+নমস্কার বা অন্য আনুষ্ঠানিক সম্ভাষণ ব্যবহার করবে না
+ব্যবহারকারীকে কখনো নাম ধরে চিনবে না বা কাউকে বিশেষভাবে সম্বোধন করবে না — সবাইকে সাধারণ ব্যবহারকারী হিসেবে বিবেচনা করো
+ইতিহাসের তথ্য দিয়ে কখনো অনুমান করবে না যে বর্তমান ব্যবহারকারী কে
+Screenshots ফোল্ডারের ছবি চ্যাটে সরাসরি দেখাতে পারবে। দেখাতে হলে অবশ্যই এই ফরম্যাট ব্যবহার করো: <<IMG:fileId>> — যেখানে fileId হলো সিস্টেম প্রম্পটে দেওয়া ফাইলের ID। কোনো Google Drive লিংক বা URL কখনো দিবে না — শুধু <<IMG:fileId>> ফরম্যাট।
 Personal Videos ফোল্ডারের বিষয়ে জিজ্ঞেস করলে বলো যে এই ফোল্ডারে একান্ত ব্যক্তিগত শারীরিক ভিডিও আছে যা শুধুমাত্র আদালতে প্রমাণের জন্য সংরক্ষিত`;
 
 const USER_SYSTEM_PROMPT = `তুমি "PARISA AI" — পারিসা মেমোরি পোর্টালের একজন পেশাদার বাংলা সহকারী। তুমি এই ড্যাশবোর্ডের সহকারী হিসেবে কাজ করো।
@@ -128,10 +131,13 @@ ${CHAT_DB_INDEX}
 বিশুদ্ধ বাংলায় উত্তর দাও
 ইমোজি ডট তারকা বা মার্কডাউন চিহ্ন ব্যবহার করবে না কারণ TTS পড়বে
 সরল স্পষ্ট ভাষায় কথা বলো
-কোনো মিথ্যা বা অনুমান বলবে না
+কোনো মিথ্যা বা অনুমান বলবে না — চ্যাট ডেটাবেস সার্চ রেজাল্টে নির্দিষ্ট তথ্য না থাকলে সরাসরি বলো "এই বিষয়ে নির্দিষ্ট তথ্য পাওয়া যাচ্ছে না"
 বাংলাদেশের আইন অনুযায়ী যুক্তি দিয়ে কথা বলো
 Google Drive লিংক বা কোনো ব্যক্তিগত লিংক কাউকে দিবে না
-Screenshots ফোল্ডারের ছবি চ্যাটে সরাসরি দেখাতে পারবে। দেখাতে হলে এই ফরম্যাট: <<IMG:fileId>> — যেখানে fileId হলো সিস্টেম প্রম্পটে দেওয়া ফাইলের ID। কোনো Google Drive লিংক কখনো দিবে না।
+নমস্কার বা অন্য আনুষ্ঠানিক সম্ভাষণ ব্যবহার করবে না
+ব্যবহারকারীকে কখনো নাম ধরে চিনবে না বা কাউকে বিশেষভাবে সম্বোধন করবে না — সবাইকে সাধারণ ব্যবহারকারী হিসেবে বিবেচনা করো
+ইতিহাসের তথ্য দিয়ে কখনো অনুমান করবে না যে বর্তমান ব্যবহারকারী কে
+Screenshots ফোল্ডারের ছবি চ্যাটে সরাসরি দেখাতে পারবে। দেখাতে হলে অবশ্যই এই ফরম্যাট ব্যবহার করো: <<IMG:fileId>> — যেখানে fileId হলো সিস্টেম প্রম্পটে দেওয়া ফাইলের ID। কোনো Google Drive লিংক বা URL কখনো দিবে না — শুধু <<IMG:fileId>> ফরম্যাট।
 Personal Videos ফোল্ডারের বিষয়ে জিজ্ঞেস করলে বলো যে এই ফোল্ডারে একান্ত ব্যক্তিগত শারীরিক ভিডিও আছে যা শুধুমাত্র আদালতে প্রমাণের জন্য সংরক্ষিত
 ড্যাশবোর্ডে কী আছে জিজ্ঞেস করলে সব ফোল্ডারের বিষয়ে বলতে পারবে লক করা ফোল্ডার ব্যতীত`;
 
@@ -700,9 +706,9 @@ export default function AIChatPage() {
 
   async function callApiDirect(text: string, mode: "chat" | "audiocall" | "videocall" = "chat"): Promise<string> {
     const callPrefix = mode === "videocall"
-      ? "তুমি এখন রুবেলের সাথে লাইভ ভিডিও কলে আছো। পারিসা হিসেবে স্বাভাবিকভাবে বাংলায় কথা বলো। নিজেকে ভার্চুয়াল সহকারী বলবে না, ক্যামেরা নেই বা দেখতে পাচ্ছি না এরকম কোনো কথা বলবে না।\n\n"
+      ? "তুমি এখন একজন ব্যবহারকারীর সাথে লাইভ ভিডিও কলে আছো। স্বাভাবিকভাবে বাংলায় কথা বলো। নিজেকে ভার্চুয়াল সহকারী বলবে না, ক্যামেরা নেই বা দেখতে পাচ্ছি না এরকম কোনো কথা বলবে না। কাউকে নাম ধরে চিনবে না।\n\n"
       : mode === "audiocall"
-      ? "তুমি এখন রুবেলের সাথে লাইভ অডিও কলে আছো। পারিসা হিসেবে স্বাভাবিকভাবে বাংলায় কথা বলো।\n\n"
+      ? "তুমি এখন একজন ব্যবহারকারীর সাথে লাইভ অডিও কলে আছো। স্বাভাবিকভাবে বাংলায় কথা বলো। কাউকে নাম ধরে চিনবে না।\n\n"
       : "";
     try {
       const resp = await api<{ text: string }>("/ai/chat", {
@@ -908,8 +914,11 @@ export default function AIChatPage() {
   }
 
   function saveUserName() {
-    const name = userNameInput.trim() || "দাদা";
-    setUserName(name); localStorage.setItem("parisa_username", name); setSettingsOpen(false);
+    const name = userNameInput.trim();
+    setUserName(name);
+    if (name) localStorage.setItem("parisa_username", name);
+    else localStorage.removeItem("parisa_username");
+    setSettingsOpen(false);
   }
 
   useEffect(() => { return () => { stopSpeech(); endAudioCall(); endVideoCall(); closeCam(); }; }, []);
@@ -1121,11 +1130,11 @@ export default function AIChatPage() {
               <div style={{ borderTop: "1px solid rgba(180,240,250,.10)", paddingTop: 14, marginBottom: 14 }}>
                 <p style={{ color: "rgba(216,243,251,.6)", fontSize: 13, marginBottom: 8, fontFamily: "'Hind Siliguri',sans-serif" }}>আপনার নাম (AI আপনাকে এই নামে ডাকবে)</p>
                 <input type="text" value={userNameInput} onChange={e => setUserNameInput(e.target.value)}
-                  placeholder="যেমন: দাদা"
+                  placeholder="আপনার নাম লিখুন"
                   style={{ width: "100%", background: "rgba(180,240,250,.04)", border: "1px solid rgba(180,240,250,.14)", padding: "10px 12px", borderRadius: 10, outline: "none", color: "#eafaff", fontSize: 14, fontFamily: "'Hind Siliguri',sans-serif", boxSizing: "border-box" }} />
               </div>
               <div style={{ display: "flex", gap: 8 }}>
-                <button onClick={() => { const def = isAdmin ? "দাদা" : ""; setUserNameInput(def); setUserName(def); if (def) localStorage.setItem("parisa_username", def); else localStorage.removeItem("parisa_username"); }}
+                <button onClick={() => { setUserNameInput(""); setUserName(""); localStorage.removeItem("parisa_username"); }}
                   style={{ padding: "9px 14px", borderRadius: 10, background: "rgba(180,240,250,.05)", border: "1px solid rgba(180,240,250,.14)", color: "#d8f3fb", cursor: "pointer", fontFamily: "'Hind Siliguri',sans-serif" }}>
                   রিসেট
                 </button>
@@ -1275,9 +1284,70 @@ function SidebarItem({ session, active, onSelect, onPin, onDelete }: {
   );
 }
 
+function applyInlineBold(s: string): React.ReactNode {
+  const parts = s.split(/(\*\*[^*]+\*\*)/g);
+  if (parts.length === 1) return s;
+  return (
+    <>
+      {parts.map((p, i) => {
+        const m = p.match(/^\*\*([^*]+)\*\*$/);
+        if (m) return <strong key={i} style={{ fontWeight: 700, color: "#e0f8ff" }}>{m[1]}</strong>;
+        return p || null;
+      })}
+    </>
+  );
+}
+
+function renderMarkdownLines(text: string): React.ReactNode {
+  const lines = text.split('\n');
+  const nodes: React.ReactNode[] = [];
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    // Numbered list: 1. or ১. or 1) etc.
+    const numMatch = line.match(/^([০-৯0-9]+)[.)]\s+(.+)/);
+    if (numMatch) {
+      nodes.push(
+        <div key={i} style={{ display: 'flex', gap: 8, margin: '3px 0', paddingLeft: 2 }}>
+          <span style={{ color: '#5fe8ff', fontWeight: 700, minWidth: 22, flexShrink: 0, fontFamily: "'Hind Siliguri',sans-serif" }}>{numMatch[1]}.</span>
+          <span>{applyInlineBold(numMatch[2])}</span>
+        </div>
+      );
+      continue;
+    }
+    // Bullet list: - or • or *
+    const bulletMatch = line.match(/^[-•]\s+(.+)/);
+    if (bulletMatch) {
+      nodes.push(
+        <div key={i} style={{ display: 'flex', gap: 8, margin: '3px 0', paddingLeft: 2 }}>
+          <span style={{ color: '#5fe8ff', fontWeight: 700, flexShrink: 0 }}>•</span>
+          <span>{applyInlineBold(bulletMatch[1])}</span>
+        </div>
+      );
+      continue;
+    }
+    // Bold heading: ### ## #
+    const headMatch = line.match(/^#{1,3}\s+(.+)/);
+    if (headMatch) {
+      nodes.push(
+        <div key={i} style={{ fontWeight: 700, fontSize: 15, margin: '6px 0 2px', color: '#5fe8ff', fontFamily: "'Hind Siliguri',sans-serif" }}>
+          {applyInlineBold(headMatch[1])}
+        </div>
+      );
+      continue;
+    }
+    // Empty line → spacing
+    if (!line.trim()) {
+      nodes.push(<div key={i} style={{ height: 6 }} />);
+      continue;
+    }
+    // Regular line
+    nodes.push(<div key={i}>{applyInlineBold(line)}</div>);
+  }
+  return <>{nodes}</>;
+}
+
 function renderMsgContent(content: string): React.ReactNode {
   const parts = content.split(/(<<IMG:[^>]+>>)/g);
-  if (parts.length === 1) return content;
   return (
     <>
       {parts.map((part, i) => {
@@ -1295,7 +1365,7 @@ function renderMsgContent(content: string): React.ReactNode {
             </div>
           );
         }
-        return part ? <span key={i}>{part}</span> : null;
+        return part ? <span key={i}>{renderMarkdownLines(part)}</span> : null;
       })}
     </>
   );
