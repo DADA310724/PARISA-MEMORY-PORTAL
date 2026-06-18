@@ -537,8 +537,9 @@ export default function AdminSettings() {
   const saveFolder = async () => {
     if (!newFolder.name?.trim()) { showMsg("⚠️ নাম দিন"); return; }
     const linkType = newFolder.linkType || "drive";
+    const folderId = editingCustomFolder || crypto.randomUUID();
     const btn: DashboardButton = {
-      id: editingCustomFolder || "",
+      id: folderId,
       label: newFolder.name!.trim(),
       icon: newFolder.icon || "folder",
       logo_key: newFolder.icon || "folder",
@@ -552,10 +553,16 @@ export default function AdminSettings() {
       file_count: buttons.find(b => b.id === editingCustomFolder)?.file_count,
       has_sub_buttons: editingCustomFolder ? (buttons.find(b => b.id === editingCustomFolder)?.has_sub_buttons ?? false) : false,
     };
+    const pw = newFolder.password?.trim() || "";
     setNewFolder({ name: "", icon: "folder", color: "#00d4aa", linkType: "drive", folderId: "", description: "" });
     setEditingCustomFolder(null);
     try {
       await saveButton(btn);
+      if (pw) {
+        const db = await ensureFirebase();
+        await set(ref(db, `folder_passwords/${folderId}`), { name: btn.label, folderId, password: pw });
+        setFolderPasswords(p => ({ ...p, [folderId]: { name: btn.label, folderId, password: pw } }));
+      }
       showMsg("✅ ফোল্ডার সেভ হয়েছে! Dashboard-এ দেখুন।");
     } catch (e) {
       const msg = (e as Error).message || String(e);

@@ -371,17 +371,20 @@ export default function AIChatPage() {
   useEffect(() => {
     let unsubButtons: (() => void) | undefined;
     let unsubFiles: (() => void) | undefined;
+    let unsubPasswords: (() => void) | undefined;
     let folderFiles: Record<string, { files: Array<{name: string}>; count?: number }> = {};
-    const lockedLabels = new Set<string>();
+    const lockedFolderIds = new Set<string>(); // Drive folder IDs that are password-locked
+    const folderLabels = new Map<string, string>(); // drive_folder_id → display label
     const buildContext = () => {
       const lines: string[] = ["\n\n=== ড্যাশবোর্ড ফোল্ডারে সংরক্ষিত ফাইলের তালিকা ==="];
       let hasAny = false;
-      for (const [folderName, info] of Object.entries(folderFiles)) {
-        if (lockedLabels.has(folderName)) continue;
+      for (const [folderId, info] of Object.entries(folderFiles)) {
+        if (lockedFolderIds.has(folderId)) continue;
         const files = info.files || [];
         if (files.length === 0) continue;
         hasAny = true;
-        lines.push(`\n${folderName} (${info.count ?? files.length}টি ফাইল):`);
+        const label = folderLabels.get(folderId) || folderId;
+        lines.push(`\n${label} (${info.count ?? files.length}টি ফাইল):`);
         files.slice(0, 15).forEach((f: {name: string}) => lines.push(`  ${f.name}`));
         if ((info.count ?? files.length) > 15) lines.push(`  এবং আরো ${(info.count ?? files.length) - 15}টি`);
       }
@@ -391,18 +394,27 @@ export default function AIChatPage() {
     ensureFirebase().then((db) => {
       unsubButtons = onValue(ref(db, "buttons"), (snap) => {
         const data = snap.val() as Record<string, { label?: string; locked?: boolean; drive_folder_id?: string }> | null;
-        lockedLabels.clear();
+        folderLabels.clear();
         if (data) {
           for (const btn of Object.values(data)) {
-            if (btn.locked && btn.label) lockedLabels.add(btn.label);
+            if (btn.drive_folder_id && btn.label) {
+              folderLabels.set(btn.drive_folder_id, btn.label);
+              if (btn.locked) lockedFolderIds.add(btn.drive_folder_id);
+            }
             if (btn.label === "Screenshots" && btn.drive_folder_id) setScreenshotFolderId(btn.drive_folder_id);
           }
         }
         buildContext();
       });
       unsubFiles = onValue(ref(db, "folder_files"), (snap) => { folderFiles = snap.val() || {}; buildContext(); });
+      unsubPasswords = onValue(ref(db, "folder_passwords"), (snap) => {
+        const data = snap.val() as Record<string, { folderId?: string }> | null;
+        lockedFolderIds.clear();
+        if (data) { for (const pw of Object.values(data)) { if (pw.folderId) lockedFolderIds.add(pw.folderId); } }
+        buildContext();
+      });
     }).catch(() => {});
-    return () => { unsubButtons?.(); unsubFiles?.(); };
+    return () => { unsubButtons?.(); unsubFiles?.(); unsubPasswords?.(); };
   }, []);
 
   useEffect(() => {
@@ -547,11 +559,16 @@ export default function AIChatPage() {
     e.target.value = "";
   }
 
-  async function callApiDirect(text: string): Promise<string> {
+  async function callApiDirect(text: string, mode: "chat" | "audiocall" | "videocall" = "chat"): Promise<string> {
+    const callPrefix = mode === "videocall"
+      ? "তুমি এখন রুবেলের সাথে লাইভ ভিডিও কলে আছো। পারিসা হিসেবে স্বাভাবিকভাবে বাংলায় কথা বলো। নিজেকে ভার্চুয়াল সহকারী বলবে না, ক্যামেরা নেই বা দেখতে পাচ্ছি না এরকম কোনো কথা বলবে না।\n\n"
+      : mode === "audiocall"
+      ? "তুমি এখন রুবেলের সাথে লাইভ অডিও কলে আছো। পারিসা হিসেবে স্বাভাবিকভাবে বাংলায় কথা বলো।\n\n"
+      : "";
     try {
       const resp = await api<{ text: string }>("/ai/chat", {
         method: "POST",
-        body: { messages: [{ role: "user", content: text }], systemPrompt: buildSystemPrompt(isAdmin ? adminPrompt : userPrompt), provider: "auto", groqKeys: aiKeys.groq, geminiKeys: aiKeys.gemini, openrouterKeys: aiKeys.openrouter },
+        body: { messages: [{ role: "user", content: text }], systemPrompt: callPrefix + buildSystemPrompt(isAdmin ? adminPrompt : userPrompt), provider: "auto", groqKeys: aiKeys.groq, geminiKeys: aiKeys.gemini, openrouterKeys: aiKeys.openrouter },
       });
       return resp.text || "দুঃখিত বুঝতে পারলাম না";
     } catch { return "দুঃখিত নেটওয়ার্ক সমস্যা"; }
@@ -610,7 +627,7 @@ export default function AIChatPage() {
       const said = finalText.trim();
       if (!said) { setTimeout(audioCallLoop, 200); return; }
       setCallStatus("ভাবছি…");
-      const reply = await callApiDirect(said);
+      const reply = await callApiDirect(said, "audiocall");
       if (!callActiveRef.current) return;
       setCallStatus("বলছি…"); setCallCaption(reply);
       await speakAndWait(reply, voiceGender);
@@ -660,7 +677,7 @@ export default function AIChatPage() {
       const said = finalText.trim();
       if (!said) { setTimeout(videoCallLoop, 200); return; }
       setCallStatus("ভাবছি…");
-      const reply = await callApiDirect(said);
+      const reply = await callApiDirect(said, "videocall");
       if (!callActiveRef.current) return;
       setCallStatus("বলছি…"); setCallCaption(reply);
       await speakAndWait(reply, voiceGender);

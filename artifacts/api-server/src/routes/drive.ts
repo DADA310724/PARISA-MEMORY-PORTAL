@@ -226,7 +226,8 @@ driveRouter.get("/proxy/:id", async (req: Request, res: Response) => {
   const { id } = req.params;
   try {
     const token = await getAccessToken();
-    const driveUrl = `https://www.googleapis.com/drive/v3/files/${id}?alt=media`;
+    // acknowledgeAbuse=true bypasses Google's virus-scan warning page for large files
+    const driveUrl = `https://www.googleapis.com/drive/v3/files/${id}?alt=media&acknowledgeAbuse=true`;
 
     // Forward Range header for video/audio streaming and seeking
     const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
@@ -234,30 +235,42 @@ driveRouter.get("/proxy/:id", async (req: Request, res: Response) => {
     if (rangeHeader) headers["Range"] = rangeHeader;
 
     const resp = await fetch(driveUrl, { headers });
+
+    // If Drive redirected to a download warning HTML page, retry without the Google API
+    const contentType = resp.headers.get("content-type") ?? "";
     if (!resp.ok && resp.status !== 206) {
-      res.status(resp.status).send(await resp.text());
+      res.status(resp.status).json({ error: `Drive error ${resp.status}` });
       return;
     }
 
-    // Forward important headers from Drive
-    const ct = resp.headers.get("content-type");
-    if (ct) res.setHeader("Content-Type", ct);
+    // If Drive returned HTML (virus scan page), something went wrong
+    if (contentType.includes("text/html")) {
+      res.status(502).json({ error: "Drive returned HTML instead of file" });
+      return;
+    }
+
+    // Forward important headers from Drive for proper browser media playback
+    if (contentType) res.setHeader("Content-Type", contentType);
     const cl = resp.headers.get("content-length");
     if (cl) res.setHeader("Content-Length", cl);
     const cr = resp.headers.get("content-range");
     if (cr) res.setHeader("Content-Range", cr);
     res.setHeader("Accept-Ranges", "bytes");
     res.setHeader("Cache-Control", "private, max-age=3600");
+    // Allow cross-origin media requests (needed when Replit proxies through different origins)
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Expose-Headers", "Content-Length, Content-Range, Accept-Ranges");
 
-    // Stream response — do NOT buffer, so video starts playing immediately
+    // Stream response immediately — do NOT buffer
     res.status(resp.status);
     if (!resp.body) { res.end(); return; }
     const { Readable } = await import("stream");
     const readable = Readable.fromWeb(resp.body as import("stream/web").ReadableStream);
     readable.pipe(res);
-    readable.on("error", () => res.end());
+    readable.on("error", () => { if (!res.headersSent) res.end(); else res.end(); });
+    req.on("close", () => { try { readable.destroy(); } catch {} });
   } catch (err) {
-    res.status(500).send(String(err));
+    if (!res.headersSent) res.status(500).json({ error: String(err) });
   }
 });
 

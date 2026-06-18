@@ -32,7 +32,8 @@ export default function FolderView() {
     { id: decodeURIComponent(params.folderId), name: decodeURIComponent(folderLabel) },
   ]);
 
-  const [locked, setLocked] = useState(false);
+  const [locked, setLocked] = useState(true);
+  const [lockChecking, setLockChecking] = useState(true);
   const [lockData, setLockData] = useState<FolderLock | null>(null);
   const [lockInput, setLockInput] = useState("");
   const [lockError, setLockError] = useState("");
@@ -55,12 +56,14 @@ export default function FolderView() {
   };
 
   const checkFolderLock = useCallback(async (folderId: string) => {
+    setLockChecking(true);
     try {
       const db = await ensureFirebase();
       const snap = await get(ref(db, `folder_passwords/${folderId}`));
       const val = snap.val() as FolderLock | null;
-      if (val?.password) { setLockData(val); setLocked(true); } else { setLocked(false); }
+      if (val?.password) { setLockData(val); setLocked(true); } else { setLockData(null); setLocked(false); }
     } catch { setLocked(false); }
+    finally { setLockChecking(false); }
   }, []);
 
   const loadFolder = useCallback(async (folderId: string) => {
@@ -111,13 +114,13 @@ export default function FolderView() {
   }, []);
 
   useEffect(() => {
-    setLocked(false); setLockInput(""); setLockError("");
+    setLockInput(""); setLockError("");
     checkFolderLock(currentFolder.id);
   }, [currentFolder.id, checkFolderLock]);
 
   useEffect(() => {
-    if (!locked) loadFolder(currentFolder.id);
-  }, [locked, currentFolder.id, loadFolder]);
+    if (!locked && !lockChecking) loadFolder(currentFolder.id);
+  }, [locked, lockChecking, currentFolder.id, loadFolder]);
 
   const unlockFolder = () => {
     if (!lockData) return;
@@ -223,6 +226,14 @@ export default function FolderView() {
     if (isText(f)) return "📝";
     return "📎";
   };
+
+  if (lockChecking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-white/40 text-sm" style={{ fontFamily:"'Hind Siliguri',sans-serif" }}>🔐 নিরাপত্তা যাচাই হচ্ছে...</div>
+      </div>
+    );
+  }
 
   if (locked) {
     return (
@@ -496,15 +507,16 @@ export default function FolderView() {
             {viewerType === 'video' && (
               <div className="flex-1 flex items-center justify-center p-4">
                 <video
+                  key={viewerFile.id}
                   ref={videoRef}
                   src={proxyUrl(viewerFile.id)}
-                  controls autoPlay playsInline
-                  preload="auto"
-                  controlsList="nodownload nofullscreen noremoteplayback"
-                  disablePictureInPicture
+                  controls playsInline
+                  preload="metadata"
+                  controlsList="nodownload"
                   className="max-w-full rounded-xl"
                   style={{ maxHeight:'calc(100vh - 120px)' }}
                   onContextMenu={e => e.preventDefault()}
+                  onCanPlay={e => { (e.target as HTMLVideoElement).play().catch(() => {}); }}
                 />
               </div>
             )}
@@ -515,7 +527,17 @@ export default function FolderView() {
                 <div className="w-full max-w-sm rounded-2xl p-8 text-center" style={{ background:'rgba(255,143,0,0.1)', border:'1px solid rgba(255,143,0,0.3)' }}>
                   <motion.div animate={{ scale:[1,1.1,1] }} transition={{ repeat:Infinity, duration:1.5 }} className="text-6xl mb-4">🎵</motion.div>
                   <p className="text-white font-medium mb-6 text-sm truncate">{viewerFile.name}</p>
-                  <audio ref={audioRef} src={proxyUrl(viewerFile.id)} controls autoPlay preload="auto" className="w-full" controlsList="nodownload noplaybackrate" onContextMenu={e => e.preventDefault()} />
+                  <audio
+                    key={viewerFile.id}
+                    ref={audioRef}
+                    src={proxyUrl(viewerFile.id)}
+                    controls
+                    preload="metadata"
+                    className="w-full"
+                    controlsList="nodownload"
+                    onContextMenu={e => e.preventDefault()}
+                    onCanPlay={e => { (e.target as HTMLAudioElement).play().catch(() => {}); }}
+                  />
                 </div>
               </div>
             )}
