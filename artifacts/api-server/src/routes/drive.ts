@@ -43,6 +43,53 @@ async function signRS256(payload: string, privateKey: string): Promise<string> {
 
 let _tokenCache: { token: string; exp: number } | null = null;
 
+// ── Media chunk cache ─────────────────────────────────────────────────────
+// Caches the first CHUNK_BYTES of each media file so first-play is instant.
+const CHUNK_BYTES = 2 * 1024 * 1024; // 2 MB per file
+const MAX_CACHE_ENTRIES = 15;
+const CACHE_TTL_MS = 30 * 60 * 1000; // 30 min
+
+interface CachedChunk {
+  data: Buffer;
+  contentType: string;
+  totalSize: number;
+  ts: number;
+}
+const mediaChunkCache = new Map<string, CachedChunk>();
+
+function evictCache() {
+  const now = Date.now();
+  for (const [k, v] of mediaChunkCache) {
+    if (now - v.ts > CACHE_TTL_MS) mediaChunkCache.delete(k);
+  }
+  if (mediaChunkCache.size > MAX_CACHE_ENTRIES) {
+    const sorted = [...mediaChunkCache.entries()].sort((a, b) => a[1].ts - b[1].ts);
+    sorted.slice(0, mediaChunkCache.size - MAX_CACHE_ENTRIES).forEach(([k]) => mediaChunkCache.delete(k));
+  }
+}
+
+async function fetchAndCacheChunk(id: string): Promise<CachedChunk | null> {
+  try {
+    const token = await getAccessToken();
+    const driveUrl = `https://www.googleapis.com/drive/v3/files/${id}?alt=media&acknowledgeAbuse=true`;
+    const resp = await fetch(driveUrl, {
+      headers: { Authorization: `Bearer ${token}`, Range: `bytes=0-${CHUNK_BYTES - 1}` },
+    });
+    if (!resp.ok && resp.status !== 206) return null;
+    const ct = resp.headers.get("content-type") ?? "application/octet-stream";
+    if (ct.includes("text/html")) return null;
+    const buf = Buffer.from(await resp.arrayBuffer());
+    const rangeMatch = resp.headers.get("content-range")?.match(/\/(\d+)/);
+    const totalSize = rangeMatch ? parseInt(rangeMatch[1]) : buf.length;
+    const chunk: CachedChunk = { data: buf, contentType: ct, totalSize, ts: Date.now() };
+    evictCache();
+    mediaChunkCache.set(id, chunk);
+    return chunk;
+  } catch {
+    return null;
+  }
+}
+
 async function getAccessToken(): Promise<string> {
   if (_tokenCache && Date.now() < _tokenCache.exp) return _tokenCache.token;
 
@@ -222,56 +269,134 @@ driveRouter.get("/text/:id", async (req: Request, res: Response) => {
   }
 });
 
+// Warm up the chunk cache in background — browser calls this silently when folder loads
+driveRouter.get("/prefetch/:id", async (req: Request, res: Response) => {
+  const id = String(req.params["id"]);
+  res.json({ ok: true }); // respond immediately, cache in background
+  if (!mediaChunkCache.has(id)) {
+    fetchAndCacheChunk(id).catch(() => {});
+  } else {
+    // Refresh timestamp so entry doesn't expire
+    const entry = mediaChunkCache.get(id);
+    if (entry) entry.ts = Date.now();
+  }
+});
+
 driveRouter.get("/proxy/:id", async (req: Request, res: Response) => {
-  const { id } = req.params;
-  try {
-    const token = await getAccessToken();
-    // acknowledgeAbuse=true bypasses Google's virus-scan warning page for large files
-    const driveUrl = `https://www.googleapis.com/drive/v3/files/${id}?alt=media&acknowledgeAbuse=true`;
+  const id = String(req.params["id"]);
+  const rawRange = req.headers["range"];
+  const rangeHeader = (Array.isArray(rawRange) ? rawRange[0] : rawRange) ?? "";
 
-    // Forward Range header for video/audio streaming and seeking
-    const headers: Record<string, string> = { Authorization: `Bearer ${token}` };
-    const rangeHeader = req.headers["range"];
-    if (rangeHeader) headers["Range"] = rangeHeader;
-
-    const resp = await fetch(driveUrl, { headers });
-
-    // If Drive redirected to a download warning HTML page, retry without the Google API
-    const contentType = resp.headers.get("content-type") ?? "";
-    if (!resp.ok && resp.status !== 206) {
-      res.status(resp.status).json({ error: `Drive error ${resp.status}` });
-      return;
-    }
-
-    // If Drive returned HTML (virus scan page), something went wrong
-    if (contentType.includes("text/html")) {
-      res.status(502).json({ error: "Drive returned HTML instead of file" });
-      return;
-    }
-
-    // Forward important headers from Drive for proper browser media playback
-    if (contentType) res.setHeader("Content-Type", contentType);
-    const cl = resp.headers.get("content-length");
-    if (cl) res.setHeader("Content-Length", cl);
-    const cr = resp.headers.get("content-range");
-    if (cr) res.setHeader("Content-Range", cr);
-    res.setHeader("Accept-Ranges", "bytes");
-    res.setHeader("Cache-Control", "private, max-age=3600");
-    // Allow cross-origin media requests (needed when Replit proxies through different origins)
+  // ── Serve first chunk from cache if possible ───────────────────────────
+  const cached = mediaChunkCache.get(id);
+  if (cached && cached.ts > Date.now() - CACHE_TTL_MS) {
+    cached.ts = Date.now(); // refresh TTL
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Expose-Headers", "Content-Length, Content-Range, Accept-Ranges");
+    res.setHeader("Accept-Ranges", "bytes");
+    res.setHeader("Cache-Control", "private, max-age=3600");
+    res.setHeader("Content-Type", cached.contentType);
 
-    // Stream response immediately — do NOT buffer
-    res.status(resp.status);
-    if (!resp.body) { res.end(); return; }
-    const { Readable } = await import("stream");
-    const readable = Readable.fromWeb(resp.body as import("stream/web").ReadableStream);
-    readable.pipe(res);
-    readable.on("error", () => { if (!res.headersSent) res.end(); else res.end(); });
-    req.on("close", () => { try { readable.destroy(); } catch {} });
-  } catch (err) {
-    if (!res.headersSent) res.status(500).json({ error: String(err) });
+    const total = cached.totalSize || cached.data.length;
+
+    if (rangeHeader) {
+      const m = rangeHeader.match(/bytes=(\d+)-(\d*)/);
+      if (m) {
+        const start = parseInt(m[1]);
+        const reqEnd = m[2] ? parseInt(m[2]) : total - 1;
+        // Only serve from cache if the entire range fits in our chunk
+        if (start < cached.data.length) {
+          const end = Math.min(reqEnd, cached.data.length - 1);
+          const slice = cached.data.slice(start, end + 1);
+          res.setHeader("Content-Length", String(slice.length));
+          res.setHeader("Content-Range", `bytes ${start}-${end}/${total}`);
+          res.status(206).end(slice);
+          return;
+        }
+      }
+    } else {
+      // No range — serve cached chunk + let browser request remaining bytes
+      res.setHeader("Content-Length", String(cached.data.length));
+      if (cached.totalSize > cached.data.length) {
+        res.setHeader("Content-Range", `bytes 0-${cached.data.length - 1}/${total}`);
+        res.status(206).end(cached.data);
+      } else {
+        res.status(200).end(cached.data);
+      }
+      return;
+    }
   }
+
+  const MAX_RETRIES = 2;
+  const attemptProxy = async (attempt: number): Promise<void> => {
+    try {
+      const token = await getAccessToken();
+      const driveUrl = `https://www.googleapis.com/drive/v3/files/${id}?alt=media&acknowledgeAbuse=true`;
+
+      const headers: Record<string, string> = {
+        Authorization: `Bearer ${token}`,
+        Connection: "keep-alive",
+      };
+      if (rangeHeader) headers["Range"] = rangeHeader;
+
+      const resp = await fetch(driveUrl, { headers });
+      const contentType = resp.headers.get("content-type") ?? "";
+
+      // Retry on auth failure (token may have just expired)
+      if (resp.status === 401 && attempt < MAX_RETRIES) {
+        _tokenCache = null; // force token refresh
+        return attemptProxy(attempt + 1);
+      }
+
+      if (!resp.ok && resp.status !== 206) {
+        if (!res.headersSent) res.status(resp.status).json({ error: `Drive error ${resp.status}` });
+        return;
+      }
+
+      // If Drive returned HTML (virus scan page), something went wrong
+      if (contentType.includes("text/html")) {
+        if (!res.headersSent) res.status(502).json({ error: "Drive returned HTML instead of file" });
+        return;
+      }
+
+      // Set CORS + cache headers
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.setHeader("Access-Control-Expose-Headers", "Content-Length, Content-Range, Accept-Ranges");
+      res.setHeader("Accept-Ranges", "bytes");
+      res.setHeader("Cache-Control", "private, max-age=3600");
+
+      // Forward content headers
+      if (contentType) res.setHeader("Content-Type", contentType);
+      const cl = resp.headers.get("content-length");
+      if (cl) res.setHeader("Content-Length", cl);
+      const cr = resp.headers.get("content-range");
+      if (cr) res.setHeader("Content-Range", cr);
+
+      // If browser sent Range but Drive returned full 200 (no partial content),
+      // synthesize correct status so browser doesn't stall waiting for 206
+      const statusCode = rangeHeader && resp.status === 200 && cr ? 206 : resp.status;
+      res.status(statusCode);
+
+      if (!resp.body) { res.end(); return; }
+
+      const { Readable } = await import("stream");
+      const readable = Readable.fromWeb(resp.body as import("stream/web").ReadableStream);
+
+      // Pipe with cleanup — handle client disconnect, stream errors
+      readable.pipe(res);
+      readable.on("error", (err) => {
+        console.warn(`[drive proxy] stream error for ${id}:`, (err as Error).message);
+        if (!res.headersSent) res.status(500).end();
+        else res.end();
+      });
+      res.on("close", () => { try { readable.destroy(); } catch {} });
+      res.on("finish", () => { try { readable.destroy(); } catch {} });
+    } catch (err) {
+      if (!res.headersSent) res.status(500).json({ error: String(err) });
+    }
+  };
+
+  await attemptProxy(0);
 });
 
 driveRouter.post("/upload", upload.array("files"), async (req: Request, res: Response) => {

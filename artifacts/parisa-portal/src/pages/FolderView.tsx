@@ -42,6 +42,8 @@ export default function FolderView() {
   const [viewerIndex, setViewerIndex] = useState(0);
   const [viewerType, setViewerType] = useState<"image"|"video"|"audio"|"html"|"pdf"|"text"|"generic">("image");
   const [viewerFile, setViewerFile] = useState<DriveFile | null>(null);
+  const [mediaError, setMediaError] = useState(false);
+  const [mediaRetryKey, setMediaRetryKey] = useState(0);
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const touchStartX = useRef(0);
@@ -177,10 +179,32 @@ export default function FolderView() {
   const nextImage = () => setViewerIndex(i => (i + 1) % imageFiles.length);
 
   useEffect(() => {
-    if (!viewerOpen) return;
-    if (viewerType === 'video' && videoRef.current) videoRef.current.play().catch(() => {});
-    if (viewerType === 'audio' && audioRef.current) audioRef.current.play().catch(() => {});
-  }, [viewerOpen, viewerType]);
+    if (viewerOpen && (viewerType === 'video' || viewerType === 'audio')) {
+      setMediaError(false);
+    }
+  }, [viewerOpen, viewerType, viewerFile]);
+
+  // ── Background media prefetch — warms server chunk-cache silently ────────
+  // Runs after files load so first-play is near-instant
+  useEffect(() => {
+    if (loading || files.length === 0) return;
+    const mediaFiles = files.filter(f => isVideo(f) || isAudio(f));
+    if (mediaFiles.length === 0) return;
+    let cancelled = false;
+    const prefetch = async () => {
+      for (let i = 0; i < mediaFiles.length && !cancelled; i++) {
+        try {
+          await fetch(`/api/drive/prefetch/${mediaFiles[i].id}`, { method: "GET" });
+        } catch {}
+        if (i < mediaFiles.length - 1 && !cancelled) {
+          await new Promise<void>(r => setTimeout(r, 600)); // stagger to avoid hammering
+        }
+      }
+    };
+    // Wait 1.5s after folder loads before prefetching (let UI settle first)
+    const timer = setTimeout(prefetch, 1500);
+    return () => { cancelled = true; clearTimeout(timer); };
+  }, [files, loading]);
 
   useEffect(() => {
     if (viewerType !== 'image' || imageFiles.length <= 1) return;
@@ -525,18 +549,36 @@ export default function FolderView() {
             {/* Video — download blocked */}
             {viewerType === 'video' && (
               <div className="flex-1 flex items-center justify-center p-4">
-                <video
-                  key={viewerFile.id}
-                  ref={videoRef}
-                  src={proxyUrl(viewerFile.id)}
-                  controls playsInline
-                  preload="metadata"
-                  controlsList="nodownload"
-                  className="max-w-full rounded-xl"
-                  style={{ maxHeight:'calc(100vh - 120px)' }}
-                  onContextMenu={e => e.preventDefault()}
-                  onCanPlay={e => { (e.target as HTMLVideoElement).play().catch(() => {}); }}
-                />
+                {mediaError ? (
+                  <div className="text-center">
+                    <div className="text-5xl mb-4">⚠️</div>
+                    <p className="text-white/60 text-sm mb-4" style={{ fontFamily:"'Hind Siliguri',sans-serif" }}>ভিডিও লোড হয়নি</p>
+                    <button
+                      onClick={() => { setMediaError(false); setMediaRetryKey(k => k + 1); }}
+                      className="px-5 py-2 rounded-xl text-sm font-bold"
+                      style={{ background:'rgba(0,229,255,0.15)', border:'1px solid rgba(0,229,255,0.4)', color:'#00e5ff', fontFamily:"'Hind Siliguri',sans-serif" }}>
+                      আবার চেষ্টা করুন
+                    </button>
+                  </div>
+                ) : (
+                  <video
+                    key={`${viewerFile.id}-${mediaRetryKey}`}
+                    ref={videoRef}
+                    src={proxyUrl(viewerFile.id)}
+                    controls playsInline
+                    preload="auto"
+                    controlsList="nodownload nofullscreen"
+                    className="max-w-full rounded-xl"
+                    style={{ maxHeight:'calc(100vh - 120px)' }}
+                    onContextMenu={e => e.preventDefault()}
+                    onCanPlayThrough={e => { (e.target as HTMLVideoElement).play().catch(() => {}); }}
+                    onError={() => setMediaError(true)}
+                    onStalled={e => {
+                      const v = e.target as HTMLVideoElement;
+                      if (!v.paused && v.readyState < 3) { v.load(); v.play().catch(() => {}); }
+                    }}
+                  />
+                )}
               </div>
             )}
 
@@ -546,17 +588,30 @@ export default function FolderView() {
                 <div className="w-full max-w-sm rounded-2xl p-8 text-center" style={{ background:'rgba(255,143,0,0.1)', border:'1px solid rgba(255,143,0,0.3)' }}>
                   <motion.div animate={{ scale:[1,1.1,1] }} transition={{ repeat:Infinity, duration:1.5 }} className="text-6xl mb-4">🎵</motion.div>
                   <p className="text-white font-medium mb-6 text-sm truncate">{viewerFile.name}</p>
-                  <audio
-                    key={viewerFile.id}
-                    ref={audioRef}
-                    src={proxyUrl(viewerFile.id)}
-                    controls
-                    preload="metadata"
-                    className="w-full"
-                    controlsList="nodownload"
-                    onContextMenu={e => e.preventDefault()}
-                    onCanPlay={e => { (e.target as HTMLAudioElement).play().catch(() => {}); }}
-                  />
+                  {mediaError ? (
+                    <div className="text-center">
+                      <p className="text-white/60 text-sm mb-3" style={{ fontFamily:"'Hind Siliguri',sans-serif" }}>অডিও লোড হয়নি</p>
+                      <button
+                        onClick={() => { setMediaError(false); setMediaRetryKey(k => k + 1); }}
+                        className="px-5 py-2 rounded-xl text-sm font-bold"
+                        style={{ background:'rgba(0,229,255,0.15)', border:'1px solid rgba(0,229,255,0.4)', color:'#00e5ff', fontFamily:"'Hind Siliguri',sans-serif" }}>
+                        আবার চেষ্টা করুন
+                      </button>
+                    </div>
+                  ) : (
+                    <audio
+                      key={`${viewerFile.id}-${mediaRetryKey}`}
+                      ref={audioRef}
+                      src={proxyUrl(viewerFile.id)}
+                      controls
+                      preload="auto"
+                      className="w-full"
+                      controlsList="nodownload"
+                      onContextMenu={e => e.preventDefault()}
+                      onCanPlayThrough={e => { (e.target as HTMLAudioElement).play().catch(() => {}); }}
+                      onError={() => setMediaError(true)}
+                    />
+                  )}
                 </div>
               </div>
             )}
