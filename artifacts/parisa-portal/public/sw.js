@@ -1,7 +1,7 @@
-// PARISA MEMORY PORTAL — Service Worker v3.0
-// Full offline support: Range request caching for video/audio playback
-const CACHE_NAME  = "parisa-v3.0";
-const MEDIA_CACHE = "parisa-media-v3.0";
+// PARISA MEMORY PORTAL — Service Worker v3.1
+// Offline-first with Range support: full files cached, seekable offline
+const CACHE_NAME  = "parisa-v3.1";
+const MEDIA_CACHE = "parisa-media-v3.1";
 
 const STATIC_ASSETS = [
   "/",
@@ -11,27 +11,22 @@ const STATIC_ASSETS = [
   "/favicon.svg",
 ];
 
-// Parse bytes=start-end header → {start, end}
-function parseRange(header, total) {
-  const m = header.match(/bytes=(\d*)-(\d*)/);
-  if (!m) return null;
+// Serve a byte-range from a cached full Response
+async function serveRange(cachedResp, rangeHeader) {
+  const buf  = await cachedResp.arrayBuffer();
+  const m    = rangeHeader.match(/bytes=(\d*)-(\d*)/);
+  if (!m) return new Response("Range Not Satisfiable", { status: 416 });
+  const total = buf.byteLength;
   const start = m[1] !== "" ? parseInt(m[1], 10) : total - parseInt(m[2], 10);
   const end   = m[2] !== "" ? parseInt(m[2], 10) : total - 1;
-  return { start: Math.max(0, start), end: Math.min(end, total - 1) };
-}
-
-// Serve a slice of a (full) Response according to a Range header
-async function serveRange(resp, rangeHeader) {
-  const buf   = await resp.arrayBuffer();
-  const range = parseRange(rangeHeader, buf.byteLength);
-  if (!range) return new Response("Range Not Satisfiable", { status: 416 });
-  const { start, end } = range;
-  return new Response(buf.slice(start, end + 1), {
+  const s = Math.max(0, start);
+  const e = Math.min(end, total - 1);
+  return new Response(buf.slice(s, e + 1), {
     status: 206,
     headers: {
-      "Content-Type":   resp.headers.get("content-type") || "application/octet-stream",
-      "Content-Range":  `bytes ${start}-${end}/${buf.byteLength}`,
-      "Content-Length": String(end - start + 1),
+      "Content-Type":   cachedResp.headers.get("content-type") || "application/octet-stream",
+      "Content-Range":  `bytes ${s}-${e}/${total}`,
+      "Content-Length": String(e - s + 1),
       "Accept-Ranges":  "bytes",
     },
   });
@@ -41,7 +36,7 @@ async function serveRange(resp, rangeHeader) {
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(STATIC_ASSETS))
+      .then((c) => c.addAll(STATIC_ASSETS))
       .then(() => self.skipWaiting())
   );
 });
@@ -54,7 +49,7 @@ self.addEventListener("activate", (event) => {
         Promise.all(
           keys
             .filter((k) => k !== CACHE_NAME && k !== MEDIA_CACHE)
-            .map((k)  => caches.delete(k))
+            .map((k) => caches.delete(k))
         )
       )
       .then(() => self.clients.claim())
@@ -65,39 +60,41 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
-  // ── Drive media proxy — offline-first + Range support ────────────────────
+  // ── Drive media proxy — stale-while-revalidate + Range-from-cache ─────────
   if (
     url.pathname.startsWith("/api/drive/proxy/") ||
     url.pathname.startsWith("/api/drive/prefetch/")
   ) {
     event.respondWith(
       caches.open(MEDIA_CACHE).then(async (cache) => {
-        // Canonical (range-free) key so all range sub-requests hit the same entry
-        const cacheKey   = new Request(url.href, { method: "GET" });
-        const rangeHdr   = event.request.headers.get("range");
+        // Canonical key without Range header (so all Range requests hit same entry)
+        const cacheKey = new Request(url.href, { method: "GET" });
+        const rangeHdr = event.request.headers.get("range");
 
-        const cached = await cache.match(cacheKey);
+        // Check for cached FULL response
+        const cachedFull = await cache.match(cacheKey);
 
-        if (cached) {
-          // Serve byte-range from the cached full file → enables seeking offline
-          if (rangeHdr) return serveRange(cached.clone(), rangeHdr);
-          return cached.clone();
+        if (cachedFull) {
+          // ── Cache hit: serve range from cached full file ────────────────
+          // This enables seeking in video/audio even when offline
+          if (rangeHdr) return serveRange(cachedFull.clone(), rangeHdr);
+          return cachedFull.clone();
         }
 
-        // Not cached yet — fetch the full file (always, regardless of Range header)
+        // ── Cache miss: forward ORIGINAL request to server ─────────────────
+        // IMPORTANT: pass event.request (not cacheKey) so Range headers reach server
+        // This allows the browser to start streaming immediately
         try {
-          const fullResp = await fetch(cacheKey);
-          if (fullResp.ok && fullResp.status === 200) {
-            const forCache = fullResp.clone();
-            // Store full file; don't await — let playback start immediately
-            cache.put(cacheKey, forCache);
-            if (rangeHdr) return serveRange(fullResp.clone(), rangeHdr);
-            return fullResp;
+          const resp = await fetch(event.request);
+          if (resp.ok && resp.status === 200) {
+            // Cache the full response for offline/seeking later
+            cache.put(cacheKey, resp.clone());
           }
-          // Non-200 from server — forward as-is (e.g. 401, 404)
-          return fullResp;
+          // 206 partial responses are forwarded as-is (not cached individually)
+          return resp;
         } catch {
-          return new Response("Media offline — ক্যাশ নেই", {
+          // Offline and nothing in cache
+          return new Response("Media offline", {
             status: 503,
             headers: { "Content-Type": "text/plain; charset=utf-8" },
           });
@@ -145,7 +142,7 @@ self.addEventListener("fetch", (event) => {
   );
 });
 
-// ── Prefetch media on demand (from app) ──────────────────────────────────────
+// ── Prefetch media on demand ──────────────────────────────────────────────────
 self.addEventListener("message", (event) => {
   if (event.data?.type !== "PREFETCH_MEDIA" || !Array.isArray(event.data.urls)) return;
   caches.open(MEDIA_CACHE).then(async (cache) => {
@@ -157,7 +154,7 @@ self.addEventListener("message", (event) => {
           const resp = await fetch(cacheKey);
           if (resp.ok && resp.status === 200) cache.put(cacheKey, resp);
         }
-      } catch { /* ignore individual failures */ }
+      } catch { /* skip failed prefetches */ }
     }
   });
 });

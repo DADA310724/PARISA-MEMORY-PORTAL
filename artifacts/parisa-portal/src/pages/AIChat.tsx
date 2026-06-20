@@ -602,10 +602,14 @@ export default function AIChatPage() {
               folderLabels.set(btn.drive_folder_id, btn.label);
               if (isLocked) lockedFolderIds.add(btn.drive_folder_id);
             }
-            const screenshotLabels = ['screenshots', 'স্ক্রিনশট', 'photos', 'photo', 'ছবি', 'gallery', 'স্ক্রিন শট', 'screenshot', 'image', 'ইমেজ', 'গ্যালারি', 'ছবি ফোল্ডার', 'ফটো'];
-            if (btn.label && screenshotLabels.some(k => btn.label!.toLowerCase().includes(k)) && btn.drive_folder_id) setScreenshotFolderId(btn.drive_folder_id);
-          }
+            }
         }
+        // স্ক্রিনশট ফোল্ডার: লেবেল দেখে না পেলে hardcoded fallback ব্যবহার করে
+        const ssLabels = ['screenshots','স্ক্রিনশট','photos','photo','ছবি','gallery','স্ক্রিন শট','screenshot','image','ইমেজ','গ্যালারি','ছবি ফোল্ডার','ফটো'];
+        const ssBtn = (data ? Object.values(data) : []).find(b =>
+          b.drive_folder_id && b.label && ssLabels.some(k => b.label!.toLowerCase().includes(k))
+        );
+        setScreenshotFolderId(ssBtn?.drive_folder_id ?? "1oMXHjtXTP41Wx2ijIgXeLJDcEq5atSL2");
         buildContext();
       });
       unsubFiles = onValue(ref(db, "folder_files"), (snap) => { folderFiles = snap.val() || {}; buildContext(); });
@@ -684,8 +688,7 @@ export default function AIChatPage() {
       // 1. Screenshot context — in-memory search (synchronous)
       const screenshotCtx = searchScreenshotIndex(text.trim(), screenshotIndex);
 
-      // 2. Chat history context — API search (async, only when relevant)
-      let chatCtx = '';
+      // 2. Chat history — সরাসরি database থেকে হুবহু দেখাও (AI bypass)
       if (isChatHistoryQuery(text.trim())) {
         const dateFilter = extractDateStr(bengaliToAscii(text.trim()));
         const conv = extractConversation(text.trim());
@@ -696,10 +699,16 @@ export default function AIChatPage() {
             body: { date: dateFilter || undefined, conversation: conv || undefined, keyword: kw, limit: 150 },
           });
           if (cr.results && cr.total > 0) {
-            chatCtx = `\n\n=== প্রাসঙ্গিক চ্যাট হিস্টরি (${cr.total}টি এন্ট্রি) ===\nগুরুত্বপূর্ণ নির্দেশনা: নিচের মেসেজগুলো হুবহু কপি করে দেখাও — বাংলায় যেটা আছে বাংলায়, ইংরেজিতে যেটা আছে ইংরেজিতে। নিজে থেকে একটাও শব্দ যোগ করবে না বা বদলাবে না। শুধু আসল ডেটা দেখাও।\n${cr.results}\n=== চ্যাট হিস্টরি শেষ ===`;
+            // ── হুবহু মেসেজ: AI-এর মধ্যে না দিয়ে সরাসরি দেখাই ──────────
+            const lines = cr.results.split('\n').filter((l: string) => l.trim());
+            const directContent = `📋 চ্যাট হিস্টরি (${lines.length}টি মেসেজ):\n\n${cr.results}`;
+            const directMsg: Msg = { role: "assistant", content: directContent, provider: "db", timestamp: Date.now() };
+            updateSession(currentId, s => ({ ...s, messages: [...nextMsgs, directMsg] }));
+            return; // finally block runs → setBusy(false)
           }
         } catch { /* ignore search errors */ }
       }
+      const chatCtx = '';
 
       const sysPrompt = buildSystemPrompt(isAdmin ? adminPrompt : userPrompt) + screenshotCtx + chatCtx;
       const apiMsgs = nextMsgs.map(m => ({
