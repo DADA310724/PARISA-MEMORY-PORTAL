@@ -18,7 +18,7 @@ export default function FolderView() {
   const { isAdmin } = useApp();
 
   const [files, setFiles] = useState<DriveFile[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
   const [toast, setToast] = useState<Toast | null>(null);
@@ -248,18 +248,7 @@ export default function FolderView() {
     return "📎";
   };
 
-  if (lockChecking) {
-    return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "rgba(10,14,31,0.97)" }}>
-        <div className="text-center">
-          <div className="w-12 h-12 border-2 border-cyan-500/20 border-t-cyan-400 rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-white/40 text-sm" style={{ fontFamily:"'Hind Siliguri',sans-serif" }}>লোড হচ্ছে</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (locked) {
+  if (!lockChecking && locked) {
     return (
       <div className="min-h-screen flex flex-col">
         <div className="sticky top-0 z-20" style={{ background:'rgba(10,14,31,0.92)', backdropFilter:'blur(20px)', borderBottom:'1px solid rgba(255,255,255,0.05)' }}>
@@ -350,7 +339,7 @@ export default function FolderView() {
 
       {/* Content */}
       <div className="flex-1 p-3 w-full">
-        {loading && (
+        {(loading || lockChecking) && (
           <div className="flex items-center justify-center py-20">
             <div className="text-center">
               <div className="w-12 h-12 border-2 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin mx-auto mb-3" />
@@ -548,16 +537,10 @@ export default function FolderView() {
                       src={proxyUrl(viewerFile.id)}
                       controls
                       playsInline
-                      preload="auto"
+                      preload="metadata"
                       style={{ width:'100%', maxHeight:'calc(100vh - 120px)', objectFit:'contain', display:'block' }}
                       onContextMenu={e => e.preventDefault()}
-                      onError={() => {
-                        if (autoRetryCount.current < 3) {
-                          const delay = (autoRetryCount.current + 1) * 1500;
-                          autoRetryCount.current++;
-                          setTimeout(() => setMediaRetryKey(k => k + 1), delay);
-                        } else { setMediaError(true); }
-                      }}
+                      onError={() => { setMediaError(true); }}
                     />
                     <div style={{ position:'absolute', bottom:0, left:0, right:0, padding:'8px 12px 6px', background:'linear-gradient(transparent,rgba(0,0,0,0.7))', pointerEvents:'none' }}>
                       <p className="text-white/70 truncate" style={{ fontSize:11, fontFamily:"'Hind Siliguri',sans-serif" }}>{viewerFile.name}</p>
@@ -605,16 +588,10 @@ export default function FolderView() {
                       ref={audioRef}
                       src={proxyUrl(viewerFile.id)}
                       controls
-                      preload="auto"
+                      preload="metadata"
                       style={{ width:'100%', borderRadius:12, accentColor:'#a855f7' }}
                       onContextMenu={e => e.preventDefault()}
-                      onError={() => {
-                        if (autoRetryCount.current < 3) {
-                          const delay = (autoRetryCount.current + 1) * 1500;
-                          autoRetryCount.current++;
-                          setTimeout(() => setMediaRetryKey(k => k + 1), delay);
-                        } else { setMediaError(true); }
-                      }}
+                      onError={() => { setMediaError(true); }}
                     />
                   )}
                 </div>

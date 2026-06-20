@@ -315,15 +315,14 @@ driveRouter.get("/proxy/:id", async (req: Request, res: Response) => {
         }
       }
     } else {
-      // No range — serve cached chunk + let browser request remaining bytes
-      res.setHeader("Content-Length", String(cached.data.length));
-      if (cached.totalSize > cached.data.length) {
-        res.setHeader("Content-Range", `bytes 0-${cached.data.length - 1}/${total}`);
-        res.status(206).end(cached.data);
-      } else {
+      // No Range header — only serve from cache if we have the COMPLETE file
+      // Partial-content (206) without a Range request confuses browsers and causes buffering stalls
+      if (cached.totalSize <= cached.data.length) {
+        res.setHeader("Content-Length", String(cached.data.length));
         res.status(200).end(cached.data);
+        return;
       }
-      return;
+      // File is larger than cached chunk — fall through to direct streaming for smooth playback
     }
   }
 
