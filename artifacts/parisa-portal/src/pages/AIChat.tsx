@@ -206,29 +206,46 @@ function isScreenshotQuery(text: string): boolean {
   return ['স্ক্রিনশট','screenshot','ছবি দেখাও','ছবি দেখতে','স্ক্রিন শট','স্ক্রিনসট','ss দেখাও','ছবি আছে','কোনো ছবি','ফটো দেখাও','ফটো আছে','photo দেখাও','ছবি দাও','স্ক্রিনশট দাও','ss দাও','ছবি show','ছবি দেখ'].some(k => l.includes(k));
 }
 
-function searchScreenshotIndex(
+// ফাইলের নাম থেকে তারিখ বের করে (যেমন: Screenshot_20250315_143200.jpg → 2025-03-15)
+function extractDateFromName(name: string): string {
+  const m = name.match(/(\d{4})[-_]?(\d{2})[-_]?(\d{2})/);
+  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
+  return '';
+}
+
+// Raw hits array — ফ্রন্টেন্ড থেকে সরাসরি ছবি inject করতে ব্যবহার হয়
+function getRawScreenshotHits(
   text: string,
   index: Record<string, Array<{ id: string; name: string; modifiedTime: string }>>
-): string {
-  if (!isScreenshotQuery(text) || Object.keys(index).length === 0) return '';
+): Array<{ folder: string; id: string; name: string; date: string }> {
+  if (!isScreenshotQuery(text) || Object.keys(index).length === 0) return [];
   const dateFilter = extractDateStr(text);
-  const platform = extractPlatformFolder(text);
+  const platform   = extractPlatformFolder(text);
   const hits: Array<{ folder: string; id: string; name: string; date: string }> = [];
   for (const [folder, files] of Object.entries(index)) {
     if (platform && !folder.toLowerCase().includes(platform)) continue;
     for (const f of files) {
-      const fd = (f.modifiedTime || '').slice(0, 10);
+      // ফাইলনাম থেকে তারিখ আগে নাও, না পেলে modifiedTime থেকে
+      const fd = extractDateFromName(f.name) || (f.modifiedTime || '').slice(0, 10);
       if (dateFilter && !fd.startsWith(dateFilter)) continue;
       hits.push({ folder, id: f.id, name: f.name, date: fd });
-      if (hits.length >= 5) break;
+      if (hits.length >= 6) break;
     }
-    if (hits.length >= 5) break;
+    if (hits.length >= 6) break;
   }
+  return hits;
+}
+
+function searchScreenshotIndex(
+  text: string,
+  index: Record<string, Array<{ id: string; name: string; modifiedTime: string }>>
+): string {
+  const hits = getRawScreenshotHits(text, index);
   if (hits.length === 0) return '';
   const lines = ['\n\n=== প্রাসঙ্গিক স্ক্রিনশট পাওয়া গেছে ==='];
-  lines.push('এই স্ক্রিনশটগুলো সরাসরি দেখাও (<<IMG:fileId>> ফরম্যাটে, Google Drive লিংক নয়):');
+  lines.push('নির্দেশনা: নিচের প্রতিটা ছবি হুবহু <<IMG:fileId>> ফরম্যাটে দেখাও। Google Drive লিংক বা টেক্সট দিবে না।');
   for (const r of hits) {
-    lines.push(`ফোল্ডার: ${r.folder} | তারিখ: ${r.date} | ফাইল: ${r.name}`);
+    lines.push(`প্ল্যাটফর্ম: ${r.folder} | তারিখ: ${r.date} | ফাইল: ${r.name}`);
     lines.push(`<<IMG:${r.id}>>`);
   }
   lines.push('=== স্ক্রিনশট শেষ ===');
@@ -679,7 +696,7 @@ export default function AIChatPage() {
             body: { date: dateFilter || undefined, conversation: conv || undefined, keyword: kw, limit: 150 },
           });
           if (cr.results && cr.total > 0) {
-            chatCtx = `\n\n=== প্রাসঙ্গিক চ্যাট হিস্টরি (${cr.total}টি এন্ট্রি) ===\n${cr.results}\n=== চ্যাট হিস্টরি শেষ ===`;
+            chatCtx = `\n\n=== প্রাসঙ্গিক চ্যাট হিস্টরি (${cr.total}টি এন্ট্রি) ===\nগুরুত্বপূর্ণ নির্দেশনা: নিচের মেসেজগুলো হুবহু কপি করে দেখাও — বাংলায় যেটা আছে বাংলায়, ইংরেজিতে যেটা আছে ইংরেজিতে। নিজে থেকে একটাও শব্দ যোগ করবে না বা বদলাবে না। শুধু আসল ডেটা দেখাও।\n${cr.results}\n=== চ্যাট হিস্টরি শেষ ===`;
           }
         } catch { /* ignore search errors */ }
       }
@@ -693,7 +710,14 @@ export default function AIChatPage() {
         method: "POST",
         body: { messages: apiMsgs, systemPrompt: sysPrompt, provider: "auto", groqKeys: aiKeys.groq, geminiKeys: aiKeys.gemini, openrouterKeys: aiKeys.openrouter },
       });
-      const aiMsg: Msg = { role: "assistant", content: resp.text, provider: resp.provider, timestamp: Date.now() };
+      // যদি AI <<IMG:>> format ব্যবহার না করে, frontend সরাসরি inject করে
+      let aiContent = resp.text;
+      const rawHits = getRawScreenshotHits(text.trim(), screenshotIndex);
+      if (rawHits.length > 0 && !aiContent.includes('<<IMG:')) {
+        const imgBlock = rawHits.slice(0, 3).map(h => `<<IMG:${h.id}>>`).join('\n');
+        aiContent = imgBlock + '\n\n' + aiContent;
+      }
+      const aiMsg: Msg = { role: "assistant", content: aiContent, provider: resp.provider, timestamp: Date.now() };
       updateSession(currentId, s => ({ ...s, messages: [...nextMsgs, aiMsg] }));
       speakText(resp.text, voiceGender);
       void api("/telegram/notify", {
