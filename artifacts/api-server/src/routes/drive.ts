@@ -45,8 +45,8 @@ let _tokenCache: { token: string; exp: number } | null = null;
 
 // ── Media chunk cache ─────────────────────────────────────────────────────
 // Caches the first CHUNK_BYTES of each media file so first-play is instant.
-const CHUNK_BYTES = 2 * 1024 * 1024; // 2 MB per file
-const MAX_CACHE_ENTRIES = 15;
+const CHUNK_BYTES = 5 * 1024 * 1024; // 5 MB per file — larger buffer for smoother streaming
+const MAX_CACHE_ENTRIES = 30;
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 min
 
 interface CachedChunk {

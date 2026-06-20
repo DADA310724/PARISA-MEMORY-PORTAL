@@ -75,6 +75,11 @@ export default function FolderView() {
     try {
       const { files: f } = await listFolder(folderId);
       setFiles(f);
+      // Background prefetch all audio/video files → warms server-side 5MB cache for instant playback
+      const mediaFiles = f.filter(file => isVideo(file) || isAudio(file));
+      mediaFiles.slice(0, 25).forEach(file => {
+        fetch(`/api/drive/prefetch/${file.id}`, { priority: "low" } as RequestInit).catch(() => {});
+      });
       void api("/telegram/notify", {
         method: "POST",
         body: { event: "folder_opened", folder: folderName || folderId, files: f.length },
