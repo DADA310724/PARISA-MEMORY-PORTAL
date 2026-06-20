@@ -521,33 +521,62 @@ export default function AIChatPage() {
     let unsubFiles: (() => void) | undefined;
     let unsubPasswords: (() => void) | undefined;
     let folderFiles: Record<string, { files: Array<{name: string}>; count?: number }> = {};
+    // ALL buttons from Firebase (live, always up to date)
+    let allButtons: Array<{ label: string; locked: boolean; drive_folder_id?: string }> = [];
     const lockedFolderIds = new Set<string>(); // Drive folder IDs that are password-locked
     const folderLabels = new Map<string, string>(); // drive_folder_id → display label
+
     const buildContext = () => {
-      const lines: string[] = ["\n\n=== ড্যাশবোর্ড ফোল্ডারে সংরক্ষিত ফাইলের তালিকা ==="];
-      let hasAny = false;
+      const lines: string[] = [];
+
+      // 1. Complete folder list (ALL non-locked folders, auto-updated from Firebase)
+      const unlockedButtons = allButtons.filter(b => !b.locked);
+      if (unlockedButtons.length > 0) {
+        lines.push("\n\n=== ড্যাশবোর্ডের সমস্ত ফোল্ডার ===");
+        lines.push("(লক করা ফোল্ডার ছাড়া সব ফোল্ডারের তথ্য দিতে পারো)\n");
+        unlockedButtons.forEach((b, i) => {
+          const info = b.drive_folder_id ? folderFiles[b.drive_folder_id] : undefined;
+          const count = info ? (info.count ?? info.files?.length ?? 0) : null;
+          const countStr = count !== null && count > 0 ? ` (${count}টি ফাইল)` : "";
+          lines.push(`${i + 1}. ${b.label}${countStr}`);
+        });
+      }
+
+      // 2. Detailed file listing for indexed folders
+      const detailLines: string[] = [];
       for (const [folderId, info] of Object.entries(folderFiles)) {
         if (lockedFolderIds.has(folderId)) continue;
         const files = info.files || [];
         if (files.length === 0) continue;
-        hasAny = true;
         const label = folderLabels.get(folderId) || folderId;
-        lines.push(`\n${label} (${info.count ?? files.length}টি ফাইল):`);
-        files.slice(0, 15).forEach((f: {name: string}) => lines.push(`  ${f.name}`));
-        if ((info.count ?? files.length) > 15) lines.push(`  এবং আরো ${(info.count ?? files.length) - 15}টি`);
+        detailLines.push(`\n${label} (${info.count ?? files.length}টি ফাইল):`);
+        files.slice(0, 15).forEach((f: {name: string}) => detailLines.push(`  ${f.name}`));
+        if ((info.count ?? files.length) > 15) detailLines.push(`  এবং আরো ${(info.count ?? files.length) - 15}টি`);
       }
-      lines.push("\n=== তালিকা শেষ ===\n");
-      setFolderContext(hasAny ? lines.join("\n") : "");
+      if (detailLines.length > 0) {
+        lines.push("\n=== ফাইলের বিস্তারিত তালিকা ===");
+        lines.push(...detailLines);
+      }
+
+      lines.push("\n=== শেষ ===\n");
+      setFolderContext(lines.length > 3 ? lines.join("\n") : "");
     };
+
     ensureFirebase().then((db) => {
       unsubButtons = onValue(ref(db, "buttons"), (snap) => {
-        const data = snap.val() as Record<string, { label?: string; locked?: boolean; drive_folder_id?: string }> | null;
+        const data = snap.val() as Record<string, { label?: string; locked?: boolean; drive_folder_id?: string; order?: number }> | null;
         folderLabels.clear();
+        allButtons = [];
         if (data) {
-          for (const btn of Object.values(data)) {
-            if (btn.drive_folder_id && btn.label) {
+          // Sort by order field so list matches dashboard order
+          const sorted = Object.values(data).sort((a, b) => (a.order ?? 999) - (b.order ?? 999));
+          for (const btn of sorted) {
+            if (!btn.label) continue;
+            const isLocked = !!(btn.locked);
+            allButtons.push({ label: btn.label, locked: isLocked, drive_folder_id: btn.drive_folder_id });
+            if (btn.drive_folder_id) {
               folderLabels.set(btn.drive_folder_id, btn.label);
-              if (btn.locked) lockedFolderIds.add(btn.drive_folder_id);
+              if (isLocked) lockedFolderIds.add(btn.drive_folder_id);
             }
             if (btn.label === "Screenshots" && btn.drive_folder_id) setScreenshotFolderId(btn.drive_folder_id);
           }
