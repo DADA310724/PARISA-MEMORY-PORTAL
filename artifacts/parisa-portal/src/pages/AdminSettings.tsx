@@ -483,11 +483,65 @@ export default function AdminSettings() {
   };
 
   const makeKeyHandlers = (field: keyof AiConfig) => ({
-    add: (key: string, label: string) => {
+    add: async (key: string, label: string) => {
       const k = key.trim();
-      if (!k || k.length < 10) { showMsg("⚠️ সঠিক key দিন"); return; }
-      const lb = label.trim() || `Key ${((aiConfig[field] as ApiKeyEntry[])?.length ?? 0) + 1}`;
-      setAiConfig(c => ({ ...c, [field]: [...((c[field] as ApiKeyEntry[]) ?? []), { key: k, label: lb, status: "unknown" as const }] }));
+      if (!k || k.length < 10) { showMsg("⚠️ সঠিক key দিন (কমপক্ষে ১০ অক্ষর)"); return; }
+      const lb       = label.trim() || `Key ${((aiConfig[field] as ApiKeyEntry[])?.length ?? 0) + 1}`;
+      const newEntry: ApiKeyEntry = { key: k, label: lb, status: "unknown" };
+      const newKeys  = [...((aiConfig[field] as ApiKeyEntry[]) ?? []), newEntry];
+      const newIdx   = newKeys.length - 1;
+      // State update
+      setAiConfig(c => ({ ...c, [field]: newKeys }));
+      // ── Auto-save immediately → key is live in Firebase right away ──────
+      setSaving(true);
+      try {
+        const db = await ensureFirebase();
+        await set(ref(db, `ai_config/${field}`), newKeys);
+        showMsg("✅ Key যোগ হয়েছে ও সেভ হয়েছে — এখনই লাইভ। পরীক্ষা চলছে...");
+      } catch { showMsg("❌ সেভ ব্যর্থ — ইন্টারনেট সংযোগ যাচাই করুন"); setSaving(false); return; }
+      finally { setSaving(false); }
+      // ── Auto-test the new key ────────────────────────────────────────────
+      const provider = field === "groqKeys" ? "groq" : field === "geminiKeys" ? "gemini" : "openrouter";
+      setAiConfig(c => {
+        const ks = [...((c[field] as ApiKeyEntry[]) ?? [])];
+        if (ks[newIdx]) ks[newIdx] = { ...ks[newIdx], status: "testing" };
+        return { ...c, [field]: ks };
+      });
+      try {
+        await api<{ text: string }>("/ai/chat", {
+          method: "POST",
+          body: {
+            messages: [{ role: "user" as const, content: "say ok" }],
+            systemPrompt: "Reply: OK",
+            provider,
+            groqKeys:        field === "groqKeys"        ? [k] : [],
+            geminiKeys:      field === "geminiKeys"      ? [k] : [],
+            openrouterKeys:  field === "openrouterKeys"  ? [k] : [],
+          },
+        });
+        setAiConfig(c => {
+          const ks = [...((c[field] as ApiKeyEntry[]) ?? [])];
+          if (ks[newIdx]) ks[newIdx] = { ...ks[newIdx], status: "ok", info: "✓ সক্রিয় — এখনই লাইভ" };
+          return { ...c, [field]: ks };
+        });
+        showMsg("✅ Key সক্রিয় ও কাজ করছে!");
+      } catch (err) {
+        const msg = (err as Error).message ?? "";
+        const is429  = msg.includes("429");
+        const is401  = msg.includes("401") || msg.includes("403");
+        const errInfo = is429
+          ? "⚠️ Rate limit পূর্ণ — কিছুক্ষণ পরে আবার কাজ করবে"
+          : is401
+          ? "✗ অবৈধ key — সঠিক key দিন"
+          : "✗ সংযোগ ব্যর্থ — পরে টেস্ট করুন";
+        setAiConfig(c => {
+          const ks = [...((c[field] as ApiKeyEntry[]) ?? [])];
+          if (ks[newIdx]) ks[newIdx] = { ...ks[newIdx], status: is429 ? "ok" : "error", info: errInfo };
+          return { ...c, [field]: ks };
+        });
+        if (is429) showMsg("⚠️ Key সেভ হয়েছে — rate limit আপাতত পূর্ণ, ব্যবহার হবে পরে");
+        else showMsg("❌ Key কাজ করছে না — অন্য key দিন");
+      }
     },
     remove: (idx: number) => setAiConfig(c => ({ ...c, [field]: ((c[field] as ApiKeyEntry[]) ?? []).filter((_, i) => i !== idx) })),
     test: async (idx: number) => {
@@ -504,20 +558,28 @@ export default function AdminSettings() {
             messages: [{ role: "user" as const, content: "say ok" }],
             systemPrompt: "Reply: OK",
             provider,
-            groqKeys: field === "groqKeys" ? [testKey] : [],
-            geminiKeys: field === "geminiKeys" ? [testKey] : [],
+            groqKeys:       field === "groqKeys"       ? [testKey] : [],
+            geminiKeys:     field === "geminiKeys"     ? [testKey] : [],
             openrouterKeys: field === "openrouterKeys" ? [testKey] : [],
           },
         });
         setAiConfig(c => {
           const k = [...((c[field] as ApiKeyEntry[]) ?? [])];
-          if (k[idx]) k[idx] = { ...k[idx], status: "ok", info: "✓ key সক্রিয় — সংযুক্ত" };
+          if (k[idx]) k[idx] = { ...k[idx], status: "ok", info: "✓ key সক্রিয় ও কাজ করছে" };
           return { ...c, [field]: k };
         });
-      } catch {
+      } catch (err) {
+        const msg     = (err as Error).message ?? "";
+        const is429   = msg.includes("429");
+        const is401   = msg.includes("401") || msg.includes("403");
+        const errInfo = is429
+          ? "⚠️ Rate limit পূর্ণ — কিছুক্ষণ পরে আবার কাজ করবে"
+          : is401
+          ? "✗ অবৈধ key — সঠিক key দিন"
+          : "✗ সংযোগ ব্যর্থ — পরে আবার টেস্ট করুন";
         setAiConfig(c => {
           const k = [...((c[field] as ApiKeyEntry[]) ?? [])];
-          if (k[idx]) k[idx] = { ...k[idx], status: "error", info: "✗ key কাজ করছে না — নতুন key দিন" };
+          if (k[idx]) k[idx] = { ...k[idx], status: is429 ? "ok" : "error", info: errInfo };
           return { ...c, [field]: k };
         });
       }
@@ -527,7 +589,7 @@ export default function AdminSettings() {
       try {
         const db = await ensureFirebase();
         await set(ref(db, `ai_config/${field}`), (aiConfig[field] as ApiKeyEntry[]) ?? []);
-        showMsg(`✅ ${field} সেভ হয়েছে`);
+        showMsg(`✅ সেভ হয়েছে — এখনই লাইভ`);
       } catch { showMsg("❌ সেভ ব্যর্থ"); }
       finally { setSaving(false); }
     },
