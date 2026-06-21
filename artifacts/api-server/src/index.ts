@@ -39,15 +39,12 @@ app.get("/api/healthz", (_req: Request, res: Response) => {
   res.json({ status: "ok" });
 });
 
-app.get("/", (_req: Request, res: Response) => {
-  res.json({ status: "ok" });
-});
-
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   console.error(err);
   res.status(500).json({ error: err.message ?? "Internal server error" });
 });
 
+// Serve frontend — must come AFTER all /api routes and error handler
 const staticDir = path.resolve(__dirname, "../../parisa-portal/dist/public");
 if (existsSync(staticDir)) {
   app.use(express.static(staticDir));
@@ -55,6 +52,10 @@ if (existsSync(staticDir)) {
     res.sendFile(path.join(staticDir, "index.html"));
   });
   console.log(`Serving static files from ${staticDir}`);
+} else {
+  app.get("/", (_req: Request, res: Response) => {
+    res.json({ status: "ok", note: "frontend not built" });
+  });
 }
 
 const server = createServer(app);
