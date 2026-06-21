@@ -75,7 +75,7 @@ export default function DashboardPage() {
       setLocation(`/view?url=${encodeURIComponent(b.link_value)}&title=${encodeURIComponent(b.label)}`);
       return;
     }
-    if (b.link_value && b.link_type !== "drive_folder" && b.link_type !== "screenshot") {
+    if (b.link_value && b.link_type !== "drive_folder") {
       setLocation(`/view?url=${encodeURIComponent(b.link_value)}&title=${encodeURIComponent(b.label)}`);
       return;
     }
