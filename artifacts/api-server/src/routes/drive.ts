@@ -45,8 +45,8 @@ let _tokenCache: { token: string; exp: number } | null = null;
 
 // ── Media chunk cache ─────────────────────────────────────────────────────
 // Caches the first CHUNK_BYTES of each media file so first-play is instant.
-const CHUNK_BYTES = 5 * 1024 * 1024; // 5 MB per file — larger buffer for smoother streaming
-const MAX_CACHE_ENTRIES = 30;
+const CHUNK_BYTES = 2 * 1024 * 1024; // 2 MB per file
+const MAX_CACHE_ENTRIES = 15;
 const CACHE_TTL_MS = 30 * 60 * 1000; // 30 min
 
 interface CachedChunk {
@@ -362,8 +362,21 @@ driveRouter.get("/proxy/:id", async (req: Request, res: Response) => {
       res.setHeader("Accept-Ranges", "bytes");
       res.setHeader("Cache-Control", "private, max-age=3600");
 
+      // Remove iframe-blocking headers from Drive response so HTML chat exports load in <iframe>
+      res.removeHeader("X-Frame-Options");
+      res.removeHeader("Content-Security-Policy");
+      res.removeHeader("Cross-Origin-Opener-Policy");
+      res.removeHeader("Cross-Origin-Embedder-Policy");
+      res.removeHeader("Cross-Origin-Resource-Policy");
+
       // Forward content headers
-      if (contentType) res.setHeader("Content-Type", contentType);
+      if (contentType) {
+        // Force UTF-8 charset for HTML so Bengali text renders correctly
+        const ct = contentType.includes("text/html") && !contentType.includes("charset")
+          ? contentType + "; charset=utf-8"
+          : contentType;
+        res.setHeader("Content-Type", ct);
+      }
       const cl = resp.headers.get("content-length");
       if (cl) res.setHeader("Content-Length", cl);
       const cr = resp.headers.get("content-range");

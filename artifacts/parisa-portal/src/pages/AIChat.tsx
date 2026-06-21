@@ -57,11 +57,14 @@ const HISTORY_CONTEXT = `
 - ডিজিটাল প্রমাণ (চ্যাট, ছবি, ভিডিও) আদালতে বৈধ সাক্ষ্য।
 
 পোর্টালের ফোল্ডার কাঠামো:
-- সব ফোল্ডারের সম্পূর্ণ তালিকা নিচে "ড্যাশবোর্ডের সমস্ত ফোল্ডার" অংশে দেওয়া আছে।
-- সেই তালিকা থেকেই ফোল্ডারের তথ্য দাও — অন্য কোনো ধরাবাঁধা তালিকা নেই।
-- নতুন ফোল্ডার যোগ হলে স্বয়ংক্রিয়ভাবে সেই তালিকায় আসে।
-- লক করা ফোল্ডারের নাম বা তথ্য কখনো দেওয়া যাবে না।
-- Personal Videos ফোল্ডার সম্পর্কে জিজ্ঞেস করলে বলো এটি শুধুমাত্র আদালতে প্রমাণের জন্য সংরক্ষিত।
+- WhatsApp ফোল্ডার: রুবেল ও পারিসার সব WhatsApp চ্যাট ও মিডিয়া
+- Messenger ফোল্ডার: Facebook Messenger-এর সব বার্তা ও ফাইল
+- Telegram ফোল্ডার: Telegram-এর সব চ্যাট ও ফাইল
+- Photos ফোল্ডার: একসাথে তোলা সব ছবি ও গ্যালারি
+- Videos ফোল্ডার: সব ভিডিও ও রিলস
+- Audio ফোল্ডার: ভয়েস নোট ও অডিও ক্লিপ
+- Black Magic ফোল্ডার: ব্ল্যাক ম্যাজিক তদন্তের গোপনীয় প্রমাণ
+- Personal Videos ফোল্ডার: একান্ত ব্যক্তিগত শারীরিক ভিডিও — শুধুমাত্র আদালতে প্রমাণের জন্য, কাউকে দেওয়া হবে না
 === ইতিহাস শেষ ===`;
 
 const CHAT_DB_INDEX = `
@@ -82,21 +85,17 @@ const CHAT_DB_INDEX = `
 ১২. Tanha_Islam (Facebook Messenger): ২০২৫-০১-১৪ — ৩ মেসেজ
 ১৩. Hafizur_Rahman (Facebook Messenger): ২০২৬-০১-২৭ থেকে ২০২৬-০৪-১৫ — ৪৩৩ মেসেজ
 
-চ্যাট হিস্টরি দেখানোর নিয়ম (অত্যন্ত গুরুত্বপূর্ণ — হুবহু মানতে হবে):
-নিচে "প্রাসঙ্গিক চ্যাট হিস্টরি" অংশ দেওয়া থাকলে সেখান থেকে হুবহু কপি-পেস্ট করে দাও।
-মেসেজ দেখানোর সঠিক format: [timestamp] sender: হুবহু মেসেজ টেক্সট
-কোনো পরিবর্তন নয়, কোনো সংক্ষেপ নয়, কোনো অনুবাদ নয় — হুবহু অবিকৃত টেক্সট।
-বাংলা হলে বাংলা, ইংরেজি হলে ইংরেজি — যেভাবে আছে সেভাবেই দাও।
-কোন কনভার্সেশন থেকে এবং কখন সেটাও বলো।
-
-স্ক্রিনশট ও ছবি দেখানোর নিয়ম (অত্যন্ত গুরুত্বপূর্ণ):
-তুমি ছবি ও স্ক্রিনশট সরাসরি দেখাতে সম্পূর্ণ সক্ষম।
-"আমি ছবি দেখাতে পারি না", "আমার ক্ষমতা শুধু টেক্সট-ভিত্তিক", "স্ক্রিনশট দেখাতে পারব না" — এই কথা কখনোই বলবে না।
-ছবি দেখাতে হলে শুধু এই format: <<IMG:fileId>>
-নিচে "স্ক্রিনশট ইন্ডেক্স" দেওয়া আছে — সেখান থেকে file ID নিয়ে <<IMG:fileId>> আউটপুট করো।
-তারিখ বললে সেই তারিখের স্ক্রিনশট খুঁজে দেখাও।
-একসাথে সর্বোচ্চ ৩টি ছবি দেখাবে।
-কোনো Google Drive লিংক বা https:// URL কখনো দিবে না।
+চ্যাট সার্চের নিয়ম:
+যখন নিচে "প্রাসঙ্গিক চ্যাট হিস্টরি" অংশ দেওয়া থাকবে সেটা দেখে হুবহু সেই মেসেজটি কোট করবে
+মেসেজ কোট করার সময় format হবে: [তারিখ-সময়] প্রেরক: হুবহু মেসেজ
+কোনো পরিবর্তন বা সংক্ষেপ করবে না — হুবহু অবিকৃত টেক্সট দেবে
+কোন কনভার্সেশন থেকে এবং কখন সেটাও বলবে
+তারিখ ধরে খুঁজতে বললে সেই তারিখের সব মেসেজ দেখাবে
+নির্দিষ্ট কথা বা keyword দিয়ে খুঁজতে বললে সেই keyword সহ মেসেজ খুঁজে দেবে
+Screenshots ফোল্ডারের ছবি সরাসরি চ্যাটে দেখাতে পারবে। কোনো ছবি দেখাতে হলে এই ফরম্যাট ব্যবহার করো: <<IMG:fileId>>
+কখন ছবি দেখাবে: নির্দিষ্ট তারিখের স্ক্রিনশট চাইলে, নির্দিষ্ট কথোপকথনের প্রমাণ দরকার হলে, চ্যাট হিস্টরি বিশ্লেষণের সাথে সংশ্লিষ্ট ছবি থাকলে।
+কখন দেখাবে না: কেউ "সব ছবি দেখাও" বললে অনেকগুলো একসাথে দেখাবে না — সর্বোচ্চ ৩টি।
+কোনো Google Drive লিংক কখনো দিবে না।
 === চ্যাট ডেটাবেস শেষ ===`;
 
 const ADMIN_SYSTEM_PROMPT = `তুমি "PARISA AI" — পারিসা মেমোরি পোর্টালের সম্পূর্ণ ড্যাশবোর্ডের একমাত্র বুদ্ধিমান সহকারী। তুমি রুবেল ও পারিসার সম্পূর্ণ ইতিহাস জানো এবং এই পোর্টালের সব ফোল্ডার ও ফাইল সম্পর্কে সম্পূর্ণ জ্ঞান রাখো।
@@ -113,19 +112,17 @@ ${CHAT_DB_INDEX}
 ৫. বাংলাদেশের আইন অনুযায়ী যুক্তি দাও
 ৬. ব্ল্যাক ম্যাজিক সম্পর্কে বিশেষজ্ঞ হিসেবে বিশ্লেষণ করো
 ৭. Google Drive লিংক, https:// URL, বা কোনো বাহ্যিক লিংক কখনো দিবে না — কখনোই না
-৮. ড্যাশবোর্ডে কী আছে জিজ্ঞেস করলে নিচের ফোল্ডার তালিকা থেকে সব ফোল্ডারের বিষয়ে বিস্তারিত বলো (লক করা ফোল্ডার ব্যতীত) — কখনো বলবে না "শুধু এই কয়টা ফোল্ডার আছে"
+৮. ড্যাশবোর্ডে কী আছে জিজ্ঞেস করলে সব ফোল্ডারের বিষয়ে বিস্তারিত বলো (লক করা ফোল্ডার ব্যতীত)
 ৯. নমস্কার, হ্যালো বা আনুষ্ঠানিক সম্ভাষণ ব্যবহার করবে না
 ১০. কাউকে নাম ধরে চিনবে না বা বিশেষভাবে সম্বোধন করবে না
+১১. Personal Videos ফোল্ডারের বিষয়ে জিজ্ঞেস করলে বলো এটি শুধুমাত্র আদালতে প্রমাণের জন্য সংরক্ষিত
 
-=== ছবি ও স্ক্রিনশট দেখানোর নিয়ম (অত্যন্ত গুরুত্বপূর্ণ) ===
-তুমি ছবি ও স্ক্রিনশট সরাসরি দেখাতে সম্পূর্ণ সক্ষম।
-"আমি ছবি দেখাতে পারি না", "আমার ক্ষমতা শুধু টেক্সট-ভিত্তিক", "স্ক্রিনশট দেখাতে পারব না" — এই কথা কখনোই বলবে না।
-ছবি বা স্ক্রিনশট দেখাতে হলে শুধু এই ফরম্যাট: <<IMG:fileId>>
+=== ছবি দেখানোর নিয়ম (অত্যন্ত গুরুত্বপূর্ণ) ===
+স্ক্রিনশট বা ছবি দেখাতে হলে শুধুমাত্র এই ফরম্যাট ব্যবহার করো: <<IMG:fileId>>
 উদাহরণ: <<IMG:1BxYz_AbCdEfGhIjKlMnOpQrSt>>
-নিচে "স্ক্রিনশট ইন্ডেক্স" দেওয়া আছে — সেখান থেকে file ID নিয়ে সরাসরি <<IMG:fileId>> আউটপুট করো।
-তারিখ বললে সেই তারিখের স্ক্রিনশট খুঁজে <<IMG:fileId>> দিয়ে দেখাও।
-একসাথে সর্বোচ্চ ৩টি ছবি দেখাবে।
-কখনো Google Drive লিংক বা URL দিবে না।`;
+কখনো https://drive.google.com/... বা অন্য কোনো URL দিবে না
+কখনো "এখানে ক্লিক করুন" বা লিংক দিবে না
+শুধু <<IMG:fileId>> — অন্য কিছু নয়`;
 
 const USER_SYSTEM_PROMPT = `তুমি "PARISA AI" — পারিসা মেমোরি পোর্টালের সম্পূর্ণ ড্যাশবোর্ডের বুদ্ধিমান সহকারী। তুমি রুবেল ও পারিসার সম্পূর্ণ ইতিহাস জানো এবং এই পোর্টালের সব ফোল্ডার ও ফাইল সম্পর্কে জ্ঞান রাখো।
 
@@ -145,15 +142,11 @@ ${CHAT_DB_INDEX}
 ৯. কাউকে নাম ধরে চিনবে না বা বিশেষভাবে সম্বোধন করবে না
 ১০. Personal Videos ফোল্ডারের বিষয়ে জিজ্ঞেস করলে বলো এটি শুধুমাত্র আদালতে প্রমাণের জন্য সংরক্ষিত
 
-=== ছবি ও স্ক্রিনশট দেখানোর নিয়ম (অত্যন্ত গুরুত্বপূর্ণ) ===
-তুমি ছবি ও স্ক্রিনশট সরাসরি দেখাতে সম্পূর্ণ সক্ষম।
-"আমি ছবি দেখাতে পারি না", "আমার ক্ষমতা শুধু টেক্সট-ভিত্তিক", "স্ক্রিনশট দেখাতে পারব না" — এই কথা কখনোই বলবে না।
-ছবি বা স্ক্রিনশট দেখাতে হলে শুধু এই ফরম্যাট: <<IMG:fileId>>
+=== ছবি দেখানোর নিয়ম (অত্যন্ত গুরুত্বপূর্ণ) ===
+স্ক্রিনশট বা ছবি দেখাতে হলে শুধুমাত্র এই ফরম্যাট ব্যবহার করো: <<IMG:fileId>>
 উদাহরণ: <<IMG:1BxYz_AbCdEfGhIjKlMnOpQrSt>>
-নিচে "স্ক্রিনশট ইন্ডেক্স" দেওয়া আছে — সেখান থেকে file ID নিয়ে সরাসরি <<IMG:fileId>> আউটপুট করো।
-তারিখ বললে সেই তারিখের স্ক্রিনশট খুঁজে <<IMG:fileId>> দিয়ে দেখাও।
-একসাথে সর্বোচ্চ ৩টি ছবি দেখাবে।
-কখনো Google Drive লিংক বা URL দিবে না।`;
+কখনো https://drive.google.com/... বা অন্য কোনো URL দিবে না
+শুধু <<IMG:fileId>> — অন্য কিছু নয়`;
 
 // ── Screenshot & chat-search helpers (module-level pure functions) ──────────
 
@@ -203,49 +196,32 @@ function extractPlatformFolder(text: string): string {
 
 function isScreenshotQuery(text: string): boolean {
   const l = text.toLowerCase();
-  return ['স্ক্রিনশট','screenshot','ছবি দেখাও','ছবি দেখতে','স্ক্রিন শট','স্ক্রিনসট','ss দেখাও','ছবি আছে','কোনো ছবি','ফটো দেখাও','ফটো আছে','photo দেখাও','ছবি দাও','স্ক্রিনশট দাও','ss দাও','ছবি show','ছবি দেখ'].some(k => l.includes(k));
-}
-
-// ফাইলের নাম থেকে তারিখ বের করে (যেমন: Screenshot_20250315_143200.jpg → 2025-03-15)
-function extractDateFromName(name: string): string {
-  const m = name.match(/(\d{4})[-_]?(\d{2})[-_]?(\d{2})/);
-  if (m) return `${m[1]}-${m[2]}-${m[3]}`;
-  return '';
-}
-
-// Raw hits array — ফ্রন্টেন্ড থেকে সরাসরি ছবি inject করতে ব্যবহার হয়
-function getRawScreenshotHits(
-  text: string,
-  index: Record<string, Array<{ id: string; name: string; modifiedTime: string }>>
-): Array<{ folder: string; id: string; name: string; date: string }> {
-  if (!isScreenshotQuery(text) || Object.keys(index).length === 0) return [];
-  const dateFilter = extractDateStr(text);
-  const platform   = extractPlatformFolder(text);
-  const hits: Array<{ folder: string; id: string; name: string; date: string }> = [];
-  for (const [folder, files] of Object.entries(index)) {
-    if (platform && !folder.toLowerCase().includes(platform)) continue;
-    for (const f of files) {
-      // ফাইলনাম থেকে তারিখ আগে নাও, না পেলে modifiedTime থেকে
-      const fd = extractDateFromName(f.name) || (f.modifiedTime || '').slice(0, 10);
-      if (dateFilter && !fd.startsWith(dateFilter)) continue;
-      hits.push({ folder, id: f.id, name: f.name, date: fd });
-      if (hits.length >= 6) break;
-    }
-    if (hits.length >= 6) break;
-  }
-  return hits;
+  return ['স্ক্রিনশট','screenshot','ছবি দেখাও','ছবি দেখতে','স্ক্রিন শট','স্ক্রিনসট','ss দেখাও'].some(k => l.includes(k));
 }
 
 function searchScreenshotIndex(
   text: string,
   index: Record<string, Array<{ id: string; name: string; modifiedTime: string }>>
 ): string {
-  const hits = getRawScreenshotHits(text, index);
+  if (!isScreenshotQuery(text) || Object.keys(index).length === 0) return '';
+  const dateFilter = extractDateStr(text);
+  const platform = extractPlatformFolder(text);
+  const hits: Array<{ folder: string; id: string; name: string; date: string }> = [];
+  for (const [folder, files] of Object.entries(index)) {
+    if (platform && !folder.toLowerCase().includes(platform)) continue;
+    for (const f of files) {
+      const fd = (f.modifiedTime || '').slice(0, 10);
+      if (dateFilter && !fd.startsWith(dateFilter)) continue;
+      hits.push({ folder, id: f.id, name: f.name, date: fd });
+      if (hits.length >= 5) break;
+    }
+    if (hits.length >= 5) break;
+  }
   if (hits.length === 0) return '';
   const lines = ['\n\n=== প্রাসঙ্গিক স্ক্রিনশট পাওয়া গেছে ==='];
-  lines.push('নির্দেশনা: নিচের প্রতিটা ছবি হুবহু <<IMG:fileId>> ফরম্যাটে দেখাও। Google Drive লিংক বা টেক্সট দিবে না।');
+  lines.push('এই স্ক্রিনশটগুলো সরাসরি দেখাও (<<IMG:fileId>> ফরম্যাটে, Google Drive লিংক নয়):');
   for (const r of hits) {
-    lines.push(`প্ল্যাটফর্ম: ${r.folder} | তারিখ: ${r.date} | ফাইল: ${r.name}`);
+    lines.push(`ফোল্ডার: ${r.folder} | তারিখ: ${r.date} | ফাইল: ${r.name}`);
     lines.push(`<<IMG:${r.id}>>`);
   }
   lines.push('=== স্ক্রিনশট শেষ ===');
@@ -602,14 +578,10 @@ export default function AIChatPage() {
               folderLabels.set(btn.drive_folder_id, btn.label);
               if (isLocked) lockedFolderIds.add(btn.drive_folder_id);
             }
-            }
+            const screenshotLabels = ['screenshots', 'স্ক্রিনশট', 'photos', 'photo', 'ছবি', 'gallery', 'স্ক্রিন শট'];
+            if (screenshotLabels.some(k => btn.label.toLowerCase().includes(k)) && btn.drive_folder_id) setScreenshotFolderId(btn.drive_folder_id);
+          }
         }
-        // স্ক্রিনশট ফোল্ডার: লেবেল দেখে না পেলে hardcoded fallback ব্যবহার করে
-        const ssLabels = ['screenshots','স্ক্রিনশট','photos','photo','ছবি','gallery','স্ক্রিন শট','screenshot','image','ইমেজ','গ্যালারি','ছবি ফোল্ডার','ফটো'];
-        const ssBtn = (data ? Object.values(data) : []).find(b =>
-          b.drive_folder_id && b.label && ssLabels.some(k => b.label!.toLowerCase().includes(k))
-        );
-        setScreenshotFolderId(ssBtn?.drive_folder_id ?? "1oMXHjtXTP41Wx2ijIgXeLJDcEq5atSL2");
         buildContext();
       });
       unsubFiles = onValue(ref(db, "folder_files"), (snap) => { folderFiles = snap.val() || {}; buildContext(); });
@@ -688,7 +660,8 @@ export default function AIChatPage() {
       // 1. Screenshot context — in-memory search (synchronous)
       const screenshotCtx = searchScreenshotIndex(text.trim(), screenshotIndex);
 
-      // 2. Chat history — সরাসরি database থেকে হুবহু দেখাও (AI bypass)
+      // 2. Chat history context — API search (async, only when relevant)
+      let chatCtx = '';
       if (isChatHistoryQuery(text.trim())) {
         const dateFilter = extractDateStr(bengaliToAscii(text.trim()));
         const conv = extractConversation(text.trim());
@@ -699,16 +672,10 @@ export default function AIChatPage() {
             body: { date: dateFilter || undefined, conversation: conv || undefined, keyword: kw, limit: 150 },
           });
           if (cr.results && cr.total > 0) {
-            // ── হুবহু মেসেজ: AI-এর মধ্যে না দিয়ে সরাসরি দেখাই ──────────
-            const lines = cr.results.split('\n').filter((l: string) => l.trim());
-            const directContent = `📋 চ্যাট হিস্টরি (${lines.length}টি মেসেজ):\n\n${cr.results}`;
-            const directMsg: Msg = { role: "assistant", content: directContent, provider: "db", timestamp: Date.now() };
-            updateSession(currentId, s => ({ ...s, messages: [...nextMsgs, directMsg] }));
-            return; // finally block runs → setBusy(false)
+            chatCtx = `\n\n=== প্রাসঙ্গিক চ্যাট হিস্টরি (${cr.total}টি এন্ট্রি) ===\n${cr.results}\n=== চ্যাট হিস্টরি শেষ ===`;
           }
         } catch { /* ignore search errors */ }
       }
-      const chatCtx = '';
 
       const sysPrompt = buildSystemPrompt(isAdmin ? adminPrompt : userPrompt) + screenshotCtx + chatCtx;
       const apiMsgs = nextMsgs.map(m => ({
@@ -719,14 +686,7 @@ export default function AIChatPage() {
         method: "POST",
         body: { messages: apiMsgs, systemPrompt: sysPrompt, provider: "auto", groqKeys: aiKeys.groq, geminiKeys: aiKeys.gemini, openrouterKeys: aiKeys.openrouter },
       });
-      // যদি AI <<IMG:>> format ব্যবহার না করে, frontend সরাসরি inject করে
-      let aiContent = resp.text;
-      const rawHits = getRawScreenshotHits(text.trim(), screenshotIndex);
-      if (rawHits.length > 0 && !aiContent.includes('<<IMG:')) {
-        const imgBlock = rawHits.slice(0, 3).map(h => `<<IMG:${h.id}>>`).join('\n');
-        aiContent = imgBlock + '\n\n' + aiContent;
-      }
-      const aiMsg: Msg = { role: "assistant", content: aiContent, provider: resp.provider, timestamp: Date.now() };
+      const aiMsg: Msg = { role: "assistant", content: resp.text, provider: resp.provider, timestamp: Date.now() };
       updateSession(currentId, s => ({ ...s, messages: [...nextMsgs, aiMsg] }));
       speakText(resp.text, voiceGender);
       void api("/telegram/notify", {
