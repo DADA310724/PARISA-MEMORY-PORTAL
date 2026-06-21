@@ -1180,7 +1180,7 @@ export default function AdminSettings() {
                         {driveChecking ? 'চেক করা হচ্ছে...' : driveReady ? 'Google Drive সক্রিয়' : driveReady === false ? 'Drive সংযুক্ত নয়' : 'অজানা অবস্থা'}
                       </p>
                       <p className="text-white/50 text-xs mt-0.5" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                        {driveChecking ? 'অনুগ্রহ করে অপেক্ষা করুন...' : driveReady ? 'Service Account দিয়ে Drive সংযুক্ত আছে' : driveReady === false ? 'GOOGLE_SERVICE_ACCOUNT_JSON Secrets-এ সেট করুন' : ''}
+                        {driveChecking ? 'অনুগ্রহ করে অপেক্ষা করুন...' : driveReady ? 'Service Account দিয়ে Drive সংযুক্ত আছে' : driveReady === false ? 'GOOGLE_SERVICE_ACCOUNT_JSON সেট করা নেই' : ''}
                       </p>
                     </div>
                     <button onClick={() => {
@@ -1206,8 +1206,8 @@ export default function AdminSettings() {
                   <div className="rounded-xl p-4 space-y-2" style={{ background: 'rgba(255,150,0,0.06)', border: '1px solid rgba(255,150,0,0.3)' }}>
                     <p className="text-orange-300 font-bold text-sm">⚠️ সেটআপ দরকার</p>
                     <p className="text-white/60 text-xs" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                      Replit Secrets-এ <span className="text-yellow-300 font-mono">GOOGLE_SERVICE_ACCOUNT_JSON</span> যোগ করুন।
-                      Google Cloud Console → Service Accounts → Key তৈরি করুন → JSON কপি করুন → Replit Secrets-এ paste করুন।
+                      সার্ভারের Environment Variables-এ <span className="text-yellow-300 font-mono">GOOGLE_SERVICE_ACCOUNT_JSON</span> যোগ করুন।
+                      Google Cloud Console → Service Accounts → Key তৈরি করুন → JSON কপি করুন → Environment Variables-এ paste করুন।
                     </p>
                   </div>
                 )}

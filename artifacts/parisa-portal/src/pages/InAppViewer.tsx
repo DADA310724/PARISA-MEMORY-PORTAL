@@ -35,7 +35,7 @@ export default function InAppViewer() {
           src={url}
           className="flex-1 border-0 w-full"
           title={title}
-          sandbox="allow-scripts allow-popups allow-forms allow-top-navigation-by-user-activation"
+          sandbox="allow-scripts allow-same-origin allow-popups allow-forms allow-top-navigation-by-user-activation allow-storage-access-by-user-activation"
           allow="autoplay; fullscreen; camera; microphone"
         />
       ) : (

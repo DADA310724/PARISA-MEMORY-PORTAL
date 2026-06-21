@@ -282,118 +282,69 @@ driveRouter.get("/prefetch/:id", async (req: Request, res: Response) => {
   }
 });
 
-driveRouter.get("/proxy/:id", async (req: Request, res: Response) => {
+// ── Proper Range-forwarding stream proxy ─────────────────────────────────────
+// Browser uses <video src="/api/drive/stream/ID"> directly.
+// All Range requests (seek, resume, partial) are forwarded to Google Drive and
+// piped back — no double-hop, no access_token in URL, no redirect chasing.
+driveRouter.get("/stream/:id", async (req: Request, res: Response) => {
   const id = String(req.params["id"]);
-  const rawRange = req.headers["range"];
-  const rangeHeader = (Array.isArray(rawRange) ? rawRange[0] : rawRange) ?? "";
+  try {
+    const token = await getAccessToken();
+    const driveUrl = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(id)}?alt=media&acknowledgeAbuse=true`;
 
-  // ── Serve first chunk from cache if possible ───────────────────────────
-  const cached = mediaChunkCache.get(id);
-  if (cached && cached.ts > Date.now() - CACHE_TTL_MS) {
-    cached.ts = Date.now(); // refresh TTL
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Expose-Headers", "Content-Length, Content-Range, Accept-Ranges");
-    res.setHeader("Accept-Ranges", "bytes");
-    res.setHeader("Cache-Control", "private, max-age=3600");
-    res.setHeader("Content-Type", cached.contentType);
+    const reqHeaders: Record<string, string> = {
+      Authorization: `Bearer ${token}`,
+    };
+    // Forward Range header — critical for seeking and partial play
+    const range = req.headers["range"];
+    if (range) reqHeaders["Range"] = range;
 
-    const total = cached.totalSize || cached.data.length;
+    const driveResp = await fetch(driveUrl, { headers: reqHeaders });
 
-    if (rangeHeader) {
-      const m = rangeHeader.match(/bytes=(\d+)-(\d*)/);
-      if (m) {
-        const start = parseInt(m[1]);
-        const reqEnd = m[2] ? parseInt(m[2]) : total - 1;
-        // Only serve from cache if the entire range fits in our chunk
-        if (start < cached.data.length) {
-          const end = Math.min(reqEnd, cached.data.length - 1);
-          const slice = cached.data.slice(start, end + 1);
-          res.setHeader("Content-Length", String(slice.length));
-          res.setHeader("Content-Range", `bytes ${start}-${end}/${total}`);
-          res.status(206).end(slice);
-          return;
-        }
-      }
-    } else {
-      // No range — serve cached chunk + let browser request remaining bytes
-      res.setHeader("Content-Length", String(cached.data.length));
-      if (cached.totalSize > cached.data.length) {
-        res.setHeader("Content-Range", `bytes 0-${cached.data.length - 1}/${total}`);
-        res.status(206).end(cached.data);
-      } else {
-        res.status(200).end(cached.data);
-      }
+    // 206 Partial Content is expected for ranged requests
+    if (!driveResp.ok && driveResp.status !== 206) {
+      res.status(driveResp.status).send("Google Drive error");
       return;
     }
+
+    // Forward response headers the browser needs for proper streaming
+    res.status(range ? 206 : driveResp.status);
+    const ct = driveResp.headers.get("content-type");
+    if (ct) res.setHeader("Content-Type", ct);
+    const cl = driveResp.headers.get("content-length");
+    if (cl) res.setHeader("Content-Length", cl);
+    const cr = driveResp.headers.get("content-range");
+    if (cr) res.setHeader("Content-Range", cr);
+    res.setHeader("Accept-Ranges", "bytes");
+    res.setHeader("Cache-Control", "no-store");
+
+    // Pipe directly — data flows from Google to browser with zero buffering in our process
+    if (!driveResp.body) { res.end(); return; }
+    const { Readable } = await import("node:stream");
+    Readable.fromWeb(driveResp.body as import("stream/web").ReadableStream).pipe(res);
+  } catch (err) {
+    if (!res.headersSent) res.status(500).send(String(err));
   }
+});
 
-  const MAX_RETRIES = 2;
-  const attemptProxy = async (attempt: number): Promise<void> => {
-    try {
-      const token = await getAccessToken();
-      const driveUrl = `https://www.googleapis.com/drive/v3/files/${id}?alt=media&acknowledgeAbuse=true`;
+// Backward-compat: mediaurl now returns our stream URL (not googleapis.com)
+driveRouter.get("/mediaurl/:id", async (req: Request, res: Response) => {
+  const id = String(req.params["id"]);
+  res.setHeader("Cache-Control", "no-store");
+  res.json({ url: `/api/drive/stream/${encodeURIComponent(id)}` });
+});
 
-      const headers: Record<string, string> = {
-        Authorization: `Bearer ${token}`,
-        Connection: "keep-alive",
-      };
-      if (rangeHeader) headers["Range"] = rangeHeader;
-
-      const resp = await fetch(driveUrl, { headers });
-      const contentType = resp.headers.get("content-type") ?? "";
-
-      // Retry on auth failure (token may have just expired)
-      if (resp.status === 401 && attempt < MAX_RETRIES) {
-        _tokenCache = null; // force token refresh
-        return attemptProxy(attempt + 1);
-      }
-
-      if (!resp.ok && resp.status !== 206) {
-        if (!res.headersSent) res.status(resp.status).json({ error: `Drive error ${resp.status}` });
-        return;
-      }
-
-      // Service accounts bypass Drive's virus-scan HTML gate, so HTML responses are real HTML files.
-      // Allow them through — WhatsApp chat exports and other HTML files need to be served as-is.
-
-      // Set CORS + cache headers
-      res.setHeader("Access-Control-Allow-Origin", "*");
-      res.setHeader("Access-Control-Expose-Headers", "Content-Length, Content-Range, Accept-Ranges");
-      res.setHeader("Accept-Ranges", "bytes");
-      res.setHeader("Cache-Control", "private, max-age=3600");
-
-      // Forward content headers
-      if (contentType) res.setHeader("Content-Type", contentType);
-      const cl = resp.headers.get("content-length");
-      if (cl) res.setHeader("Content-Length", cl);
-      const cr = resp.headers.get("content-range");
-      if (cr) res.setHeader("Content-Range", cr);
-
-      // If browser sent Range but Drive returned full 200 (no partial content),
-      // synthesize correct status so browser doesn't stall waiting for 206
-      const statusCode = rangeHeader && resp.status === 200 && cr ? 206 : resp.status;
-      res.status(statusCode);
-
-      if (!resp.body) { res.end(); return; }
-
-      const { Readable } = await import("stream");
-      const readable = Readable.fromWeb(resp.body as import("stream/web").ReadableStream);
-
-      // Pipe with cleanup — handle client disconnect, stream errors
-      readable.pipe(res);
-      readable.on("error", (err) => {
-        console.warn(`[drive proxy] stream error for ${id}:`, (err as Error).message);
-        if (!res.headersSent) res.status(500).end();
-        else res.end();
-      });
-      res.on("close", () => { try { readable.destroy(); } catch {} });
-      res.on("finish", () => { try { readable.destroy(); } catch {} });
-    } catch (err) {
-      if (!res.headersSent) res.status(500).json({ error: String(err) });
-    }
-  };
-
-  await attemptProxy(0);
+// Proxy route for images, PDFs, HTML — redirects are fine for non-streaming content
+driveRouter.get("/proxy/:id", async (req: Request, res: Response) => {
+  const id = String(req.params["id"]);
+  try {
+    const token = await getAccessToken();
+    const driveUrl = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(id)}?alt=media&acknowledgeAbuse=true&access_token=${encodeURIComponent(token)}`;
+    res.setHeader("Cache-Control", "no-store, no-cache");
+    res.redirect(302, driveUrl);
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
 });
 
 driveRouter.post("/upload", upload.array("files"), async (req: Request, res: Response) => {
@@ -475,15 +426,31 @@ driveRouter.get("/list-screenshots", async (req: Request, res: Response) => {
   if (!rootFolderId) { res.status(400).json({ error: "folderId required" }); return; }
   try {
     const token = await getAccessToken();
-    const subUrl = new URL("https://www.googleapis.com/drive/v3/files");
-    subUrl.searchParams.set("q", `'${rootFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`);
-    subUrl.searchParams.set("fields", "files(id,name)");
-    subUrl.searchParams.set("pageSize", "20");
-    const subResp = await fetch(subUrl.toString(), { headers: { Authorization: `Bearer ${token}` } });
+
+    // Fetch root-level images AND subfolders in parallel
+    const [subResp, rootImgResp] = await Promise.all([
+      fetch(
+        (() => { const u = new URL("https://www.googleapis.com/drive/v3/files"); u.searchParams.set("q", `'${rootFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`); u.searchParams.set("fields", "files(id,name)"); u.searchParams.set("pageSize", "20"); return u.toString(); })(),
+        { headers: { Authorization: `Bearer ${token}` } }
+      ),
+      fetch(
+        (() => { const u = new URL("https://www.googleapis.com/drive/v3/files"); u.searchParams.set("q", `'${rootFolderId}' in parents and mimeType contains 'image/' and trashed=false`); u.searchParams.set("fields", "files(id,name,modifiedTime)"); u.searchParams.set("orderBy", "modifiedTime desc"); u.searchParams.set("pageSize", "200"); return u.toString(); })(),
+        { headers: { Authorization: `Bearer ${token}` } }
+      ),
+    ]);
+
     if (!subResp.ok) { res.status(subResp.status).json({ error: await subResp.text() }); return; }
     const subData = await subResp.json() as { files: Array<{ id: string; name: string }> };
 
     const result: Record<string, Array<{ id: string; name: string; modifiedTime: string }>> = {};
+
+    // Include root-level images directly in the folder (e.g. Photos folder with no subfolders)
+    if (rootImgResp.ok) {
+      const rootImgData = await rootImgResp.json() as { files: Array<{ id: string; name: string; modifiedTime: string }> };
+      if (rootImgData.files.length > 0) result["__root__"] = rootImgData.files;
+    }
+
+    // Include subfolder images
     await Promise.all(
       subData.files.map(async (folder) => {
         const fileUrl = new URL("https://www.googleapis.com/drive/v3/files");
@@ -494,7 +461,7 @@ driveRouter.get("/list-screenshots", async (req: Request, res: Response) => {
         const fileResp = await fetch(fileUrl.toString(), { headers: { Authorization: `Bearer ${token}` } });
         if (!fileResp.ok) return;
         const fileData = await fileResp.json() as { files: Array<{ id: string; name: string; modifiedTime: string }> };
-        result[folder.name] = fileData.files;
+        if (fileData.files.length > 0) result[folder.name] = fileData.files;
       })
     );
     res.json({ subfolders: result });

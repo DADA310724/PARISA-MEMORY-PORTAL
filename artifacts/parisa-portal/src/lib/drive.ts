@@ -49,6 +49,7 @@ export async function fetchText(id: string): Promise<string> {
 }
 
 export const proxyUrl = (id: string) => `/api/drive/proxy/${id}`;
+export const streamUrl = (id: string) => `/api/drive/stream/${id}`;
 
 export async function uploadFiles(
   folderId: string,

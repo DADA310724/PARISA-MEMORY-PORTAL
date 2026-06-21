@@ -39,10 +39,6 @@ app.get("/api/healthz", (_req: Request, res: Response) => {
   res.json({ status: "ok" });
 });
 
-app.get("/", (_req: Request, res: Response) => {
-  res.json({ status: "ok" });
-});
-
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   console.error(err);
   res.status(500).json({ error: err.message ?? "Internal server error" });

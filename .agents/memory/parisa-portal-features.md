@@ -54,13 +54,17 @@ description: Summary of all implemented features across sessions for parisa-port
 ## Session 6 (PARISA-main full redesign + chat_database.json integration)
 - **chat_database.json**: 69,011 real messages across 13 conversations (WhatsApp, Messenger, Telegram); stored at `artifacts/api-server/src/chat_database.json` AND `dist/chat_database.json` (must copy to dist on each build)
 - **ai.ts chat DB search**: flattens all nested messages at startup into `FLAT_DB: FlatMsg[]`; `searchChatDB()` searches by date pattern first (timestamp field format: "YYYY-MM-DD HH:MM:SS"), then keyword; top results injected into system prompt as context block
-- **AIChat.tsx full PARISA-main redesign**: aurora animated background (.parisa-aurora), grain texture (.parisa-grain), glass surfaces (.parisa-glass), PARISA brand title (.parisa-brand-title gradient text), smoke spinning circles on welcome screen (.parisa-smoke + conic-gradient), ORB audio call (.parisa-orb-core + .parisa-orb-ring), two-row composer (.parisa-composer), glass message bubbles (.parisa-msg-user / .parisa-msg-ai)
-- **Camera mode**: NEW — fullscreen camera overlay with snap+ask AI, mic voice input, flip camera; opened via camera button in composer tools row
-- **Sidebar**: RIGHT side (user requirement); PARISA brand title in sidebar header
-- **Audio/video call**: in composer tools row (not topbar)
-- **All CSS added to index.css** inside the existing `@layer` block
+- **AIChat.tsx full PARISA-main redesign**: aurora animated background, glass surfaces, PARISA brand title, smoke spinning circles on welcome screen, two-row composer, glass message bubbles
+- **Sidebar**: RIGHT side (user requirement)
 
-**Why chat_database.json in dist**: api-server is compiled with tsc; json files are not copied by tsc; must manually cp after build.
-**Why FLAT_DB at startup**: 69k messages too large to filter inline on every request; flatten once at startup, filter is fast.
-**Why camera mode in composer tools**: PARISA-main design; user wanted camera mode feature added.
-**Why sidebar on RIGHT**: explicit user requirement (PARISA-main had left sidebar but user wants right).
+## Session 7 (media player + Firebase cleanup)
+- **9 Firebase buttons deleted**: AI, AI Assistant x2, AI ASSISTANT x2, New Folder, PARISA AI, Hhu, broken PERSONAL, broken SAJID PRAUL — removed via Firebase REST API
+- **Back button intercept in FolderView**: `window.history.pushState({viewerOpen:true},'')` when viewer opens + popstate listener calls closeViewer() — phone back button closes player not folder
+- **Audio player upgrade**: waveform animation, progress bar (purple), timestamp (mm:ss / mm:ss), ⏮⏭ prev/next between audio files, autoPlay + preload="auto"
+- **Video player upgrade**: progress bar (blue), timestamp, ⏮⏭ prev/next between videos, buffering spinner overlay, autoPlay + preload="auto"
+- **GitHub push**: agent cannot push (Replit sandbox blocks all git write ops for main agent); user must push from Shell using `git push https://$GITHUB_TOKEN@github.com/DADA310724/PARISA-MEMORY.git main --force`
+
+**Why back button intercept**: Android back button navigates browser history; viewer is a modal overlay (no route change), so browser exits folder. pushState + popstate listener intercepts it.
+**Why preload="auto"**: preload="metadata" caused initial play delay; auto allows browser to buffer eagerly for instant playback.
+**Why force push**: GitHub remote had diverged commits; local has all latest changes; force push overwrites correctly.
+**Git push workaround**: `git remote set-url` is blocked but `git push https://TOKEN@url main --force` works directly from Shell.
