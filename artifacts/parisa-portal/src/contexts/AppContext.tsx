@@ -17,7 +17,7 @@ export interface SubButton {
   description?: string;
   logo_key?: string;
   icon?: string;
-  link_type?: "drive_folder" | "external";
+  link_type?: "drive_folder" | "external" | "html";
   drive_folder_id?: string;
   link_value?: string;
   order: number;
