@@ -76,12 +76,11 @@ export default function SubFolderView() {
   }, [buttonId]);
 
   function handleSubClick(sub: SubButton) {
-    if ((sub.link_type === "external" || sub.link_type === "html") && sub.link_value) {
+    if (sub.link_type === "external" && sub.link_value) {
+      // Open in-app viewer instead of leaving the app
       setLocation(`/view?url=${encodeURIComponent(sub.link_value)}&title=${encodeURIComponent(sub.label)}`);
     } else if (sub.link_type === "drive_folder" && sub.drive_folder_id) {
       setLocation(`/folder/${sub.drive_folder_id}?label=${encodeURIComponent(sub.label)}`);
-    } else if (sub.link_value) {
-      setLocation(`/view?url=${encodeURIComponent(sub.link_value)}&title=${encodeURIComponent(sub.label)}`);
     }
   }
 
@@ -109,9 +108,12 @@ export default function SubFolderView() {
       </div>
 
       {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <div className="w-8 h-8 rounded-full border-2 border-cyan-400/30 border-t-cyan-400 animate-spin" />
-          <p className="text-white/50 text-sm">লোড হচ্ছে…</p>
+        <div className="fixed inset-0 flex items-center justify-center z-10"
+          style={{ background: 'rgba(10,14,31,0.97)' }}>
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-8 h-8 rounded-full border-2 border-cyan-400/30 border-t-cyan-400 animate-spin" />
+            <p className="text-white/50 text-sm">লোড হচ্ছে…</p>
+          </div>
         </div>
       ) : subs.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 px-6 text-center">
