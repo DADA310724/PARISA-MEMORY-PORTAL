@@ -560,21 +560,27 @@ export default function FolderView() {
                 style={{ touchAction: 'none' }}
                 onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
                 <AnimatePresence mode="wait">
-                  <motion.img key={viewerIndex}
-                    initial={{ opacity:0, x: imgScale > 1 ? 0 : 40 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x: imgScale > 1 ? 0 : -40 }}
+                  <motion.div key={viewerIndex}
+                    initial={{ opacity:0, x: imgScale > 1 ? 0 : 40 }}
+                    animate={{ opacity:1, x:0 }}
+                    exit={{ opacity:0, x: imgScale > 1 ? 0 : -40 }}
                     transition={{ duration:0.18 }}
-                    src={proxyUrl(imageFiles[viewerIndex]?.id ?? '')}
-                    alt={imageFiles[viewerIndex]?.name}
-                    className="max-w-full object-contain select-none"
-                    style={{
-                      maxHeight:'calc(100vh - 130px)',
-                      transform: `scale(${imgScale})`,
-                      transformOrigin: 'center center',
-                      transition: imgScale === 1 ? 'transform 0.2s ease' : 'none',
-                      touchAction: 'none',
-                    }}
-                    onDoubleClick={() => setImgScale(s => s > 1 ? 1 : 2.5)}
-                  />
+                    style={{ display:'flex', alignItems:'center', justifyContent:'center' }}>
+                    <img
+                      src={proxyUrl(imageFiles[viewerIndex]?.id ?? '')}
+                      alt={imageFiles[viewerIndex]?.name}
+                      className="max-w-full object-contain select-none"
+                      style={{
+                        maxHeight:'calc(100vh - 130px)',
+                        transform: `scale(${imgScale})`,
+                        transformOrigin: 'center center',
+                        transition: 'transform 0.15s ease',
+                        touchAction: 'none',
+                        display:'block',
+                      }}
+                      onDoubleClick={() => setImgScale(s => s > 1 ? 1 : 2.5)}
+                    />
+                  </motion.div>
                 </AnimatePresence>
                 {/* Zoom controls */}
                 <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
