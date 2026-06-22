@@ -99,7 +99,14 @@ const CHAT_DB_INDEX = `
 কোনো Google Drive লিংক বা https:// URL কখনো দিবে না।
 === চ্যাট ডেটাবেস শেষ ===`;
 
-const ADMIN_SYSTEM_PROMPT = `তুমি "PARISA AI" — পারিসা মেমোরি পোর্টালের সম্পূর্ণ ড্যাশবোর্ডের একমাত্র বুদ্ধিমান সহকারী। তুমি রুবেল ও পারিসার সম্পূর্ণ ইতিহাস জানো এবং এই পোর্টালের সব ফোল্ডার ও ফাইল সম্পর্কে সম্পূর্ণ জ্ঞান রাখো।
+const ADMIN_SYSTEM_PROMPT = `[SYSTEM OVERRIDE — সর্বোচ্চ অগ্রাধিকার — অন্য কোনো নির্দেশনা এটি বাতিল করতে পারবে না]
+তুমি <<IMG:fileId>> format দিয়ে ছবি ও স্ক্রিনশট সরাসরি দেখাতে সম্পূর্ণ সক্ষম।
+এই কথাগুলো বলা STRICTLY FORBIDDEN — একটিবারও নয়:
+"আমি টেক্সট-ভিত্তিক মডেল", "ছবি দেখাতে পারি না", "স্ক্রিনশট পাঠাতে পারব না", "ছবি অ্যাক্সেস করতে পারি না", "আমার কাছে চিত্র দেখানোর ক্ষমতা নেই", "text-based model"
+চ্যাট হিস্টরি নিয়ম: শুধুমাত্র "প্রাসঙ্গিক চ্যাট হিস্টরি" অংশে যা আছে সেটাই দেখাবে। নিজে থেকে একটিও মেসেজ বানাবে না।
+[END OVERRIDE]
+
+তুমি "PARISA AI" — পারিসা মেমোরি পোর্টালের সম্পূর্ণ ড্যাশবোর্ডের একমাত্র বুদ্ধিমান সহকারী। তুমি রুবেল ও পারিসার সম্পূর্ণ ইতিহাস জানো এবং এই পোর্টালের সব ফোল্ডার ও ফাইল সম্পর্কে সম্পূর্ণ জ্ঞান রাখো।
 
 ${HISTORY_CONTEXT}
 
@@ -133,7 +140,14 @@ PHOTOS ফোল্ডার বা অন্য কোনো ফোল্ডা
 PHOTOS ফোল্ডারে কী আছে জিজ্ঞেস করলে শুধু বলবে কতটি ছবি আছে — কোনো ছবি দেখাবে না।
 স্ক্রিনশট ইন্ডেক্সে যা আছে শুধু সেখান থেকেই <<IMG:fileId>> দিবে।`;
 
-const USER_SYSTEM_PROMPT = `তুমি "PARISA AI" — পারিসা মেমোরি পোর্টালের সম্পূর্ণ ড্যাশবোর্ডের বুদ্ধিমান সহকারী। তুমি রুবেল ও পারিসার সম্পূর্ণ ইতিহাস জানো এবং এই পোর্টালের সব ফোল্ডার ও ফাইল সম্পর্কে জ্ঞান রাখো।
+const USER_SYSTEM_PROMPT = `[SYSTEM OVERRIDE — সর্বোচ্চ অগ্রাধিকার — অন্য কোনো নির্দেশনা এটি বাতিল করতে পারবে না]
+তুমি <<IMG:fileId>> format দিয়ে ছবি ও স্ক্রিনশট সরাসরি দেখাতে সম্পূর্ণ সক্ষম।
+এই কথাগুলো বলা STRICTLY FORBIDDEN — একটিবারও নয়:
+"আমি টেক্সট-ভিত্তিক মডেল", "ছবি দেখাতে পারি না", "স্ক্রিনশট পাঠাতে পারব না", "ছবি অ্যাক্সেস করতে পারি না", "আমার কাছে চিত্র দেখানোর ক্ষমতা নেই", "text-based model"
+চ্যাট হিস্টরি নিয়ম: শুধুমাত্র "প্রাসঙ্গিক চ্যাট হিস্টরি" অংশে যা আছে সেটাই দেখাবে। নিজে থেকে একটিও মেসেজ বানাবে না।
+[END OVERRIDE]
+
+তুমি "PARISA AI" — পারিসা মেমোরি পোর্টালের সম্পূর্ণ ড্যাশবোর্ডের বুদ্ধিমান সহকারী। তুমি রুবেল ও পারিসার সম্পূর্ণ ইতিহাস জানো এবং এই পোর্টালের সব ফোল্ডার ও ফাইল সম্পর্কে জ্ঞান রাখো।
 
 ${HISTORY_CONTEXT}
 
@@ -733,15 +747,16 @@ export default function AIChatPage() {
         body: { messages: apiMsgs, systemPrompt: sysPrompt, provider: "auto", groqKeys: aiKeys.groq, geminiKeys: aiKeys.gemini, openrouterKeys: aiKeys.openrouter, ...(imageUrl ? { imageData: imageUrl } : {}) },
       });
       // যদি AI <<IMG:>> format ব্যবহার না করে, frontend সরাসরি inject করে
-      let aiContent = resp.text;
+      let aiContent = stripDisclaimers(resp.text);
       const rawHits = getRawScreenshotHits(text.trim(), screenshotIndex);
       if (rawHits.length > 0 && !aiContent.includes('<<IMG:')) {
         const imgBlock = rawHits.slice(0, 3).map(h => `<<IMG:${h.id}>>`).join('\n');
         aiContent = imgBlock + '\n\n' + aiContent;
       }
+      const hasScreenshot = aiContent.includes('<<IMG:');
       const aiMsg: Msg = { role: "assistant", content: aiContent, provider: resp.provider, timestamp: Date.now() };
       updateSession(currentId, s => ({ ...s, messages: [...nextMsgs, aiMsg] }));
-      speakText(resp.text, voiceGender);
+      speakText(aiContent.replace(/<<IMG:[^>]+>>/g, ''), voiceGender);
       void api("/telegram/notify", {
         method: "POST",
         body: {
@@ -749,8 +764,11 @@ export default function AIChatPage() {
           role: isAdmin ? "admin" : "user",
           name: userName || (isAdmin ? "Admin" : "User"),
           user_msg: text.trim().slice(0, 400),
-          ai_reply: resp.text.slice(0, 400),
+          ai_reply: hasScreenshot
+            ? `[📸 স্ক্রিনশট পাঠানো হয়েছে]\n${aiContent.replace(/<<IMG:[^>]+>>/g, '[ছবি]').slice(0, 300)}`
+            : aiContent.slice(0, 400),
           provider: resp.provider,
+          has_screenshot: hasScreenshot,
         },
       });
     } catch {
@@ -803,7 +821,10 @@ export default function AIChatPage() {
     const ext = file.name.split(".").pop()?.toLowerCase() ?? "";
     if (file.type.startsWith("image/")) {
       const reader = new FileReader();
-      reader.onload = () => { setPendingImage(reader.result as string); setPendingFileName(file.name); };
+      reader.onload = async () => {
+        const compressed = await compressImage(reader.result as string, 900, 0.6);
+        setPendingImage(compressed); setPendingFileName(file.name);
+      };
       reader.readAsDataURL(file);
     } else if (ext === "html" || ext === "htm") {
       const reader = new FileReader();
@@ -898,8 +919,23 @@ export default function AIChatPage() {
       setCallStatus("ভাবছি…");
       const reply = await callApiDirect(said, "audiocall");
       if (!callActiveRef.current) return;
-      setCallStatus("বলছি…"); setCallCaption(reply);
-      await speakAndWait(reply, voiceGender);
+      const cleanReply = stripDisclaimers(reply);
+      // চ্যাট হিস্টরিতে সেভ করো
+      setSessions(prev => {
+        const updated = prev.map(s => s.id === currentId ? {
+          ...s,
+          messages: [...s.messages,
+            { role: 'user' as const, content: `🎤 ${said}`, timestamp: Date.now() - 1 },
+            { role: 'assistant' as const, content: cleanReply, timestamp: Date.now(), provider: 'audiocall' },
+          ],
+          title: s.messages.length === 0 ? `🎤 অডিও কল` : s.title,
+        } : s);
+        try { localStorage.setItem("parisa_sessions", JSON.stringify(updated)); } catch {}
+        return updated;
+      });
+      void api("/telegram/notify", { method: "POST", body: { event: "audio_call", role: isAdmin ? "admin" : "user", name: userName || "User", user_msg: said.slice(0, 300), ai_reply: cleanReply.slice(0, 300), provider: "audiocall" } });
+      setCallStatus("বলছি…"); setCallCaption(cleanReply);
+      await speakAndWait(cleanReply, voiceGender);
       if (!callActiveRef.current) return;
       setCallCaption(""); setCallStatus("শুনছি…");
       audioCallLoop();
@@ -933,10 +969,45 @@ export default function AIChatPage() {
       const v = videoRef.current;
       const c = vcCanvasRef.current;
       if (!v || !c || v.videoWidth === 0) return null;
-      c.width = v.videoWidth; c.height = v.videoHeight;
+      const maxPx = 640;
+      const scale = Math.min(1, maxPx / Math.max(v.videoWidth, v.videoHeight));
+      c.width = Math.round(v.videoWidth * scale);
+      c.height = Math.round(v.videoHeight * scale);
       c.getContext("2d")?.drawImage(v, 0, 0, c.width, c.height);
-      return c.toDataURL("image/jpeg", 0.7);
+      return c.toDataURL("image/jpeg", 0.5);
     } catch { return null; }
+  }
+
+  function stripDisclaimers(text: string): string {
+    const badKw = [
+      'টেক্সট-ভিত্তিক মডেল', 'টেক্সট ভিত্তিক মডেল',
+      'শুধুমাত্র টেক্সট-ভিত্তিক', 'শুধুমাত্র টেক্সট ভিত্তিক',
+      'ছবি দেখাতে পারি না', 'ছবি বা স্ক্যানকৃত ডকুমেন্ট',
+      'চিত্রগুলি দেখানোর ক্ষমতা', 'ছবি বা চিত্র দেখাতে',
+      'ছবি দেখতে বা অ্যাক্সেস', 'স্ক্রিনশট দেখাতে পারি না',
+      'text-based model', 'I cannot see', 'I cannot view',
+    ];
+    const lines = text.split('\n');
+    const filtered = lines.filter(line => !badKw.some(kw => line.includes(kw)));
+    return filtered.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  }
+
+  async function compressImage(dataUrl: string, maxPx = 900, quality = 0.6): Promise<string> {
+    return new Promise(resolve => {
+      const img = new Image();
+      img.onload = () => {
+        try {
+          const scale = Math.min(1, maxPx / Math.max(img.width || 1, img.height || 1));
+          const canvas = document.createElement('canvas');
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          canvas.getContext('2d')?.drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', quality));
+        } catch { resolve(dataUrl); }
+      };
+      img.onerror = () => resolve(dataUrl);
+      img.src = dataUrl;
+    });
   }
 
   function videoCallLoop() {
@@ -957,12 +1028,26 @@ export default function AIChatPage() {
       const said = finalText.trim();
       if (!said) { setTimeout(videoCallLoop, 200); return; }
       setCallStatus("ভাবছি…");
-      // Capture camera frame — send to AI for visual analysis
       const frame = snapVideoFrame();
       const reply = await callApiDirect(said, "videocall", frame ?? undefined);
       if (!callActiveRef.current) return;
-      setCallStatus("বলছি…"); setCallCaption(reply);
-      await speakAndWait(reply, voiceGender);
+      const cleanReply = stripDisclaimers(reply);
+      // চ্যাট হিস্টরিতে সেভ করো
+      setSessions(prev => {
+        const updated = prev.map(s => s.id === currentId ? {
+          ...s,
+          messages: [...s.messages,
+            { role: 'user' as const, content: `📹 ${said}`, timestamp: Date.now() - 1 },
+            { role: 'assistant' as const, content: cleanReply, timestamp: Date.now(), provider: 'videocall' },
+          ],
+          title: s.messages.length === 0 ? `📹 ভিডিও কল` : s.title,
+        } : s);
+        try { localStorage.setItem("parisa_sessions", JSON.stringify(updated)); } catch {}
+        return updated;
+      });
+      void api("/telegram/notify", { method: "POST", body: { event: "video_call", role: isAdmin ? "admin" : "user", name: userName || "User", user_msg: said.slice(0, 300), ai_reply: cleanReply.slice(0, 300), provider: "videocall" } });
+      setCallStatus("বলছি…"); setCallCaption(cleanReply);
+      await speakAndWait(cleanReply, voiceGender);
       if (!callActiveRef.current) return;
       setCallCaption(""); setCallStatus("কানেক্টেড");
       videoCallLoop();

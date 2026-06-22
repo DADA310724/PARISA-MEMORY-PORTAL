@@ -58,7 +58,9 @@ export default function FolderView() {
   const audioRef = useRef<HTMLAudioElement>(null);
   const touchStartX = useRef(0);
   const [imgScale, setImgScale] = useState(1);
+  const [imgOffset, setImgOffset] = useState({ x: 0, y: 0 });
   const pinchRef = useRef({ dist: 0, scale: 1 });
+  const panRef = useRef({ active: false, startX: 0, startY: 0, ox: 0, oy: 0 });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const viewerOpenedAt = useRef<number>(0);
   const historyPushed = useRef(false);
@@ -229,35 +231,48 @@ export default function FolderView() {
   }, [viewerIndex, viewerType, imageFiles]);
 
   // Reset zoom when image changes
-  useEffect(() => { setImgScale(1); }, [viewerIndex]);
+  useEffect(() => { setImgScale(1); setImgOffset({ x: 0, y: 0 }); }, [viewerIndex]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 2) {
+      panRef.current.active = false;
       const dx = e.touches[1].clientX - e.touches[0].clientX;
       const dy = e.touches[1].clientY - e.touches[0].clientY;
       pinchRef.current.dist = Math.hypot(dx, dy);
       pinchRef.current.scale = imgScale;
-    } else {
+    } else if (e.touches.length === 1) {
       touchStartX.current = e.touches[0].clientX;
+      if (imgScale > 1.05) {
+        panRef.current = { active: true, startX: e.touches[0].clientX, startY: e.touches[0].clientY, ox: imgOffset.x, oy: imgOffset.y };
+      } else {
+        panRef.current.active = false;
+      }
     }
   };
   const handleTouchMove = (e: React.TouchEvent) => {
+    e.preventDefault();
     if (e.touches.length === 2) {
+      panRef.current.active = false;
       const dx = e.touches[1].clientX - e.touches[0].clientX;
       const dy = e.touches[1].clientY - e.touches[0].clientY;
       const newDist = Math.hypot(dx, dy);
       if (pinchRef.current.dist > 0) {
         const ratio = newDist / pinchRef.current.dist;
-        setImgScale(s => Math.max(1, Math.min(5, pinchRef.current.scale * ratio)));
+        setImgScale(s => Math.max(1, Math.min(10, pinchRef.current.scale * ratio)));
       }
+    } else if (e.touches.length === 1 && panRef.current.active) {
+      const nx = panRef.current.ox + (e.touches[0].clientX - panRef.current.startX);
+      const ny = panRef.current.oy + (e.touches[0].clientY - panRef.current.startY);
+      setImgOffset({ x: nx, y: ny });
     }
   };
   const handleTouchEnd = (e: React.TouchEvent) => {
-    if (e.touches.length === 0 && e.changedTouches.length === 1 && imgScale <= 1.1) {
+    if (e.touches.length === 0 && e.changedTouches.length === 1 && imgScale <= 1.1 && !panRef.current.active) {
       const dx = e.changedTouches[0].clientX - touchStartX.current;
       if (Math.abs(dx) > 50) { dx < 0 ? nextImage() : prevImage(); }
     }
-    if (imgScale < 1.05) setImgScale(1);
+    if (imgScale < 1.05) { setImgScale(1); setImgOffset({ x: 0, y: 0 }); }
+    panRef.current.active = false;
   };
 
   const handleUploadClick = () => {
@@ -572,29 +587,30 @@ export default function FolderView() {
                       className="max-w-full object-contain select-none"
                       style={{
                         maxHeight:'calc(100vh - 130px)',
-                        transform: `scale(${imgScale})`,
+                        transform: `translate(${imgOffset.x}px, ${imgOffset.y}px) scale(${imgScale})`,
                         transformOrigin: 'center center',
-                        transition: 'transform 0.15s ease',
+                        transition: panRef.current.active ? 'none' : 'transform 0.15s ease',
                         touchAction: 'none',
                         display:'block',
+                        cursor: imgScale > 1 ? 'grab' : 'default',
                       }}
-                      onDoubleClick={() => setImgScale(s => s > 1 ? 1 : 2.5)}
+                      onDoubleClick={() => { setImgScale(s => s > 1 ? 1 : 3); setImgOffset({ x: 0, y: 0 }); }}
                     />
                   </motion.div>
                 </AnimatePresence>
                 {/* Zoom controls */}
                 <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
-                  <button onClick={() => setImgScale(s => Math.max(1, s - 0.5))}
+                  <button onClick={() => { setImgScale(s => Math.max(1, s - 1)); if (imgScale <= 2) setImgOffset({ x: 0, y: 0 }); }}
                     className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-xl font-bold active:scale-90 transition-transform"
                     style={{ background:'rgba(0,0,0,0.75)', border:'1px solid rgba(255,255,255,0.25)' }}>−</button>
                   {imgScale !== 1 && (
-                    <button onClick={() => setImgScale(1)}
+                    <button onClick={() => { setImgScale(1); setImgOffset({ x: 0, y: 0 }); }}
                       className="px-3 py-1.5 rounded-xl text-xs text-white font-medium active:scale-90 transition-transform"
                       style={{ background:'rgba(0,0,0,0.75)', border:'1px solid rgba(255,255,255,0.25)' }}>
                       ↙ Reset
                     </button>
                   )}
-                  <button onClick={() => setImgScale(s => Math.min(5, s + 0.5))}
+                  <button onClick={() => setImgScale(s => Math.min(10, s + 1))}
                     className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-xl font-bold active:scale-90 transition-transform"
                     style={{ background:'rgba(0,0,0,0.75)', border:'1px solid rgba(255,255,255,0.25)' }}>+</button>
                 </div>
