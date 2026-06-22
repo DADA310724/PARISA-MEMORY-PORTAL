@@ -351,7 +351,7 @@ function ThemePanel({ showMsg, saving, setSaving }: {
 }
 
 export default function AdminSettings() {
-  const { auth, setAuth, buttons, saveButton, deleteButton, reorderButtons, getSubButtons, saveSubButton, deleteSubButton } = useApp();
+  const { auth, setAuth, buttons, saveButton, deleteButton, reorderButtons, getSubButtons, saveSubButton, deleteSubButton, reorderSubButtons } = useApp();
   const [, navigate] = useLocation();
   const isAdmin = auth?.role === "admin";
   const [tab, setTab] = useState<Tab>("ai");
@@ -884,9 +884,19 @@ export default function AdminSettings() {
                         <div className="text-center py-4 text-white/30 text-xs">লোড হচ্ছে...</div>
                       ) : subButtons.length > 0 && (
                         <div className="space-y-1.5">
-                          {subButtons.map(s => (
+                          {subButtons.map((s, sidx) => (
                             <div key={s.id} className="rounded-xl p-3 flex items-center gap-2"
                               style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                              <div className="flex flex-col gap-0.5 flex-shrink-0">
+                                <button onClick={async () => { if (sidx === 0) return; const u = [...subButtons]; [u[sidx-1],u[sidx]]=[u[sidx],u[sidx-1]]; setSubButtons(u); if (editingCustomFolder) await reorderSubButtons(editingCustomFolder, u.map(x=>x.id)); }}
+                                  disabled={sidx === 0}
+                                  className="w-6 h-5 rounded text-white/40 hover:text-white/80 disabled:opacity-20 flex items-center justify-center text-xs"
+                                  style={{ background: 'rgba(255,255,255,0.06)' }}>▲</button>
+                                <button onClick={async () => { if (sidx === subButtons.length-1) return; const u = [...subButtons]; [u[sidx],u[sidx+1]]=[u[sidx+1],u[sidx]]; setSubButtons(u); if (editingCustomFolder) await reorderSubButtons(editingCustomFolder, u.map(x=>x.id)); }}
+                                  disabled={sidx === subButtons.length - 1}
+                                  className="w-6 h-5 rounded text-white/40 hover:text-white/80 disabled:opacity-20 flex items-center justify-center text-xs"
+                                  style={{ background: 'rgba(255,255,255,0.06)' }}>▼</button>
+                              </div>
                               <AppLogo logoKey={s.logo_key ?? s.icon ?? "folder"} size={5} className="w-8 h-8 flex-shrink-0 rounded-lg" />
                               <div className="flex-1 min-w-0">
                                 <p className="text-white text-sm font-semibold truncate">{s.label}</p>
