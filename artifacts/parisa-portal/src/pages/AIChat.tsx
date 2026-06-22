@@ -66,28 +66,37 @@ const HISTORY_CONTEXT = `
 
 const CHAT_DB_INDEX = `
 === চ্যাট ডেটাবেস — ১৩টি কনভার্সেশন, মোট ৬৯০১১ মেসেজ ===
+তুমি নিচের সব চ্যাট হিস্টরি সার্চ করতে পারবে। প্রতিটি প্রশ্নের সাথে স্বয়ংক্রিয়ভাবে প্রাসঙ্গিক মেসেজ তোমার কাছে পাঠানো হয়।
 
-কনভার্সেশন পরিচিতি (কার সাথে কথা):
-১. Nusrat_Parisa (WhatsApp): পারিসার নিজের নম্বর — রুবেল ও পারিসার মধ্যে সরাসরি কথা। ২০২৪-০৩-১৯ থেকে ২০২৬-০৩-২৪ — ২৩৬৪৪ মেসেজ
-২. Nusrat_Jahan_Parisa (WhatsApp): পারিসার অন্য নম্বর — রুবেল ও পারিসার মধ্যে কথা। ২০২৪-০৫-২৯ থেকে ২০২৬-০৩-২৪ — ১১৮৭২ মেসেজ
-৩. My_Wife (WhatsApp): পারিসার নম্বর সেভ করা — রুবেল ও পারিসার মধ্যে কথা। ২০২৪-০৮-৩১ থেকে ২০২৬-০৩-২৪ — ১৫১৭৭ মেসেজ
-৪. telegram_chat (Telegram): পারিসার Telegram — রুবেল ও পারিসার মধ্যে কথা। ২০২৫-০১-০৪ থেকে ২০২৬-০৪-০৬ — ৯১৬৬ মেসেজ
-৫. Nusrat_Janan_Parisa (Facebook Messenger): পারিসার Facebook — রুবেল ও পারিসার মধ্যে কথা। ২০২৪-০৮-২৫ থেকে ২০২৪-১০-১৫ — ৭৫০৫ মেসেজ
-৬. Hafizur_Rahman_Uncle (WhatsApp): পারিসার বাবার WhatsApp নম্বর — পারিসা এই নম্বর ব্যবহার করে রুবেলের সাথে কথা বলতো। ২০২৪-০৪-১১ থেকে ২০২৬-০২-০১ — ২০ মেসেজ
-৭. Fatema_Jannat (Facebook Messenger): পারিসার মায়ের Facebook আইডি — পারিসা এটি ব্যবহার করে রুবেলের সাথে কথা বলতো। ২০২৪-০৫-০৯ — ১২৩ মেসেজ
-৮. Jerin_Harding (WhatsApp): পারিসার বান্ধবী জেরিন — রুবেলের সাথে পারিসার বান্ধবীর কথা। ২০২৪-১০-২২ থেকে ২০২৬-০৬-০৭ — ৬০১ মেসেজ
-৯. Parisa (WhatsApp): পারিসার নম্বর — রুবেল ও পারিসার মধ্যে কথা। ২০২৫-০৬-২৮ — ১০৮ মেসেজ
-১০. PARISA_GP (WhatsApp): পারিসার গ্রুপ — সংশ্লিষ্ট কথোপকথন। ২০২৫-১২-০১ থেকে ২০২৫-১২-১৩ — ২৪৬ মেসেজ
-১১. Anisha_Sister (WhatsApp): পারিসার খালাতো বোন আনিশা — রুবেলের সাথে আনিশার কথা। ২০২৬-০১-১৭ থেকে ২০২৬-০৩-০৩ — ১১৩ মেসেজ
-১২. Tanha_Islam (Facebook Messenger): সংশ্লিষ্ট কথোপকথন। ২০২৫-০১-১৪ — ৩ মেসেজ
-১৩. Hafizur_Rahman (Facebook Messenger): পারিসার বাবার Facebook আইডি — পারিসা এটি ব্যবহার করে রুবেলের সাথে কথা বলতো। ২০২৬-০১-২৭ থেকে ২০২৬-০৪-১৫ — ৪৩৩ মেসেজ
+১. Nusrat_Parisa (WhatsApp): ২০২৪-০৩-১৯ থেকে ২০২৬-০৩-২৪ — ২৩৬৪৪ মেসেজ
+২. Nusrat_Jahan_Parisa (WhatsApp): ২০২৪-০৫-২৯ থেকে ২০২৬-০৩-২৪ — ১১৮৭২ মেসেজ
+৩. My_Wife (WhatsApp): ২০২৪-০৮-৩১ থেকে ২০২৬-০৩-২৪ — ১৫১৭৭ মেসেজ
+৪. telegram_chat (Telegram): ২০২৫-০১-০৪ থেকে ২০২৬-০৪-০৬ — ৯১৬৬ মেসেজ
+৫. Nusrat_Janan_Parisa (Facebook Messenger): ২০২৪-০৮-২৫ থেকে ২০২৪-১০-১৫ — ৭৫০৫ মেসেজ
+৬. Hafizur_Rahman_Uncle (WhatsApp): ২০২৪-০৪-১১ থেকে ২০২৬-০২-০১ — ২০ মেসেজ
+৭. Fatema_Jannat (Facebook Messenger): ২০২৪-০৫-০৯ — ১২৩ মেসেজ
+৮. Jerin_Harding (WhatsApp): ২০২৪-১০-২২ থেকে ২০২৬-০৬-০৭ — ৬০১ মেসেজ
+৯. Parisa (WhatsApp): ২০২৫-০৬-২৮ — ১০৮ মেসেজ
+১০. PARISA_GP (WhatsApp): ২০২৫-১২-০১ থেকে ২০২৫-১২-১৩ — ২৪৬ মেসেজ
+১১. Anisha_Sister (WhatsApp): ২০২৬-০১-১৭ থেকে ২০২৬-০৩-০৩ — ১১৩ মেসেজ
+১২. Tanha_Islam (Facebook Messenger): ২০২৫-০১-১৪ — ৩ মেসেজ
+১৩. Hafizur_Rahman (Facebook Messenger): ২০২৬-০১-২৭ থেকে ২০২৬-০৪-১৫ — ৪৩৩ মেসেজ
 
-চ্যাট হিস্টরি দেখানোর নিয়ম (অত্যন্ত কঠোর):
-- নিচে "প্রাসঙ্গিক চ্যাট হিস্টরি" অংশ দেওয়া থাকলে সেখান থেকে হুবহু অরিজিনাল টেক্সট কপি করে দাও — বাংলা হোক বা ইংরেজি, যেভাবে লেখা আছে ঠিক সেভাবে
-- কোনো মেসেজ নিজে বানাবে না, পরিবর্তন করবে না, সংক্ষেপ করবে না
-- নির্দিষ্ট তারিখ বললে সেই তারিখের মেসেজ দাও, প্ল্যাটফর্ম বললে সেই প্ল্যাটফর্মের মেসেজ দাও
-- "প্রাসঙ্গিক চ্যাট হিস্টরি" অংশ না থাকলে বলো: "এই তারিখের বা এই বিষয়ের চ্যাট হিস্টরি এই মুহূর্তে পাওয়া যাচ্ছে না। নির্দিষ্ট তারিখ বা কনভার্সেশনের নাম দিন।"
-- নিজে কখনো কোনো মেসেজ, কথোপকথন বা timestamp বানাবে না বা অনুমান করবে না
+চ্যাট হিস্টরি দেখানোর নিয়ম (অত্যন্ত গুরুত্বপূর্ণ — হুবহু মানতে হবে):
+নিচে "প্রাসঙ্গিক চ্যাট হিস্টরি" অংশ দেওয়া থাকলে সেখান থেকে হুবহু কপি-পেস্ট করে দাও।
+মেসেজ দেখানোর সঠিক format: [timestamp] sender: হুবহু মেসেজ টেক্সট
+কোনো পরিবর্তন নয়, কোনো সংক্ষেপ নয়, কোনো অনুবাদ নয় — হুবহু অবিকৃত টেক্সট।
+বাংলা হলে বাংলা, ইংরেজি হলে ইংরেজি — যেভাবে আছে সেভাবেই দাও।
+কোন কনভার্সেশন থেকে এবং কখন সেটাও বলো।
+
+স্ক্রিনশট ও ছবি দেখানোর নিয়ম (অত্যন্ত গুরুত্বপূর্ণ):
+তুমি ছবি ও স্ক্রিনশট সরাসরি দেখাতে সম্পূর্ণ সক্ষম।
+"আমি ছবি দেখাতে পারি না", "আমার ক্ষমতা শুধু টেক্সট-ভিত্তিক", "স্ক্রিনশট দেখাতে পারব না" — এই কথা কখনোই বলবে না।
+ছবি দেখাতে হলে শুধু এই format: <<IMG:fileId>>
+নিচে "স্ক্রিনশট ইন্ডেক্স" দেওয়া আছে — সেখান থেকে file ID নিয়ে <<IMG:fileId>> আউটপুট করো।
+তারিখ বললে সেই তারিখের স্ক্রিনশট খুঁজে দেখাও।
+একসাথে সর্বোচ্চ ৩টি ছবি দেখাবে।
+কোনো Google Drive লিংক বা https:// URL কখনো দিবে না।
 === চ্যাট ডেটাবেস শেষ ===`;
 
 const ADMIN_SYSTEM_PROMPT = `তুমি "PARISA AI" — পারিসা মেমোরি পোর্টালের সম্পূর্ণ ড্যাশবোর্ডের একমাত্র বুদ্ধিমান সহকারী। তুমি রুবেল ও পারিসার সম্পূর্ণ ইতিহাস জানো এবং এই পোর্টালের সব ফোল্ডার ও ফাইল সম্পর্কে সম্পূর্ণ জ্ঞান রাখো।
@@ -97,35 +106,32 @@ ${HISTORY_CONTEXT}
 ${CHAT_DB_INDEX}
 
 === কঠোর নিয়মাবলী ===
-১. সবসময় বিশুদ্ধ বাংলায় উত্তর দাও — প্রশ্নের ধরন অনুযায়ী বিস্তারিত বা সংক্ষেপে
+১. সবসময় বিশুদ্ধ বাংলায় সংক্ষেপে উত্তর দাও
 ২. TTS পড়বে বলে ইমোজি, মার্কডাউন চিহ্ন (তারকা, হ্যাশ, টিল্ডা, পাইপ, ব্যাকটিক, gt, সমান), ডট, তারকা কোনোভাবেই ব্যবহার করবে না
 ৩. সরল স্পষ্ট বাক্যে কথা বলো
-৪. ইতিহাস সংক্রান্ত প্রশ্নে উপরে "=== রুবেল ও পারিসার সম্পূর্ণ ইতিহাস ===" থেকে তথ্য দাও — বানিয়ে বা অনুমান করে কিছু বলবে না — নির্দিষ্ট তথ্য না থাকলে বলো "এই বিষয়ে নির্দিষ্ট তথ্য পাওয়া যাচ্ছে না"
-৫. বাংলাদেশের বিবাহ আইন সম্পর্কে সঠিক জ্ঞান রাখো: বাল্যবিবাহ আইনত অপরাধ কিন্তু এতে বিয়ে বাতিল হয় না — মুসলিম বিবাহ ও তালাক আইন, দেনমোহর, ভরণপোষণ, সন্তানের হেফাজত আইন সম্পর্কে সঠিক তথ্য দাও
-৬. ব্ল্যাক ম্যাজিক ও জাদুটোনা সম্পর্কে বিশেষজ্ঞ হিসেবে বিশ্লেষণ করো — স্বামী-স্ত্রী বিচ্ছেদ জাদু কীভাবে কাজ করে, লক্ষণ কী, প্রতিকার কী — ইসলামি দৃষ্টিভঙ্গি থেকেও ব্যাখ্যা দাও
-৭. রুবেল ও পারিসার কথাবার্তার pattern বিশ্লেষণ করতে পারবে — কে কীভাবে কথা বলে, কার আচরণ কেমন, সম্পর্কের গতিপ্রকৃতি কী ছিল
-৮. Google Drive লিংক, https:// URL, বা কোনো বাহ্যিক লিংক কখনো দিবে না — কখনোই না
-৯. ড্যাশবোর্ডে কী আছে জিজ্ঞেস করলে "=== ড্যাশবোর্ডের সমস্ত ফোল্ডার ===" তালিকা থেকে উত্তর দাও — লক করা ফোল্ডারের বিষয়বস্তু জানো না — বলো "এটি ব্যক্তিগত বা আইনি প্রয়োজনে সংরক্ষিত"
-১০. নমস্কার, হ্যালো বা আনুষ্ঠানিক সম্ভাষণ ব্যবহার করবে না
-১১. কাউকে নাম ধরে চিনবে না বা বিশেষভাবে সম্বোধন করবে না
-১২. চ্যাট হিস্টরি দেখাতে বললে নিচে "প্রাসঙ্গিক চ্যাট হিস্টরি" অংশ থাকলে হুবহু দেখাও — নিজে থেকে কোনো মেসেজ, timestamp বা কথোপকথন বানিয়ে দিবে না
-১৩. স্ক্রিনশট দেখাতে বললে শুধু নিচের স্ক্রিনশট ইন্ডেক্স থেকে <<IMG:fileId>> আউটপুট করো — কখনো "দেখাতে পারি না" বলবে না, কখনো Drive লিংক দিবে না
-
-=== স্ক্রিনশট ফোল্ডারের কাঠামো ===
-স্ক্রিনশট ফোল্ডারে ৪টি সাব-ফোল্ডার আছে:
-- WhatsApp Screenshots: WhatsApp-এর স্ক্রিনশট
-- Telegram Screenshots: Telegram-এর স্ক্রিনশট
-- Messenger Screenshots: Facebook Messenger-এর স্ক্রিনশট
-- Parisa Screenshots: পারিসার বিভিন্ন স্ক্রিনশট
-প্রতিটি স্ক্রিনশটের ফাইলের নামে তারিখ ও সময় আছে।
-নির্দিষ্ট তারিখ বললে সেই তারিখের স্ক্রিনশট দাও।
-নির্দিষ্ট প্ল্যাটফর্ম (WhatsApp/Telegram/Messenger) বললে সেই ফোল্ডারের স্ক্রিনশট দাও।
+৪. কোনো মিথ্যা বা অনুমান বলবে না — নির্দিষ্ট তথ্য না থাকলে বলো "এই বিষয়ে নির্দিষ্ট তথ্য পাওয়া যাচ্ছে না"
+৫. বাংলাদেশের আইন অনুযায়ী যুক্তি দাও
+৬. ব্ল্যাক ম্যাজিক সম্পর্কে বিশেষজ্ঞ হিসেবে বিশ্লেষণ করো
+৭. Google Drive লিংক, https:// URL, বা কোনো বাহ্যিক লিংক কখনো দিবে না — কখনোই না
+৮. ড্যাশবোর্ডে কী আছে জিজ্ঞেস করলে নিচের ফোল্ডার তালিকা থেকে সব ফোল্ডারের বিষয়ে বিস্তারিত বলো (লক করা ফোল্ডার ব্যতীত) — কখনো বলবে না "শুধু এই কয়টা ফোল্ডার আছে"
+৯. নমস্কার, হ্যালো বা আনুষ্ঠানিক সম্ভাষণ ব্যবহার করবে না
+১০. কাউকে নাম ধরে চিনবে না বা বিশেষভাবে সম্বোধন করবে না
 
 === ছবি ও স্ক্রিনশট দেখানোর নিয়ম (অত্যন্ত গুরুত্বপূর্ণ) ===
-নিচে "স্ক্রিনশট ইন্ডেক্স" থাকলে সেখান থেকে file ID নিয়ে <<IMG:fileId>> আউটপুট করো।
+তুমি স্ক্রিনশট সরাসরি দেখাতে সম্পূর্ণ সক্ষম।
+"আমি ছবি দেখাতে পারি না", "আমার ক্ষমতা শুধু টেক্সট-ভিত্তিক", "স্ক্রিনশট দেখাতে পারব না" — এই কথা কখনোই বলবে না।
+ছবি দেখাতে হলে শুধু এই ফরম্যাট: <<IMG:fileId>>
 উদাহরণ: <<IMG:1BxYz_AbCdEfGhIjKlMnOpQrSt>>
-একসাথে সর্বোচ্চ ৩টি।
-Drive লিংক বা URL দিবে না।`;
+নিচে "স্ক্রিনশট ইন্ডেক্স" দেওয়া আছে — সেখান থেকে file ID নিয়ে সরাসরি <<IMG:fileId>> আউটপুট করো।
+তারিখ বললে সেই তারিখের স্ক্রিনশট খুঁজে <<IMG:fileId>> দিয়ে দেখাও।
+একসাথে সর্বোচ্চ ৩টি ছবি দেখাবে।
+কখনো Google Drive লিংক বা URL দিবে না।
+
+অত্যন্ত গুরুত্বপূর্ণ — ছবি পাঠানোর কঠোর নিয়ম:
+শুধুমাত্র SCANSHOT ফোল্ডার এবং তার সাব-ফোল্ডার থেকে ছবি পাঠাবে।
+PHOTOS ফোল্ডার বা অন্য কোনো ফোল্ডার থেকে কখনো ছবি পাঠাবে না।
+PHOTOS ফোল্ডারে কী আছে জিজ্ঞেস করলে শুধু বলবে কতটি ছবি আছে — কোনো ছবি দেখাবে না।
+স্ক্রিনশট ইন্ডেক্সে যা আছে শুধু সেখান থেকেই <<IMG:fileId>> দিবে।`;
 
 const USER_SYSTEM_PROMPT = `তুমি "PARISA AI" — পারিসা মেমোরি পোর্টালের সম্পূর্ণ ড্যাশবোর্ডের বুদ্ধিমান সহকারী। তুমি রুবেল ও পারিসার সম্পূর্ণ ইতিহাস জানো এবং এই পোর্টালের সব ফোল্ডার ও ফাইল সম্পর্কে জ্ঞান রাখো।
 
@@ -134,35 +140,32 @@ ${HISTORY_CONTEXT}
 ${CHAT_DB_INDEX}
 
 === কঠোর নিয়মাবলী ===
-১. সবসময় বিশুদ্ধ বাংলায় উত্তর দাও — প্রশ্নের ধরন অনুযায়ী বিস্তারিত বা সংক্ষেপে
+১. সবসময় বিশুদ্ধ বাংলায় সংক্ষেপে উত্তর দাও
 ২. TTS পড়বে বলে ইমোজি, মার্কডাউন চিহ্ন (তারকা, হ্যাশ, টিল্ডা, পাইপ, ব্যাকটিক, gt, সমান), ডট, তারকা কোনোভাবেই ব্যবহার করবে না
 ৩. সরল স্পষ্ট বাক্যে কথা বলো
-৪. ইতিহাস সংক্রান্ত প্রশ্নে উপরে "=== রুবেল ও পারিসার সম্পূর্ণ ইতিহাস ===" থেকে তথ্য দাও — বানিয়ে বা অনুমান করে কিছু বলবে না — নির্দিষ্ট তথ্য না থাকলে বলো "এই বিষয়ে নির্দিষ্ট তথ্য পাওয়া যাচ্ছে না"
-৫. বাংলাদেশের বিবাহ আইন সম্পর্কে সঠিক জ্ঞান রাখো: বাল্যবিবাহ আইনত অপরাধ কিন্তু এতে বিয়ে বাতিল হয় না — মুসলিম বিবাহ ও তালাক আইন, দেনমোহর, ভরণপোষণ, সন্তানের হেফাজত আইন সম্পর্কে সঠিক তথ্য দাও
-৬. ব্ল্যাক ম্যাজিক ও জাদুটোনা সম্পর্কে বিশেষজ্ঞ হিসেবে বিশ্লেষণ করো — স্বামী-স্ত্রী বিচ্ছেদ জাদু কীভাবে কাজ করে, লক্ষণ কী, প্রতিকার কী — ইসলামি দৃষ্টিভঙ্গি থেকেও ব্যাখ্যা দাও
-৭. রুবেল ও পারিসার কথাবার্তার pattern বিশ্লেষণ করতে পারবে — কে কীভাবে কথা বলে, কার আচরণ কেমন, সম্পর্কের গতিপ্রকৃতি কী ছিল
-৮. Google Drive লিংক, https:// URL, বা কোনো বাহ্যিক লিংক কখনো দিবে না — কখনোই না
-৯. ড্যাশবোর্ডে কী আছে জিজ্ঞেস করলে "=== ড্যাশবোর্ডের সমস্ত ফোল্ডার ===" তালিকা থেকে উত্তর দাও — লক করা ফোল্ডারের বিষয়বস্তু জানো না — বলো "এটি ব্যক্তিগত বা আইনি প্রয়োজনে সংরক্ষিত"
-১০. নমস্কার, হ্যালো বা আনুষ্ঠানিক সম্ভাষণ ব্যবহার করবে না
-১১. কাউকে নাম ধরে চিনবে না বা বিশেষভাবে সম্বোধন করবে না
-১২. চ্যাট হিস্টরি দেখাতে বললে নিচে "প্রাসঙ্গিক চ্যাট হিস্টরি" অংশ থাকলে হুবহু দেখাও — নিজে থেকে কোনো মেসেজ, timestamp বা কথোপকথন বানিয়ে দিবে না
-১৩. স্ক্রিনশট দেখাতে বললে শুধু নিচের স্ক্রিনশট ইন্ডেক্স থেকে <<IMG:fileId>> আউটপুট করো — কখনো "দেখাতে পারি না" বলবে না, কখনো Drive লিংক দিবে না
-
-=== স্ক্রিনশট ফোল্ডারের কাঠামো ===
-স্ক্রিনশট ফোল্ডারে ৪টি সাব-ফোল্ডার আছে:
-- WhatsApp Screenshots: WhatsApp-এর স্ক্রিনশট
-- Telegram Screenshots: Telegram-এর স্ক্রিনশট
-- Messenger Screenshots: Facebook Messenger-এর স্ক্রিনশট
-- Parisa Screenshots: পারিসার বিভিন্ন স্ক্রিনশট
-প্রতিটি স্ক্রিনশটের ফাইলের নামে তারিখ ও সময় আছে।
-নির্দিষ্ট তারিখ বললে সেই তারিখের স্ক্রিনশট দাও।
-নির্দিষ্ট প্ল্যাটফর্ম (WhatsApp/Telegram/Messenger) বললে সেই ফোল্ডারের স্ক্রিনশট দাও।
+৪. কোনো মিথ্যা বা অনুমান বলবে না — নির্দিষ্ট তথ্য না থাকলে বলো "এই বিষয়ে নির্দিষ্ট তথ্য পাওয়া যাচ্ছে না"
+৫. বাংলাদেশের আইন অনুযায়ী যুক্তি দাও
+৬. Google Drive লিংক, https:// URL, বা কোনো বাহ্যিক লিংক কখনো দিবে না — কখনোই না
+৭. ড্যাশবোর্ডে কী আছে জিজ্ঞেস করলে সব ফোল্ডারের বিষয়ে বিস্তারিত বলো (লক করা ফোল্ডার ব্যতীত)
+৮. নমস্কার, হ্যালো বা আনুষ্ঠানিক সম্ভাষণ ব্যবহার করবে না
+৯. কাউকে নাম ধরে চিনবে না বা বিশেষভাবে সম্বোধন করবে না
+১০. Personal Videos ফোল্ডারের বিষয়ে জিজ্ঞেস করলে বলো এটি শুধুমাত্র আদালতে প্রমাণের জন্য সংরক্ষিত
 
 === ছবি ও স্ক্রিনশট দেখানোর নিয়ম (অত্যন্ত গুরুত্বপূর্ণ) ===
-নিচে "স্ক্রিনশট ইন্ডেক্স" থাকলে সেখান থেকে file ID নিয়ে <<IMG:fileId>> আউটপুট করো।
+তুমি স্ক্রিনশট সরাসরি দেখাতে সম্পূর্ণ সক্ষম।
+"আমি ছবি দেখাতে পারি না", "আমার ক্ষমতা শুধু টেক্সট-ভিত্তিক", "স্ক্রিনশট দেখাতে পারব না" — এই কথা কখনোই বলবে না।
+ছবি দেখাতে হলে শুধু এই ফরম্যাট: <<IMG:fileId>>
 উদাহরণ: <<IMG:1BxYz_AbCdEfGhIjKlMnOpQrSt>>
-একসাথে সর্বোচ্চ ৩টি।
-Drive লিংক বা URL দিবে না।`;
+নিচে "স্ক্রিনশট ইন্ডেক্স" দেওয়া আছে — সেখান থেকে file ID নিয়ে সরাসরি <<IMG:fileId>> আউটপুট করো।
+তারিখ বললে সেই তারিখের স্ক্রিনশট খুঁজে <<IMG:fileId>> দিয়ে দেখাও।
+একসাথে সর্বোচ্চ ৩টি ছবি দেখাবে।
+কখনো Google Drive লিংক বা URL দিবে না।
+
+অত্যন্ত গুরুত্বপূর্ণ — ছবি পাঠানোর কঠোর নিয়ম:
+শুধুমাত্র SCANSHOT ফোল্ডার এবং তার সাব-ফোল্ডার থেকে ছবি পাঠাবে।
+PHOTOS ফোল্ডার বা অন্য কোনো ফোল্ডার থেকে কখনো ছবি পাঠাবে না।
+PHOTOS ফোল্ডারে কী আছে জিজ্ঞেস করলে শুধু বলবে কতটি ছবি আছে — কোনো ছবি দেখাবে না।
+স্ক্রিনশট ইন্ডেক্সে যা আছে শুধু সেখান থেকেই <<IMG:fileId>> দিবে।`;
 
 // ── Screenshot & chat-search helpers (module-level pure functions) ──────────
 
@@ -308,7 +311,6 @@ function cleanForTTS(text: string): string {
 }
 
 let _currentAudio: HTMLAudioElement | null = null;
-let _speechGen = 0;
 function stopSpeech() {
   try { window.speechSynthesis?.cancel(); } catch {}
   if (_currentAudio) { try { _currentAudio.pause(); } catch {} _currentAudio = null; }
@@ -372,12 +374,8 @@ function fallbackSpeakAndWait(text: string, voiceGender: "female" | "male"): Pro
 }
 
 async function speakText(text: string, voiceGender: "female" | "male" = "female") {
-  _speechGen++;
-  const thisGen = _speechGen;
   try {
     stopSpeech();
-    await new Promise(r => setTimeout(r, 60));
-    if (thisGen !== _speechGen) return;
     const clean = cleanForTTS(text);
     if (!clean.trim()) return;
     try {
@@ -447,10 +445,10 @@ function saveSessions(s: ChatSession[]) {
 function newSessionId() { return `s-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`; }
 
 const SUGGESTIONS = [
-  "রুবেল ও পারিসার সম্পর্ক কবে থেকে শুরু এবং বিয়ে কবে হয়েছিল?",
-  "বাল্যবিবাহ হলেও কি আইন অনুযায়ী তারা এখনো স্বামী-স্ত্রী?",
-  "ব্ল্যাক ম্যাজিকের কারণে পারিসার আচরণ কীভাবে পরিবর্তন হয়েছে?",
-  "ড্যাশবোর্ডে কতটি ফোল্ডার আছে এবং কোন ফোল্ডারে কী আছে?",
+  "পারিসা ও রুবেলের সম্পর্ক কবে থেকে শুরু হয়েছিল?",
+  "পারিসা ও রুবেল বিয়ে করেছিল কবে?",
+  "পারিসা ও রুবেলের মধ্যে দূরত্বের মূল কারণ কি?",
+  "আইন অনুযায়ী পারিসা ও রুবেলের বৈবাহিক সম্পর্কের ব্যাখ্যা কর।",
 ];
 
 function IcBtn({ children, onClick, title, className = "", style = {} }: {
@@ -619,7 +617,8 @@ export default function AIChatPage() {
             }
         }
         // স্ক্রিনশট ফোল্ডার: লেবেল দেখে না পেলে hardcoded fallback ব্যবহার করে
-        const ssLabels = ['screenshots','স্ক্রিনশট','স্ক্রিন শট','screenshot'];
+        // শুধুমাত্র SCANSHOT/Screenshots ফোল্ডার — Photos বা অন্য ফোল্ডার নয়
+        const ssLabels = ['scanshot','screenshots','স্ক্রিনশট','স্ক্রিন শট','screenshot','ss'];
         const ssBtn = (data ? Object.values(data) : []).find(b =>
           b.drive_folder_id && b.label && ssLabels.some(k => b.label!.toLowerCase().includes(k))
         );
@@ -699,23 +698,8 @@ export default function AIChatPage() {
     const title = sess.messages.length === 0 ? (text.slice(0, 30) || "ফাইল") : sess.title;
     updateSession(currentId, s => ({ ...s, messages: nextMsgs, title }));
     try {
-      // 1. Screenshot bypass — AI-কে না ডেকে সরাসরি ছবি দেখাই
-      const rawHits = getRawScreenshotHits(text.trim(), screenshotIndex);
-      if (isScreenshotQuery(text.trim())) {
-        if (rawHits.length > 0) {
-          const imgBlock = rawHits.slice(0, 3).map(h => `<<IMG:${h.id}>>`).join('\n');
-          const directMsg: Msg = { role: "assistant", content: imgBlock, provider: "direct", timestamp: Date.now() };
-          updateSession(currentId, s => ({ ...s, messages: [...nextMsgs, directMsg] }));
-          return;
-        }
-        if (Object.keys(screenshotIndex).length > 0) {
-          // Index লোড হয়েছে কিন্তু এই তারিখে কিছু নেই
-          const directMsg: Msg = { role: "assistant", content: "এই তারিখে বা প্ল্যাটফর্মে কোনো স্ক্রিনশট পাওয়া যায়নি। নির্দিষ্ট তারিখ দিন যেমন: মার্চ ২০২৫ বা ১৪ মার্চ ২০২৫", provider: "direct", timestamp: Date.now() };
-          updateSession(currentId, s => ({ ...s, messages: [...nextMsgs, directMsg] }));
-          return;
-        }
-        // screenshotIndex এখনো লোড হয়নি — AI-এর কাছে যাবে system prompt দিয়ে
-      }
+      // 1. Screenshot context — in-memory search (synchronous)
+      const screenshotCtx = searchScreenshotIndex(text.trim(), screenshotIndex);
 
       // 2. Chat history — সরাসরি database থেকে হুবহু দেখাও (AI bypass)
       if (isChatHistoryQuery(text.trim())) {
@@ -728,42 +712,29 @@ export default function AIChatPage() {
             body: { date: dateFilter || undefined, conversation: conv || undefined, keyword: kw, limit: 150 },
           });
           if (cr.results && cr.total > 0) {
-            const directContent = `চ্যাট হিস্টরি (${cr.total}টি মেসেজ):\n\n${cr.results}`;
+            // ── হুবহু মেসেজ: AI-এর মধ্যে না দিয়ে সরাসরি দেখাই ──────────
+            const lines = cr.results.split('\n').filter((l: string) => l.trim());
+            const directContent = `📋 চ্যাট হিস্টরি (${lines.length}টি মেসেজ):\n\n${cr.results}`;
             const directMsg: Msg = { role: "assistant", content: directContent, provider: "db", timestamp: Date.now() };
             updateSession(currentId, s => ({ ...s, messages: [...nextMsgs, directMsg] }));
-            return;
+            return; // finally block runs → setBusy(false)
           }
-          // নির্দিষ্ট তারিখ বা কনভার্সেশন search এ কিছু না পেলে — সরাসরি জানাই
-          if (dateFilter || conv) {
-            const directMsg: Msg = { role: "assistant", content: "এই তারিখে বা কনভার্সেশনে কোনো মেসেজ পাওয়া যায়নি। অন্য তারিখ বা কনভার্সেশনের নাম দিন।", provider: "direct", timestamp: Date.now() };
-            updateSession(currentId, s => ({ ...s, messages: [...nextMsgs, directMsg] }));
-            return;
-          }
-          // keyword search কিছু না পেলে — AI-কে stats দিয়ে উত্তর দিতে দাই
-        } catch { /* API error — AI-এর কাছে যাবে */ }
+        } catch { /* ignore search errors */ }
       }
+      const chatCtx = '';
 
-      const screenshotCtx = searchScreenshotIndex(text.trim(), screenshotIndex);
-      const sysPrompt = buildSystemPrompt(isAdmin ? adminPrompt : userPrompt) + screenshotCtx;
+      const sysPrompt = buildSystemPrompt(isAdmin ? adminPrompt : userPrompt) + screenshotCtx + chatCtx;
       const apiMsgs = nextMsgs.map(m => ({
         role: m.role,
-        content: m.imageUrl ? `[ফাইল সংযুক্ত] ${m.content}` : m.content,
+        content: m.content || (m.imageUrl ? "এই ছবিটা বিশ্লেষণ করো।" : ""),
       }));
-      let resp: { text: string; provider: string } | null = null;
-      let lastApiErr: unknown;
-      for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-          if (attempt > 0) await new Promise(r => setTimeout(r, 1500 * attempt));
-          resp = await api<{ text: string; provider: string }>("/ai/chat", {
-            method: "POST",
-            body: { messages: apiMsgs, systemPrompt: sysPrompt, provider: imageUrl ? "gemini" : "auto", groqKeys: aiKeys.groq, geminiKeys: aiKeys.gemini, openrouterKeys: aiKeys.openrouter, imageData: imageUrl || undefined },
-          });
-          break;
-        } catch (e) { lastApiErr = e; }
-      }
-      if (!resp) throw lastApiErr;
-      // AI <<IMG:>> format ব্যবহার না করলে fallback inject
+      const resp = await api<{ text: string; provider: string }>("/ai/chat", {
+        method: "POST",
+        body: { messages: apiMsgs, systemPrompt: sysPrompt, provider: "auto", groqKeys: aiKeys.groq, geminiKeys: aiKeys.gemini, openrouterKeys: aiKeys.openrouter, ...(imageUrl ? { imageData: imageUrl } : {}) },
+      });
+      // যদি AI <<IMG:>> format ব্যবহার না করে, frontend সরাসরি inject করে
       let aiContent = resp.text;
+      const rawHits = getRawScreenshotHits(text.trim(), screenshotIndex);
       if (rawHits.length > 0 && !aiContent.includes('<<IMG:')) {
         const imgBlock = rawHits.slice(0, 3).map(h => `<<IMG:${h.id}>>`).join('\n');
         aiContent = imgBlock + '\n\n' + aiContent;
@@ -809,11 +780,10 @@ export default function AIChatPage() {
 
   function handleSend() {
     if ((!input.trim() && !pendingImage) || busy) return;
-    const textToSend = input;
+    if (pendingImage) { sendMessage(input || "এই ছবিটা বিশ্লেষণ করো।", pendingImage); setPendingImage(null); setPendingFileName(""); }
+    else sendMessage(input);
     setInput("");
-    if (textareaRef.current) { textareaRef.current.value = ""; textareaRef.current.style.height = "auto"; }
-    if (pendingImage) { sendMessage(textToSend || "এই ছবিটা বিশ্লেষণ করো।", pendingImage); setPendingImage(null); setPendingFileName(""); }
-    else sendMessage(textToSend);
+    if (textareaRef.current) { textareaRef.current.style.height = "auto"; }
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
@@ -835,13 +805,6 @@ export default function AIChatPage() {
       const reader = new FileReader();
       reader.onload = () => { setPendingImage(reader.result as string); setPendingFileName(file.name); };
       reader.readAsDataURL(file);
-    } else if (file.type === "application/pdf" || ext === "pdf") {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const dataUrl = reader.result as string;
-        sendMessage(`এই PDF ফাইলটা বিশ্লেষণ করো: ${file.name}`, dataUrl);
-      };
-      reader.readAsDataURL(file);
     } else if (ext === "html" || ext === "htm") {
       const reader = new FileReader();
       reader.onload = () => sendMessage(`HTML/চ্যাট ফাইল: ${file.name}\n\n${(reader.result as string).slice(0, 3000)}`);
@@ -857,30 +820,26 @@ export default function AIChatPage() {
   async function callApiDirect(text: string, mode: "chat" | "audiocall" | "videocall" = "chat", imageData?: string): Promise<string> {
     const callPrefix = mode === "videocall"
       ? `তুমি এখন সরাসরি ভিডিও কলে কথা বলছো। নিচের নিয়মগুলো কঠোরভাবে মেনে চলো:
-- তুমি PARISA AI — রুবেল ও পারিসার সম্পূর্ণ ইতিহাস এবং এই পোর্টালের সব তথ্য তোমার কাছে আছে
-- নিচে দেওয়া system prompt-এ রুবেল ও পারিসার ইতিহাস, ফোল্ডার তালিকা, বাংলাদেশের আইন ও ব্ল্যাক ম্যাজিক সম্পর্কিত তথ্য আছে — সেখান থেকে সঠিক উত্তর দাও
-- ইতিহাস, আইন, ফোল্ডার বা ব্ল্যাক ম্যাজিক সম্পর্কে প্রশ্ন হলে বিস্তারিত সঠিক উত্তর দাও
-- ভিডিও ফ্রেম দেওয়া থাকলে: ছবিতে যা সত্যিই দেখছো তা বলো — পরিবেশ, বস্তু, দৃশ্য বর্ণনা করো — ব্যক্তির নাম বা পরিচয় অনুমান করবে না
-- এই কথাগুলো কখনো বলবে না: "দেখতে পাচ্ছি না", "ক্যামেরা নেই", "ভিডিও ফিড নেই", "ছবি পাঠানো হয়নি", "আমি AI", "ভার্চুয়াল সহকারী"
-- ফ্রেম না পেলে বলো "এই মুহূর্তে ফ্রেম লোড হচ্ছে" — "দেখতে পাচ্ছি না" বলবে না
-- প্রশ্নের ধরন অনুযায়ী উত্তর দাও — সাধারণ প্রশ্নে সংক্ষেপে, বিস্তারিত তথ্যে যতটুকু দরকার
-- কাউকে নাম ধরে সম্বোধন করবে না
+- তুমি PARISA AI — পারিসা মেমোরি পোর্টালের বুদ্ধিমান ড্যাশবোর্ড সহকারী
+- তোমার ক্যামেরা আছে, তুমি সব দেখতে পাচ্ছো — "দেখতে পাচ্ছি না", "ক্যামেরা নেই", "আমি AI", "ভার্চুয়াল সহকারী", "আমার কোনো শরীর নেই" — এই ধরনের কথা কখনো বলবে না
+- ছবি বা ভিডিও ফ্রেম দিলে সেটি দেখে বিস্তারিত বিশ্লেষণ করো
+- সব ড্যাশবোর্ড ফোল্ডার সম্পর্কে তোমার পূর্ণ জ্ঞান আছে
+- স্বাভাবিকভাবে বাংলায় সংক্ষেপে উত্তর দাও, ২-৩ বাক্যের মধ্যে
+- কাউকে নাম ধরে চিনবে না বা সম্বোধন করবে না
 - ইমোজি বা মার্কডাউন ব্যবহার করবে না\n\n`
       : mode === "audiocall"
       ? `তুমি এখন সরাসরি অডিও কলে কথা বলছো। নিচের নিয়মগুলো কঠোরভাবে মেনে চলো:
-- তুমি PARISA AI — রুবেল ও পারিসার সম্পূর্ণ ইতিহাস এবং এই পোর্টালের সব তথ্য তোমার কাছে আছে
-- নিচে দেওয়া system prompt-এ রুবেল ও পারিসার ইতিহাস, ফোল্ডার তালিকা, বাংলাদেশের আইন ও ব্ল্যাক ম্যাজিক সম্পর্কিত তথ্য আছে — সেখান থেকে সঠিক উত্তর দাও
-- ইতিহাস, আইন, ফোল্ডার বা ব্ল্যাক ম্যাজিক সম্পর্কে প্রশ্ন হলে বিস্তারিত সঠিক উত্তর দাও
-- লক করা ফোল্ডারের বিষয়বস্তু জানো না — বলো "এটি ব্যক্তিগত বা আইনি প্রয়োজনে সংরক্ষিত"
+- তুমি PARISA AI — পারিসা মেমোরি পোর্টালের বুদ্ধিমান ড্যাশবোর্ড সহকারী
 - "আমি AI" বা "আমি ভার্চুয়াল সহকারী" — এই ধরনের কথা বলবে না
-- প্রশ্নের ধরন অনুযায়ী উত্তর দাও — সাধারণ প্রশ্নে সংক্ষেপে, বিস্তারিত তথ্যে যতটুকু দরকার
-- কাউকে নাম ধরে সম্বোধন করবে না
+- সব ড্যাশবোর্ড ফোল্ডার সম্পর্কে তোমার পূর্ণ জ্ঞান আছে
+- স্বাভাবিকভাবে বাংলায় সংক্ষেপে উত্তর দাও, ২-৩ বাক্যের মধ্যে
+- কাউকে নাম ধরে চিনবে না বা সম্বোধন করবে না
 - ইমোজি বা মার্কডাউন ব্যবহার করবে না\n\n`
       : "";
     try {
       const resp = await api<{ text: string }>("/ai/chat", {
         method: "POST",
-        body: { messages: [{ role: "user", content: text }], systemPrompt: callPrefix + buildSystemPrompt(isAdmin ? adminPrompt : userPrompt), provider: (mode === "videocall" || imageData) ? "gemini" : "auto", groqKeys: aiKeys.groq, geminiKeys: aiKeys.gemini, openrouterKeys: aiKeys.openrouter, imageData },
+        body: { messages: [{ role: "user", content: text }], systemPrompt: callPrefix + buildSystemPrompt(isAdmin ? adminPrompt : userPrompt), provider: "auto", groqKeys: aiKeys.groq, geminiKeys: aiKeys.gemini, openrouterKeys: aiKeys.openrouter, imageData },
       });
       return resp.text || "দুঃখিত বুঝতে পারলাম না";
     } catch { return "দুঃখিত নেটওয়ার্ক সমস্যা"; }
@@ -967,12 +926,7 @@ export default function AIChatPage() {
       if (vcStreamRef.current) vcStreamRef.current.getTracks().forEach(t => t.stop());
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: false });
       vcStreamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.playsInline = true;
-        videoRef.current.muted = true;
-        try { await videoRef.current.play(); } catch { /* autoplay may be blocked */ }
-      }
+      if (videoRef.current) videoRef.current.srcObject = stream;
     } catch (e: unknown) { alert("ক্যামেরা চালু করা যাচ্ছে না: " + (e as Error).message); }
   }
 
@@ -1043,8 +997,8 @@ export default function AIChatPage() {
       if (camStreamRef.current) camStreamRef.current.getTracks().forEach(t => t.stop());
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: false });
       camStreamRef.current = stream;
+      if (camVideoRef.current) camVideoRef.current.srcObject = stream;
       setCameraOn(true); setCamCaption("");
-      // srcObject will be set by useEffect after React renders the video element
     } catch (e: unknown) { alert("ক্যামেরা চালু করা যাচ্ছে না: " + (e as Error).message); }
   }
   function closeCam() {
@@ -1069,21 +1023,12 @@ export default function AIChatPage() {
     if (!img) return;
     setCamCaption("দেখছি…");
     try {
-      const camSystemPrompt = `তুমি PARISA AI — একটি বুদ্ধিমান ভিজ্যুয়াল সহকারী।
-তোমাকে একটি ক্যামেরার ছবি দেওয়া হয়েছে। তুমি সেই ছবিতে যা দেখছো তা সত্যিকার অর্থে বর্ণনা করবে।
-
-নিয়মাবলী:
-- ছবিতে যা আছে তা স্পষ্টভাবে বাংলায় বলো — পরিবেশ, বস্তু, মানুষ, রং, আলো যা দেখছো
-- ছবিতে দেখা কোনো ব্যক্তির নাম বা পরিচয় অনুমান করবে না
-- সংক্ষেপে ২-৪ বাক্যে উত্তর দাও
-- ইমোজি বা মার্কডাউন ব্যবহার করবে না
-- "দেখতে পাচ্ছি না" বা "ছবি পাঠানো হয়নি" — এই ধরনের কথা বলবে না`;
       const resp = await api<{ text: string }>("/ai/chat", {
         method: "POST",
         body: {
           messages: [{ role: "user", content: promptText || "এই ছবিতে কী দেখা যাচ্ছে? বাংলায় বিস্তারিত বলো।" }],
-          systemPrompt: camSystemPrompt,
-          provider: "gemini",
+          systemPrompt: `তুমি PARISA AI। ক্যামেরায় ধরা ছবি দেখে বিস্তারিত বিশ্লেষণ করো। বাংলায় স্পষ্টভাবে বলো কী দেখা যাচ্ছে।\n\n` + buildSystemPrompt(isAdmin ? adminPrompt : userPrompt),
+          provider: "auto",
           groqKeys: aiKeys.groq, geminiKeys: aiKeys.gemini, openrouterKeys: aiKeys.openrouter,
           imageData: img,
         },
@@ -1117,20 +1062,6 @@ export default function AIChatPage() {
   }
 
   useEffect(() => { return () => { stopSpeech(); endAudioCall(); endVideoCall(); closeCam(); }; }, []);
-
-  // Camera: srcObject set করতে হবে React render হওয়ার পরে (cameraOn=true হলে)
-  useEffect(() => {
-    if (cameraOn && camVideoRef.current && camStreamRef.current) {
-      camVideoRef.current.srcObject = camStreamRef.current;
-    }
-  }, [cameraOn]);
-
-  // Video Call: srcObject set করতে হবে React render হওয়ার পরে (videoCallOn=true হলে)
-  useEffect(() => {
-    if (videoCallOn && videoRef.current && vcStreamRef.current) {
-      videoRef.current.srcObject = vcStreamRef.current;
-    }
-  }, [videoCallOn]);
 
   const pinnedSessions = sessions.filter(s => s.pinned);
   const recentSessions = sessions.filter(s => !s.pinned).sort((a, b) => b.createdAt - a.createdAt);
@@ -1389,17 +1320,9 @@ export default function AIChatPage() {
               <p className="parisa-tagline t2" style={{ color: "rgba(216,243,251,.75)", fontSize: 14, fontFamily: "'Hind Siliguri',sans-serif", margin: 0 }}>এটা মৃত্যুর আগ পর্যন্ত থেকে যায়...😘😘</p>
             </div>
             <h1 className="parisa-brand-title" style={{ fontSize: 26, letterSpacing: 8, margin: 0 }}>WELCOME</h1>
-            <div style={{ textAlign: "center" }}>
-              <p style={{ color: "rgba(216,243,251,.92)", fontSize: 15, margin: "0 0 4px", fontFamily: "'Hind Siliguri',sans-serif", fontWeight: 600 }}>
-                আস্সালামুয়ালাইকুম
-              </p>
-              <p style={{ color: "rgba(174,226,236,.80)", fontSize: 13, margin: 0, fontFamily: "'Hind Siliguri',sans-serif", lineHeight: 1.6 }}>
-                {userName
-                  ? `${userName}, আমি পারিসা মেমোরি পোর্টালের AI সহকারী।`
-                  : "আমি পারিসা মেমোরি পোর্টালের AI সহকারী।"}
-                <br />আপনাকে কীভাবে সহযোগিতা করতে পারি?
-              </p>
-            </div>
+            <p style={{ color: "rgba(174,226,236,.75)", fontSize: 14, margin: 0, fontFamily: "'Hind Siliguri',sans-serif" }}>
+              {userName ? `${userName}, কী জানতে চান?` : "আমি পারিসা — কী জানতে চান, লিখুন বা বলুন।"}
+            </p>
             <div style={{ width: "100%", maxWidth: 460, display: "flex", flexDirection: "column", gap: 8 }}>
               {SUGGESTIONS.map((s, i) => (
                 <button key={i} className="parisa-sugg" onClick={() => { setInput(s); setTimeout(() => { sendMessage(s); setInput(""); }, 50); }}>
@@ -1465,7 +1388,8 @@ export default function AIChatPage() {
               onChange={e => setInput(e.target.value)}
               onInput={handleInput}
               onKeyDown={handleKeyDown}
-              placeholder={busy ? "উত্তর আসছে…" : "কিছু লিখুন বা জিজ্ঞাসা করুন…"}
+              placeholder="কিছু লিখুন বা জিজ্ঞাসা করুন…"
+              disabled={busy}
               lang="bn"
               autoCorrect="off"
               autoCapitalize="off"
