@@ -57,6 +57,8 @@ export default function FolderView() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const touchStartX = useRef(0);
+  const [imgScale, setImgScale] = useState(1);
+  const pinchRef = useRef({ dist: 0, scale: 1 });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const viewerOpenedAt = useRef<number>(0);
   const historyPushed = useRef(false);
@@ -226,17 +228,39 @@ export default function FolderView() {
     preload((viewerIndex - 1 + imageFiles.length) % imageFiles.length);
   }, [viewerIndex, viewerType, imageFiles]);
 
-  const handleTouchStart = (e: React.TouchEvent) => { touchStartX.current = e.touches[0].clientX; };
+  // Reset zoom when image changes
+  useEffect(() => { setImgScale(1); }, [viewerIndex]);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[1].clientX - e.touches[0].clientX;
+      const dy = e.touches[1].clientY - e.touches[0].clientY;
+      pinchRef.current.dist = Math.hypot(dx, dy);
+      pinchRef.current.scale = imgScale;
+    } else {
+      touchStartX.current = e.touches[0].clientX;
+    }
+  };
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[1].clientX - e.touches[0].clientX;
+      const dy = e.touches[1].clientY - e.touches[0].clientY;
+      const newDist = Math.hypot(dx, dy);
+      if (pinchRef.current.dist > 0) {
+        const ratio = newDist / pinchRef.current.dist;
+        setImgScale(s => Math.max(1, Math.min(5, pinchRef.current.scale * ratio)));
+      }
+    }
+  };
   const handleTouchEnd = (e: React.TouchEvent) => {
-    const dx = e.changedTouches[0].clientX - touchStartX.current;
-    if (Math.abs(dx) > 50) { dx < 0 ? nextImage() : prevImage(); }
+    if (e.touches.length === 0 && e.changedTouches.length === 1 && imgScale <= 1.1) {
+      const dx = e.changedTouches[0].clientX - touchStartX.current;
+      if (Math.abs(dx) > 50) { dx < 0 ? nextImage() : prevImage(); }
+    }
+    if (imgScale < 1.05) setImgScale(1);
   };
 
-  const handleUploadClick = async () => {
-    try {
-      const status = await api<{ ready: boolean }>("/drive/ready");
-      if (!status.ready) { showToast("Google Drive সংযুক্ত নয়। Admin Settings → Drive ট্যাব দেখুন।", "err"); return; }
-    } catch {}
+  const handleUploadClick = () => {
     fileInputRef.current?.click();
   };
 
@@ -363,15 +387,17 @@ export default function FolderView() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 p-3 w-full">
+      <div className="flex-1 relative">
         {(loading || lockChecking) && (
-          <div className="flex items-center justify-center py-20">
-            <div className="text-center">
-              <div className="w-12 h-12 border-2 border-cyan-500/30 border-t-cyan-400 rounded-full animate-spin mx-auto mb-3" />
-              <p className="text-white/40 text-sm">লোড হচ্ছে...</p>
+          <div className="absolute inset-0 flex items-center justify-center"
+            style={{ background: 'rgba(10,14,31,0.97)', zIndex: 5 }}>
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-8 h-8 rounded-full border-2 border-cyan-400/30 border-t-cyan-400 animate-spin" />
+              <p className="text-white/50 text-sm">লোড হচ্ছে…</p>
             </div>
           </div>
         )}
+        <div className="p-3 w-full">
         {error && (
           <div className="rounded-xl p-6 text-center" style={{ background:'rgba(255,50,50,0.08)', border:'1px solid rgba(255,50,50,0.2)' }}>
             <p className="text-red-400 mb-3">{error}</p>
@@ -496,6 +522,7 @@ export default function FolderView() {
             )}
           </div>
         )}
+        </div>
       </div>
 
       {/* ═══════════════════════════════════════════════════════════
@@ -530,18 +557,41 @@ export default function FolderView() {
             {/* ── Image viewer ── */}
             {viewerType === 'image' && (
               <div className="flex-1 flex items-center justify-center relative overflow-hidden"
-                onTouchStart={handleTouchStart} onTouchEnd={handleTouchEnd}>
+                onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
                 <AnimatePresence mode="wait">
                   <motion.img key={viewerIndex}
-                    initial={{ opacity:0, x:40 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x:-40 }}
+                    initial={{ opacity:0, x: imgScale > 1 ? 0 : 40 }} animate={{ opacity:1, x:0 }} exit={{ opacity:0, x: imgScale > 1 ? 0 : -40 }}
                     transition={{ duration:0.18 }}
                     src={proxyUrl(imageFiles[viewerIndex]?.id ?? '')}
                     alt={imageFiles[viewerIndex]?.name}
                     className="max-w-full object-contain select-none"
-                    style={{ maxHeight:'calc(100vh - 130px)' }}
+                    style={{
+                      maxHeight:'calc(100vh - 130px)',
+                      transform: `scale(${imgScale})`,
+                      transformOrigin: 'center center',
+                      transition: imgScale === 1 ? 'transform 0.2s ease' : 'none',
+                      touchAction: 'none',
+                    }}
+                    onDoubleClick={() => setImgScale(s => s > 1 ? 1 : 2.5)}
                   />
                 </AnimatePresence>
-                {imageFiles.length > 1 && (
+                {/* Zoom controls */}
+                <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-2 z-10">
+                  <button onClick={() => setImgScale(s => Math.max(1, s - 0.5))}
+                    className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-xl font-bold active:scale-90 transition-transform"
+                    style={{ background:'rgba(0,0,0,0.75)', border:'1px solid rgba(255,255,255,0.25)' }}>−</button>
+                  {imgScale !== 1 && (
+                    <button onClick={() => setImgScale(1)}
+                      className="px-3 py-1.5 rounded-xl text-xs text-white font-medium active:scale-90 transition-transform"
+                      style={{ background:'rgba(0,0,0,0.75)', border:'1px solid rgba(255,255,255,0.25)' }}>
+                      ↙ Reset
+                    </button>
+                  )}
+                  <button onClick={() => setImgScale(s => Math.min(5, s + 0.5))}
+                    className="w-9 h-9 rounded-xl flex items-center justify-center text-white text-xl font-bold active:scale-90 transition-transform"
+                    style={{ background:'rgba(0,0,0,0.75)', border:'1px solid rgba(255,255,255,0.25)' }}>+</button>
+                </div>
+                {imageFiles.length > 1 && imgScale <= 1 && (
                   <>
                     <button onClick={prevImage} className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center text-white text-2xl" style={{ background:'rgba(0,0,0,0.6)' }}>‹</button>
                     <button onClick={nextImage} className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center text-white text-2xl" style={{ background:'rgba(0,0,0,0.6)' }}>›</button>

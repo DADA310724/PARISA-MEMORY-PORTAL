@@ -108,16 +108,12 @@ export default function SubFolderView() {
       </div>
 
       {loading ? (
-        <div className="space-y-0 divide-y divide-white/5">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="flex items-center gap-3 px-4 py-4 animate-pulse">
-              <div className="w-12 h-12 rounded-full bg-white/8 shrink-0" />
-              <div className="flex-1">
-                <div className="h-3.5 bg-white/8 rounded w-32 mb-2" />
-                <div className="h-2.5 bg-white/5 rounded w-48" />
-              </div>
-            </div>
-          ))}
+        <div className="fixed inset-0 flex items-center justify-center z-10"
+          style={{ background: 'rgba(10,14,31,0.97)' }}>
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-8 h-8 rounded-full border-2 border-cyan-400/30 border-t-cyan-400 animate-spin" />
+            <p className="text-white/50 text-sm">লোড হচ্ছে…</p>
+          </div>
         </div>
       ) : subs.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 px-6 text-center">
