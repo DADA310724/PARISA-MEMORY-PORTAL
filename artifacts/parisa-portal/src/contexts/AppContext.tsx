@@ -55,6 +55,7 @@ interface AppCtx {
   getSubButtons: (buttonId: string) => Promise<SubButton[]>;
   saveSubButton: (buttonId: string, sub: SubButton) => Promise<void>;
   deleteSubButton: (buttonId: string, subId: string) => Promise<void>;
+  reorderSubButtons: (buttonId: string, ids: string[]) => Promise<void>;
   loading: boolean;
 }
 
@@ -321,6 +322,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function reorderSubButtons(buttonId: string, ids: string[]) {
+    const db = await ensureFirebase();
+    await Promise.all(
+      ids.map((id, i) => fbSet(ref(db, `sub_buttons/${buttonId}/${id}/order`), i + 1)),
+    );
+    delete subCache.current[buttonId];
+  }
+
   const isAdmin = auth?.role === "admin";
   const logout = () => setAuth(null);
 
@@ -328,7 +337,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     <Ctx.Provider value={{
       config, auth, setAuth, isAdmin, logout, buttons,
       saveButton, deleteButton, reorderButtons,
-      getSubButtons, saveSubButton, deleteSubButton,
+      getSubButtons, saveSubButton, deleteSubButton, reorderSubButtons,
       loading,
     }}>
       {children}
