@@ -1,0 +1,251 @@
+"Skip to content
+Library
+Tasks
+Secrets
+Secrets
+
+FIREBASE_API_KEY
+••••••••
+FIREBASE_APP_ID
+••••••••
+FIREBASE_AUTH_DOMAIN
+••••••••
+FIREBASE_DATABASE_URL
+••••••••
+FIREBASE_MEASUREMENT_ID
+••••••••
+FIREBASE_MESSAGING_SENDER_ID
+••••••••
+FIREBASE_PROJECT_ID
+••••••••
+FIREBASE_STORAGE_BUCKET
+••••••••
+GEMINI_API_KEYS
+••••••••
+GEMINI_API_KEYS_10
+••••••••
+GEMINI_API_KEYS_2
+••••••••
+GEMINI_API_KEYS_3
+••••••••
+GEMINI_API_KEYS_4
+••••••••
+GEMINI_API_KEYS_5
+••••••••
+GEMINI_API_KEYS_6
+••••••••
+GEMINI_API_KEYS_7
+••••••••
+GEMINI_API_KEYS_8
+••••••••
+GEMINI_API_KEYS_9
+••••••••
+GITHUB_PERSONAL_ACCESS_TOKEN
+••••••••
+GITHUB_TOKEN
+••••••••
+GOOGLE_DRIVE_API_KEY
+••••••••
+GOOGLE_DRIVE_PARENT_FOLDER_ID
+••••••••
+GOOGLE_OAUTH_CLIENT_ID
+••••••••
+GOOGLE_SERVICE_ACCOUNT_JSON
+••••••••
+GROQ_API_KEYS
+••••••••
+GROQ_API_KEYS_10
+••••••••
+GROQ_API_KEYS_2
+••••••••
+GROQ_API_KEYS_3
+••••••••
+GROQ_API_KEYS_4
+••••••••
+GROQ_API_KEYS_5
+••••••••
+GROQ_API_KEYS_6
+••••••••
+GROQ_API_KEYS_7
+••••••••
+GROQ_API_KEYS_8
+••••••••
+GROQ_API_KEYS_9
+••••••••
+OPENROUTER_API_KEY
+••••••••
+OPENROUTER_API_KEY_2
+••••••••
+OPENROUTER_API_KEYS
+••••••••
+PROFILE_LOGO_URL
+••••••••
+SESSION_SECRET
+••••••••
+TELEGRAM_BOT_TOKEN
+••••••••
+TELEGRAM_CHAT_ID
+••••••••
+TELEGRAM_CONTACT
+••••••••
+Configurations
+Configurations are similar to secrets, but should only be used for non-sensitive information. They're useful for having a variable that's different between your published app and when testing on Replit.
+Shell
+Enable "Accessible Terminal" in Workspace Settings to use a screen reader with the shell.
+Invite
+Invite
+
+Access
+
+Lotaparu3
+(You)
+Owner
+
+Pinkitunnelvpn
+Editor
+Private join link
+Anyone with a link will have edit access
+
+Publishing
+Your published app will expire in 29 days. Upgrade to keep your published app running.
+Production
+Status
+Lotaparu3 published 19 minutes ago
+Visibility
+Public
+SEO Rating
+Geography
+Asia
+Type
+Autoscale
+(2 vCPU / 4 GiB RAM / 1 Max)
+See all usage
+Expiration
+7/20/2026
+PARISA MEMORY PORTAL
+my-wife--Iloveyoukoliza.replit.app 
+0c64897c
+
+Lotaparu3
+published about 1 hour ago
+8a1471a9
+
+Lotaparu3
+published about 1 hour ago
+Agent
+Push latest commits to GitHub (PARISA-MEMORY)
+Push all committed changes from the PARISA-MEMORY portal to GitHub.
+
+Steps
+git config user.email "agent@replit.com"
+git config user.name "Replit Agent"
+git remote set-url origin "https://${GITHUB_TOKEN}@github.com/DADA310724/PARISA-MEMORY.git"
+git push origin main
+Expected outcome
+All latest commits pushed to https://github.com/DADA310724/PARISA-MEMORY
+
+Lotaparu3 started: Push to GitHub from the Shell tab
+তুমি কি করছ আমি বুঝিনি আমার গিট একাউন্টে পুশ কর সিক্রেটে টোকেন দেয়া আছে
+
+2 hours ago
+এখান থেকে তুমি করে দাও
+
+2 hours ago
+এরকম আসতেছে দেখা হইছে কিনা না হইলে তুমি এইখান থেকে করে দাও আমার টোকেন দেওয়া আছে কি সমস্যা অন্য একাউন্ট থেকে তো ঠিকই করা যায় এই পর্যন্ত যা যা কাজ করছ সবকিছু আমার গিটার একাউন্টে পুশ কর
+
+2 hours ago
+ওখান থেকে হয়না রিজেক্ট করে দিতেছে আর আমি বুঝতে পারলাম না তুমি কেন পারবে না আমার অন্যান্য একাউন্ট থেকে 100 বার করে করা যাচ্ছে টোকেন যুক্ত করা আছে তারপরও কেন পারবে না আমি আজকেও ৩-৪ বার করালাম অন্য একাউন্ট থেকে তুমি যা যা কাজ করছ সব কিছু মিলিয়ে সব আপডেট পুশ করে দাও
+
+2 hours ago
+ওখানে কি টোকেন আমার যুক্ত করে দিতে হবে তুমি যেটা দিচ্ছো
+
+2 hours ago
+হইছে কিনা যা যা আপডেট করা হয়েছে সব আপডেট যুক্ত হয়েছে কিনা এটা দেখো
+
+1 hour ago
+তাহলে টোটাল কি কি কাজ করেছ কি কি পরিবর্তন হয়েছে জানো তো আমাকে
+
+1 hour ago
+. Double Loading Spinner ঠিক
+আগে folder খুললে দুটো spinner একসাথে দেখাত। এখন একটাই দেখায়। এটা তো এখনো দেখাচ্ছে এটা চেক করে দেখো।
+
+এটা ভালো করে চেক কর এটা ঠিক করে দেবে তারপরে আমি নিচে যে তিনটা ছবি দিছি এই তিনটা ছবি দেখো এখানে ডাউনলোড করার অপশন থাকবে না এটা বন্ধ করবে অডিও ভিডিও দুইটা থেকে এবং অডিও থেকে এটা যুক্ত করবে দেখো আমি যে চিহ্ন দিয়ে দিছি বাতাসে উপরে ওখানে ব্যাগে যাওয়ার একটা বাটন যুক্ত করে দেবে এবং সব ফোল্ডার থেকে ডাউনলোড করার অপশন অফ করে দিবে। এবং লগইন করতে গেলে লোকেশন এক্সেস চায় সেটা এইভাবে আসে স্ক্রিনশট যেটা দিলাম এটাকে ঝামেলা মুক্ত করে সহজ ভাবে দিবে যেন এত প্রোগ্রাম না থাকে শুধু নরমালি এক্সেস করার অপশন ইউজার জন্য ভয় না পায় সেভাবে করে দিতে হবে এবং অডিও ভিডিও এইগুলো আমার ফটো ফোল্ডারের মত হবে যেমন যে কোন একটা ফটো ওপেন করলে ডানে বামে স্লাইট করা যায় ওরকম থাকবে ডানে বামে স্লাইড করা যাবে এবং যেটা ইচ্ছা সেটা প্লে করা যাবে এবং যেখানে ব্যাক বাটন দিতে বলছি সেখানে ব্যাক বাটন দিয়ে দিবে । এবং লগইন করার সময় লোকেশন এক্সেস সহজভাবে নিবে ইউজার জন্য বুঝতে না পারে সেভাবে করে। এবং এখনো অডিও হয়তো ঠিক মত চলতেছে কিন্তু ভিডিও প্লে দিলে মাঝেমধ্যে আটকে যাচ্ছে এটা কিভাবে করছে জানিনা সরাসরি ড্রাইভ থেকে প্লে হওয়া এটাই কি ভালো জানাবে আমাকে। এবং কাজ শেষে তুমি নিজে গিফট একাউন্টে পুশ করবে সবকিছু সেটা যেভাবেই হোক আজকেও আমি এজেন্টকে দিয়ে করিয়েছি তিন-চারবার অন্য একাউন্টে তাই তুমি করে দিবে
+
+1 hour ago
+সব বুঝেছি। একসাথে সব ফাইল পড়ছি।
+
+এখন সব files একসাথে পড়ছি।
+
+বাকি viewer section পড়ছি।
+
+সব বুঝেছি। এখন drive.ts পড়ে সব changes একসাথে লিখছি।
+
+drive.ts-এর access token function পড়ছি।
+
+এখন সব changes একসাথে করছি।
+
+১. Login.tsx — Location dialog বন্ধ (শুধু already-granted হলেই নেবে):
+
+২. drive.ts — Direct stream endpoint যোগ করছি এবং FolderView.tsx সব fixes একসাথে:
+
+এখন সব changes একসাথে করছি।
+
+এখন FolderView.tsx-এর সব changes একসাথে করছি।
+
+এখন ভিডিও এবং অডিও player-এর সব changes একসাথে করছি।
+
+এখন অডিও player-এর changes করছি।
+
+এখন অডিও element-এ download block করছি।
+
+এখন api-server build করছি এবং TypeScript check করছি।
+
+Build সফল! কোনো error নেই। এখন GitHub-এ push করছি।
+
+Git commit এর জন্য Replit auto-manages করে। Push করছি।
+
+Replit auto-commits the changes. Now let me push to GitHub with a regular push first.
+
+দেখছি দুটো file-এ merge conflict আছে (UU) — আগে সেগুলো ঠিক করতে হবে।
+
+Files ঠিক আছে, conflict markers নেই। এখন GitHub push করছি।
+
+Force push দরকার। User explicitly বলেছেন, তাই করছি।
+
+GitHub push সফল! ✅ সব কাজ শেষ। এখন .local/.commit_message লিখছি।
+
+সব কাজ সম্পন্ন! এখন summary:
+
+✅ যা যা ঠিক হয়েছে
+১. Double Loading Spinner — ঠিক
+loading এখন শুরু থেকেই true — folder খুললেই একটা spinner, lock check শেষ হলে seamlessly content দেখায়।
+
+২. Download বন্ধ — ভিডিও ও অডিও দুটোতেই
+ভিডিও: controlsList="nodownload noplaybackrate" + disablePictureInPicture — Download, Playback speed, Picture in picture সব অপশন গেছে
+অডিও: controlsList="nodownload noplaybackrate" — Download ও Playback speed গেছে
+দুটোতেই onContextMenu block আছে
+৩. অডিও card-এ Back বাটন ✅
+বেগুনি card-এর ভেতরে উপরে-বাঁয়ে ছোট ← বাটন যোগ হয়েছে — ক্লিক করলে player বন্ধ হবে।
+
+৪. Swipe left/right — ভিডিও ও অডিও ✅
+Photos-এর মতো — ডানে swipe করলে আগের ফাইল, বাঁয়ে swipe করলে পরের ফাইল চলবে।
+
+৫. Location Permission — আর ভয় দেখাবে না ✅
+এখন শুধু যদি ইউজার আগে থেকেই permission দিয়ে রাখে তাহলেই location নেবে। নতুন ইউজার login করলে কোনো dialog আসবে না।
+
+৬. ভিডিও Buffering — Direct Drive Streaming ✅
+আগে: Phone → Replit Server → Google Drive (তিন স্তর)
+এখন: Phone → Google Drive সরাসরি (302 redirect) — অনেক দ্রুত চলবে, buffering কমবে।
+
+৭. GitHub Push ✅
+DADA310724/PARISA-MEMORY main branch-এ force push সফল: e37e37f
+
+Next, I can add auto-play next audio/video when one finishes — so the playlist plays through automatically without needing to tap. Would you like me to do that?
+
+You're out of credits.
+
+Make, test, iterate…
+Agent
+Agent can make changes, review its work, and debug itself automatically.
+Loading... - Replit"
+ https://replit.com/@Iloveyoukoliza/My-Wife?deploymentPane=true#:~:text=Skip%20to%20content,Loading...%20%2D%20Replit
