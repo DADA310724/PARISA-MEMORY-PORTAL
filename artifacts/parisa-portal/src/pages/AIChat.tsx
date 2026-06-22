@@ -726,11 +726,11 @@ export default function AIChatPage() {
       const sysPrompt = buildSystemPrompt(isAdmin ? adminPrompt : userPrompt) + screenshotCtx + chatCtx;
       const apiMsgs = nextMsgs.map(m => ({
         role: m.role,
-        content: m.imageUrl ? `[ফাইল সংযুক্ত] ${m.content}` : m.content,
+        content: m.content || (m.imageUrl ? "এই ছবিটা বিশ্লেষণ করো।" : ""),
       }));
       const resp = await api<{ text: string; provider: string }>("/ai/chat", {
         method: "POST",
-        body: { messages: apiMsgs, systemPrompt: sysPrompt, provider: "auto", groqKeys: aiKeys.groq, geminiKeys: aiKeys.gemini, openrouterKeys: aiKeys.openrouter },
+        body: { messages: apiMsgs, systemPrompt: sysPrompt, provider: "auto", groqKeys: aiKeys.groq, geminiKeys: aiKeys.gemini, openrouterKeys: aiKeys.openrouter, ...(imageUrl ? { imageData: imageUrl } : {}) },
       });
       // যদি AI <<IMG:>> format ব্যবহার না করে, frontend সরাসরি inject করে
       let aiContent = resp.text;

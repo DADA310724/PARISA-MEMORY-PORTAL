@@ -402,6 +402,60 @@ async function tryOpenRouter(
   throw new Error("All OpenRouter keys failed");
 }
 
+async function tryOpenRouterVision(
+  keys: string[],
+  messages: ChatMessage[],
+  systemPrompt: string,
+  imageData: string,
+): Promise<string> {
+  const allKeys = shuffle([...keys, ...getEnvKeys("OPENROUTER_API_KEYS")]);
+  const uniqueKeys = [...new Set(allKeys)].filter(Boolean);
+  if (!uniqueKeys.length) throw new Error("No OpenRouter keys for vision");
+  for (const key of uniqueKeys) {
+    try {
+      const visionMessages = messages.map((m, idx) => {
+        const isLastUser = m.role === "user" && idx === messages.length - 1;
+        if (isLastUser) {
+          return {
+            role: "user",
+            content: [
+              { type: "text", text: m.content },
+              { type: "image_url", image_url: { url: imageData } },
+            ],
+          };
+        }
+        return { role: m.role, content: m.content };
+      });
+      const resp = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${key}`,
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.0-flash",
+          messages: [{ role: "system", content: systemPrompt }, ...visionMessages],
+          max_tokens: 1500,
+        }),
+      });
+      if (!resp.ok) {
+        const errBody = await resp.text().catch(() => "");
+        console.warn(`OpenRouter Vision HTTP ${resp.status}: ${errBody.slice(0, 200)}`);
+        continue;
+      }
+      const data = (await resp.json()) as {
+        choices: Array<{ message: { content: string } }>;
+      };
+      const text = data.choices?.[0]?.message?.content?.trim();
+      if (text) return text;
+    } catch (e) {
+      console.warn("OpenRouter vision fetch error:", (e as Error).message);
+      continue;
+    }
+  }
+  throw new Error("OpenRouter vision failed");
+}
+
 aiRouter.post("/chat", async (req: Request, res: Response) => {
   const {
     messages = [],
@@ -419,15 +473,14 @@ aiRouter.post("/chat", async (req: Request, res: Response) => {
     ? `${systemPrompt}\n\n=== প্রাসঙ্গিক চ্যাট হিস্টরি ===\n${chatContext}\n=== শেষ ===`
     : systemPrompt;
 
-  // When imageData is provided, use Gemini first (it supports vision)
+  // ছবি থাকলে শুধু vision-capable মডেল ব্যবহার করবে — Groq/text-only মডেল fallback নয়
   const providers: Array<{
     name: string;
     fn: () => Promise<string>;
   }> = imageData
     ? [
         { name: "gemini", fn: () => tryGemini(geminiKeys, messages, enhancedPrompt, imageData) },
-        { name: "groq", fn: () => tryGroq(groqKeys, messages, enhancedPrompt) },
-        { name: "openrouter", fn: () => tryOpenRouter(openrouterKeys, messages, enhancedPrompt) },
+        { name: "openrouter-vision", fn: () => tryOpenRouterVision(openrouterKeys, messages, enhancedPrompt, imageData) },
       ]
     : [
         { name: "groq", fn: () => tryGroq(groqKeys, messages, enhancedPrompt) },
@@ -443,6 +496,12 @@ aiRouter.post("/chat", async (req: Request, res: Response) => {
     } catch (err) {
       console.warn(`${p.name} failed:`, err);
     }
+  }
+
+  // ছবি বিশ্লেষণ সম্পূর্ণ ব্যর্থ — স্পষ্ট বার্তা দাও, ভুল বর্ণনা নয়
+  if (imageData) {
+    res.json({ text: "ছবি বিশ্লেষণ করতে পারলাম না। Gemini API key সেট আছে কিনা Admin Settings থেকে দেখুন।", provider: "error" });
+    return;
   }
 
   res.status(503).json({ error: "All AI providers failed" });

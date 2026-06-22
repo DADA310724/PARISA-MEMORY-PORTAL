@@ -389,8 +389,8 @@ export default function FolderView() {
       {/* Content */}
       <div className="flex-1 relative">
         {(loading || lockChecking) && (
-          <div className="absolute inset-0 flex items-center justify-center"
-            style={{ background: 'rgba(10,14,31,0.97)', zIndex: 5 }}>
+          <div className="fixed inset-0 flex items-center justify-center"
+            style={{ background: 'rgba(10,14,31,0.97)', zIndex: 50 }}>
             <div className="flex flex-col items-center gap-3">
               <div className="w-8 h-8 rounded-full border-2 border-cyan-400/30 border-t-cyan-400 animate-spin" />
               <p className="text-white/50 text-sm">লোড হচ্ছে…</p>
@@ -557,6 +557,7 @@ export default function FolderView() {
             {/* ── Image viewer ── */}
             {viewerType === 'image' && (
               <div className="flex-1 flex items-center justify-center relative overflow-hidden"
+                style={{ touchAction: 'none' }}
                 onTouchStart={handleTouchStart} onTouchMove={handleTouchMove} onTouchEnd={handleTouchEnd}>
                 <AnimatePresence mode="wait">
                   <motion.img key={viewerIndex}
