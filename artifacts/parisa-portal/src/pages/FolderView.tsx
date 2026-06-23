@@ -49,7 +49,6 @@ export default function FolderView() {
   const [viewerIndex, setViewerIndex] = useState(0);
   const [viewerType, setViewerType] = useState<"image"|"video"|"audio"|"html"|"pdf"|"text"|"generic">("image");
   const [viewerFile, setViewerFile] = useState<DriveFile | null>(null);
-  const [mediaError, setMediaError] = useState(false);
   const [mediaRetryKey, setMediaRetryKey] = useState(0);
   const [mediaCurTime, setMediaCurTime] = useState(0);
   const [mediaDuration, setMediaDuration] = useState(0);
@@ -154,7 +153,6 @@ export default function FolderView() {
     setMediaCurTime(0);
     setMediaDuration(0);
     setMediaBuffering(false);
-    setMediaError(false);
   }, [viewerFile, currentFolder.name]);
 
   // ── Back button intercept: ফোনের back বাটন viewer বন্ধ করবে, folder থেকে বের হবে না ──
@@ -194,7 +192,6 @@ export default function FolderView() {
     if (isFolder(f)) { openFolder(f); return; }
     viewerOpenedAt.current = Date.now();
     setViewerFile(f);
-    setMediaError(false);
     setMediaCurTime(0);
     setMediaDuration(0);
     setMediaBuffering(false);
@@ -626,66 +623,54 @@ export default function FolderView() {
             {/* ── Video Player ── */}
             {viewerType === 'video' && (
               <div className="flex-1 flex flex-col" style={{ background:'#000' }}>
-                {mediaError ? (
-                  <div className="flex-1 flex items-center justify-center">
-                    <div className="text-center p-8">
-                      <p className="text-white/60 text-sm mb-4" style={{ fontFamily:"'Hind Siliguri',sans-serif" }}>ভিডিও লোড হয়নি</p>
-                      <button onClick={() => { setMediaError(false); setMediaRetryKey(k => k + 1); }}
-                        className="px-5 py-2 rounded-xl text-sm font-bold"
-                        style={{ background:'rgba(0,229,255,0.15)', border:'1px solid rgba(0,229,255,0.4)', color:'#00e5ff' }}>
-                        আবার চেষ্টা করুন
-                      </button>
-                    </div>
+                <div className="flex-1 flex flex-col">
+                  {/* Video element */}
+                  <div className="flex-1 flex items-center justify-center relative" style={{ background:'#000' }}>
+                    <video
+                      key={`v-${viewerFile.id}-${mediaRetryKey}`}
+                      ref={videoRef}
+                      src={proxyUrl(viewerFile.id)}
+                      controls
+                      playsInline
+                      autoPlay
+                      preload="auto"
+                      controlsList="nodownload nofullscreen noremoteplayback"
+                      disablePictureInPicture
+                      style={{ width:'100%', maxHeight:'calc(100vh - 180px)', objectFit:'contain', display:'block' }}
+                      onContextMenu={e => e.preventDefault()}
+                      onTimeUpdate={e => setMediaCurTime((e.target as HTMLVideoElement).currentTime)}
+                      onLoadedMetadata={e => setMediaDuration((e.target as HTMLVideoElement).duration)}
+                      onWaiting={() => setMediaBuffering(true)}
+                      onPlaying={() => setMediaBuffering(false)}
+                      onCanPlay={() => setMediaBuffering(false)}
+                    />
+                    {/* Buffering indicator */}
+                    {mediaBuffering && (
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className="w-12 h-12 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                      </div>
+                    )}
                   </div>
-                ) : (
-                  <div className="flex-1 flex flex-col">
-                    {/* Video element */}
-                    <div className="flex-1 flex items-center justify-center relative" style={{ background:'#000' }}>
-                      <video
-                        key={`v-${viewerFile.id}-${mediaRetryKey}`}
-                        ref={videoRef}
-                        src={proxyUrl(viewerFile.id)}
-                        controls
-                        playsInline
-                        autoPlay
-                        preload="auto"
-                        style={{ width:'100%', maxHeight:'calc(100vh - 180px)', objectFit:'contain', display:'block' }}
-                        onContextMenu={e => e.preventDefault()}
-                        onTimeUpdate={e => setMediaCurTime((e.target as HTMLVideoElement).currentTime)}
-                        onLoadedMetadata={e => setMediaDuration((e.target as HTMLVideoElement).duration)}
-                        onWaiting={() => setMediaBuffering(true)}
-                        onPlaying={() => setMediaBuffering(false)}
-                        onCanPlay={() => setMediaBuffering(false)}
-                        onError={() => setMediaError(true)}
-                      />
-                      {/* Buffering indicator */}
-                      {mediaBuffering && (
-                        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                          <div className="w-12 h-12 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                  {/* Timestamp bar + prev/next */}
+                  <div className="flex-shrink-0 px-4 pb-3 pt-2" style={{ background:'rgba(0,0,0,0.8)' }}>
+                    {/* Progress bar */}
+                    <div className="w-full h-1 rounded-full mb-2 overflow-hidden" style={{ background:'rgba(255,255,255,0.12)' }}>
+                      <div className="h-full rounded-full transition-all duration-300"
+                        style={{ width: mediaDuration > 0 ? `${(mediaCurTime / mediaDuration) * 100}%` : '0%', background:'linear-gradient(90deg,#3b82f6,#60a5fa)' }} />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-white/50 text-xs">{fmtTime(mediaCurTime)} / {fmtTime(mediaDuration)}</span>
+                      {videoFiles.length > 1 && (
+                        <div className="flex gap-3">
+                          <button onClick={prevVideo} disabled={currentVideoIdx <= 0}
+                            className="text-white/60 disabled:text-white/20 text-lg px-2 active:scale-90 transition-transform">⏮</button>
+                          <button onClick={nextVideo} disabled={currentVideoIdx >= videoFiles.length - 1}
+                            className="text-white/60 disabled:text-white/20 text-lg px-2 active:scale-90 transition-transform">⏭</button>
                         </div>
                       )}
                     </div>
-                    {/* Timestamp bar + prev/next */}
-                    <div className="flex-shrink-0 px-4 pb-3 pt-2" style={{ background:'rgba(0,0,0,0.8)' }}>
-                      {/* Progress bar */}
-                      <div className="w-full h-1 rounded-full mb-2 overflow-hidden" style={{ background:'rgba(255,255,255,0.12)' }}>
-                        <div className="h-full rounded-full transition-all duration-300"
-                          style={{ width: mediaDuration > 0 ? `${(mediaCurTime / mediaDuration) * 100}%` : '0%', background:'linear-gradient(90deg,#3b82f6,#60a5fa)' }} />
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-white/50 text-xs">{fmtTime(mediaCurTime)} / {fmtTime(mediaDuration)}</span>
-                        {videoFiles.length > 1 && (
-                          <div className="flex gap-3">
-                            <button onClick={prevVideo} disabled={currentVideoIdx <= 0}
-                              className="text-white/60 disabled:text-white/20 text-lg px-2 active:scale-90 transition-transform">⏮</button>
-                            <button onClick={nextVideo} disabled={currentVideoIdx >= videoFiles.length - 1}
-                              className="text-white/60 disabled:text-white/20 text-lg px-2 active:scale-90 transition-transform">⏭</button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
                   </div>
-                )}
+                </div>
               </div>
             )}
 
@@ -717,54 +702,41 @@ export default function FolderView() {
                     {viewerFile.name.replace(/\.[^.]+$/, '')}
                   </p>
 
-                  {mediaError ? (
-                    <div className="text-center">
-                      <p className="text-white/60 text-sm mb-3" style={{ fontFamily:"'Hind Siliguri',sans-serif" }}>অডিও লোড হয়নি</p>
-                      <button onClick={() => { setMediaError(false); setMediaRetryKey(k => k + 1); }}
-                        className="px-5 py-2 rounded-xl text-sm font-bold mx-auto block"
-                        style={{ background:'rgba(160,80,255,0.15)', border:'1px solid rgba(160,80,255,0.4)', color:'#c084fc' }}>
-                        আবার চেষ্টা করুন
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      {/* Audio element */}
-                      <audio
-                        key={`a-${viewerFile.id}-${mediaRetryKey}`}
-                        ref={audioRef}
-                        src={proxyUrl(viewerFile.id)}
-                        controls
-                        autoPlay
-                        preload="auto"
-                        style={{ width:'100%', borderRadius:10, accentColor:'#a855f7', marginBottom:12 }}
-                        onContextMenu={e => e.preventDefault()}
-                        onTimeUpdate={e => setMediaCurTime((e.target as HTMLAudioElement).currentTime)}
-                        onLoadedMetadata={e => setMediaDuration((e.target as HTMLAudioElement).duration)}
-                        onError={() => setMediaError(true)}
-                      />
+                  {/* Audio element */}
+                  <audio
+                    key={`a-${viewerFile.id}-${mediaRetryKey}`}
+                    ref={audioRef}
+                    src={proxyUrl(viewerFile.id)}
+                    controls
+                    autoPlay
+                    preload="auto"
+                    controlsList="nodownload noplaybackrate"
+                    style={{ width:'100%', borderRadius:10, accentColor:'#a855f7', marginBottom:12 }}
+                    onContextMenu={e => e.preventDefault()}
+                    onTimeUpdate={e => setMediaCurTime((e.target as HTMLAudioElement).currentTime)}
+                    onLoadedMetadata={e => setMediaDuration((e.target as HTMLAudioElement).duration)}
+                  />
 
-                      {/* Progress bar */}
-                      <div className="w-full h-1 rounded-full mb-2 overflow-hidden" style={{ background:'rgba(255,255,255,0.1)' }}>
-                        <div className="h-full rounded-full transition-all duration-300"
-                          style={{ width: mediaDuration > 0 ? `${(mediaCurTime / mediaDuration) * 100}%` : '0%', background:'linear-gradient(90deg,#a855f7,#c084fc)' }} />
-                      </div>
+                  {/* Progress bar */}
+                  <div className="w-full h-1 rounded-full mb-2 overflow-hidden" style={{ background:'rgba(255,255,255,0.1)' }}>
+                    <div className="h-full rounded-full transition-all duration-300"
+                      style={{ width: mediaDuration > 0 ? `${(mediaCurTime / mediaDuration) * 100}%` : '0%', background:'linear-gradient(90deg,#a855f7,#c084fc)' }} />
+                  </div>
 
-                      {/* Timestamp + prev/next */}
-                      <div className="flex items-center justify-between mt-1">
-                        <span style={{ color:'rgba(255,255,255,0.4)', fontSize:11 }}>{fmtTime(mediaCurTime)} / {fmtTime(mediaDuration)}</span>
-                        {audioFiles.length > 1 && (
-                          <div className="flex gap-2">
-                            <button onClick={prevAudio} disabled={currentAudioIdx <= 0}
-                              className="active:scale-90 transition-transform"
-                              style={{ color: currentAudioIdx <= 0 ? 'rgba(255,255,255,0.15)' : 'rgba(200,120,255,0.8)', fontSize:20, padding:'0 8px' }}>⏮</button>
-                            <button onClick={nextAudio} disabled={currentAudioIdx >= audioFiles.length - 1}
-                              className="active:scale-90 transition-transform"
-                              style={{ color: currentAudioIdx >= audioFiles.length - 1 ? 'rgba(255,255,255,0.15)' : 'rgba(200,120,255,0.8)', fontSize:20, padding:'0 8px' }}>⏭</button>
-                          </div>
-                        )}
+                  {/* Timestamp + prev/next */}
+                  <div className="flex items-center justify-between mt-1">
+                    <span style={{ color:'rgba(255,255,255,0.4)', fontSize:11 }}>{fmtTime(mediaCurTime)} / {fmtTime(mediaDuration)}</span>
+                    {audioFiles.length > 1 && (
+                      <div className="flex gap-2">
+                        <button onClick={prevAudio} disabled={currentAudioIdx <= 0}
+                          className="active:scale-90 transition-transform"
+                          style={{ color: currentAudioIdx <= 0 ? 'rgba(255,255,255,0.15)' : 'rgba(200,120,255,0.8)', fontSize:20, padding:'0 8px' }}>⏮</button>
+                        <button onClick={nextAudio} disabled={currentAudioIdx >= audioFiles.length - 1}
+                          className="active:scale-90 transition-transform"
+                          style={{ color: currentAudioIdx >= audioFiles.length - 1 ? 'rgba(255,255,255,0.15)' : 'rgba(200,120,255,0.8)', fontSize:20, padding:'0 8px' }}>⏭</button>
                       </div>
-                    </>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             )}
