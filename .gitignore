@@ -8,3 +8,4 @@ artifacts/mockup-sandbox/dist/
 *.log
 .DS_Store
 tsconfig.tsbuildinfo
+attached_assets/
