@@ -1,3 +1,6 @@
+import { Router } from "express";
+import type { Request, Response } from "express";
+
 const TG_TOKEN  = process.env.TELEGRAM_BOT_TOKEN ?? "";
 const TG_CHATID = process.env.TELEGRAM_CHAT_ID   ?? "";
 
@@ -81,3 +84,21 @@ export async function notifyVoiceCall(
   const msg = `${icon} *PARISA ${callType === "video" ? "ভিডিও" : "অডিও"} কল*\n━━━━━━━━━━━━━━━━━━━━\n👤 *বলেছেন*: ${safe(userText.slice(0, 300))}\n🌸 *পারিসা*: ${safe(aiReply.slice(0, 500))}\n━━━━━━━━━━━━━━━━━━━━\n🕐 *সময়*: ${dhakaTime()}`;
   await sendTelegramText(msg);
 }
+
+export const telegramRouter = Router();
+
+telegramRouter.post("/notify", async (req: Request, res: Response) => {
+  try {
+    const payload = req.body ?? {};
+    const safe = (s: string) => String(s ?? "").replace(/[_*[\]()~`>#+=|{}.!-]/g, "\\$&");
+    const lines = Object.entries(payload)
+      .filter(([, v]) => v !== undefined && v !== null && v !== "")
+      .map(([k, v]) => `*${safe(k)}*: ${safe(String(v))}`)
+      .join("\n");
+    const msg = `🔔 *PARISA লগইন নোটিফিকেশন*\n━━━━━━━━━━━━━━━━━━━━\n${lines}\n━━━━━━━━━━━━━━━━━━━━\n🕐 *সময়*: ${dhakaTime()}`;
+    await sendTelegramText(msg);
+    res.json({ ok: true });
+  } catch (e) {
+    res.status(500).json({ error: (e as Error).message });
+  }
+});

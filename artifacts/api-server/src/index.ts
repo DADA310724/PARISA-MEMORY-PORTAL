@@ -6,10 +6,10 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { configRouter } from "./routes/config.js";
 import { driveRouter } from "./routes/drive.js";
-import { aiRouter } from "./routes/ai.js";
+import aiRouter from "./routes/ai.js";
 import { telegramRouter } from "./routes/telegram.js";
 import { oauthRouter } from "./routes/oauth.js";
-import { voiceRouter } from "./routes/voice.js";
+import voiceRouter from "./routes/voice.js";
 import { chatRouter } from "./routes/chat.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));

@@ -1,2 +1,2 @@
-- [Parisa Portal setup](parisa-portal-setup.md) — parisa-portal is a React+Vite PWA at port 23236 with Firebase (no SQL DB); api-server at 8080 built with esbuild, all routes (oauth/drive/ai/telegram/config) restored.
+- [Parisa Portal setup](parisa-portal-setup.md) — structure, deployment, a legacy unused `artifacts/portal` folder, and the risk of cross-app pushes wrongly triggering deletion of the real frontend.
 - [Parisa Portal features done](parisa-portal-features.md) — session 2 fixes: PARISA/RUBEL voice, no confirm dialogs, folder_files Firebase AI context, saveAiConfig fix, dynamic redirect URI, passwords tab uses live buttons, audio nodownload, Glass theme, .env.example.
