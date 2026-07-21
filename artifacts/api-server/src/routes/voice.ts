@@ -2,7 +2,7 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import { MsEdgeTTS, OUTPUT_FORMAT } from "msedge-tts";
 
-export const voiceRouter = Router();
+const router = Router();
 
 const FEMALE_VOICE = "bn-BD-NabanitaNeural";
 const MALE_VOICE   = "bn-BD-PradeepNeural";
@@ -13,12 +13,15 @@ function cleanText(text: string): string {
     .replace(/[\u{2600}-\u{26FF}]/gu, " ")
     .replace(/[\u{2700}-\u{27BF}]/gu, " ")
     .replace(/[*_#~`|\\[\]{}^<>=@+]/g, " ")
+    .replace(/\[IMAGE:[^\]]*\]/g, " ")
     .replace(/\.{2,}/g, " ")
+    .replace(/\n{2,}/g, "। ")
+    .replace(/\n/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
 
-voiceRouter.post("/", async (req: Request, res: Response) => {
+router.post("/voice", async (req: Request, res: Response) => {
   try {
     const { text, gender } = req.body as { text?: string; gender?: string };
     if (!text || !text.trim()) {
@@ -51,6 +54,8 @@ voiceRouter.post("/", async (req: Request, res: Response) => {
   } catch (err: unknown) {
     const e = err as Error;
     console.error("Voice route error:", e.message);
-    if (!res.headersSent) res.status(500).json({ error: e.message });
+    if (!res.headersSent) res.status(500).end();
   }
 });
+
+export default router;

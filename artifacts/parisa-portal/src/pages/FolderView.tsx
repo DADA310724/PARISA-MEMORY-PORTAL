@@ -690,6 +690,14 @@ export default function FolderView() {
                     ))}
                   </div>
 
+                  {/* Back / close button inside audio card */}
+                  <div style={{ display:'flex', justifyContent:'flex-start', marginBottom:8 }}>
+                    <button onClick={closeViewer}
+                      style={{ display:'flex', alignItems:'center', gap:4, color:'rgba(200,120,255,0.7)', fontSize:13, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(200,120,255,0.2)', borderRadius:8, padding:'4px 10px', cursor:'pointer' }}>
+                      <ArrowLeft size={14} /> ফিরে যাও
+                    </button>
+                  </div>
+
                   {/* Icon */}
                   <div style={{ display:'flex', alignItems:'center', justifyContent:'center', marginBottom:14 }}>
                     <div style={{ width:64, height:64, borderRadius:16, background:'linear-gradient(135deg,rgba(160,80,255,0.4),rgba(80,40,160,0.6))', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 0 24px rgba(160,80,255,0.3)', border:'1px solid rgba(200,120,255,0.2)' }}>

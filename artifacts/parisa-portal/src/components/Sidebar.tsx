@@ -39,11 +39,11 @@ export function Sidebar({ onClose }: SidebarProps) {
   }
 
   function navigateToButton(btn: typeof buttons[0]) {
-    if (btn.link_type === "external" && btn.link_value) {
+    if ((btn.link_type === "external" || btn.link_type === "html") && btn.link_value) {
       go(`/view?url=${encodeURIComponent(btn.link_value)}&title=${encodeURIComponent(btn.label)}`);
       return;
     }
-    if (btn.link_type === "html" && btn.link_value) {
+    if (btn.link_value && btn.link_type !== "drive_folder" && btn.link_type !== "screenshot") {
       go(`/view?url=${encodeURIComponent(btn.link_value)}&title=${encodeURIComponent(btn.label)}`);
       return;
     }

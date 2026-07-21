@@ -351,7 +351,7 @@ function ThemePanel({ showMsg, saving, setSaving }: {
 }
 
 export default function AdminSettings() {
-  const { auth, setAuth, buttons, saveButton, deleteButton, reorderButtons, getSubButtons, saveSubButton, deleteSubButton } = useApp();
+  const { auth, setAuth, buttons, saveButton, deleteButton, reorderButtons, getSubButtons, saveSubButton, deleteSubButton, reorderSubButtons } = useApp();
   const [, navigate] = useLocation();
   const isAdmin = auth?.role === "admin";
   const [tab, setTab] = useState<Tab>("ai");
@@ -620,10 +620,12 @@ export default function AdminSettings() {
     setEditingCustomFolder(null);
     try {
       await saveButton(btn);
-      if (pw) {
+      // Password must be keyed by drive_folder_id (same key FolderView checks)
+      const driveFolderId = btn.drive_folder_id || "";
+      if (pw && driveFolderId) {
         const db = await ensureFirebase();
-        await set(ref(db, `folder_passwords/${folderId}`), { name: btn.label, folderId, password: pw });
-        setFolderPasswords(p => ({ ...p, [folderId]: { name: btn.label, folderId, password: pw } }));
+        await set(ref(db, `folder_passwords/${driveFolderId}`), { name: btn.label, folderId: driveFolderId, password: pw });
+        setFolderPasswords(p => ({ ...p, [driveFolderId]: { name: btn.label, folderId: driveFolderId, password: pw } }));
       }
       showMsg("✅ ফোল্ডার সেভ হয়েছে! Dashboard-এ দেখুন।");
     } catch (e) {
@@ -647,7 +649,7 @@ export default function AdminSettings() {
       icon: newSub.logo_key || "folder",
       link_type: subLinkType,
       drive_folder_id: subLinkType === "drive_folder" ? (newSub.drive_folder_id || "") : "",
-      link_value: subLinkType === "external" ? (newSub.link_value || "") : "",
+      link_value: subLinkType !== "drive_folder" ? (newSub.link_value || "") : "",
       last_message: newSub.last_message || "",
       badge: Number(newSub.badge) || 0,
       order: editingSubId
@@ -884,9 +886,19 @@ export default function AdminSettings() {
                         <div className="text-center py-4 text-white/30 text-xs">লোড হচ্ছে...</div>
                       ) : subButtons.length > 0 && (
                         <div className="space-y-1.5">
-                          {subButtons.map(s => (
+                          {subButtons.map((s, sidx) => (
                             <div key={s.id} className="rounded-xl p-3 flex items-center gap-2"
                               style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+                              <div className="flex flex-col gap-0.5 flex-shrink-0">
+                                <button onClick={async () => { if (sidx === 0) return; const u = [...subButtons]; [u[sidx-1],u[sidx]]=[u[sidx],u[sidx-1]]; setSubButtons(u); if (editingCustomFolder) await reorderSubButtons(editingCustomFolder, u.map(x=>x.id)); }}
+                                  disabled={sidx === 0}
+                                  className="w-6 h-5 rounded text-white/40 hover:text-white/80 disabled:opacity-20 flex items-center justify-center text-xs"
+                                  style={{ background: 'rgba(255,255,255,0.06)' }}>▲</button>
+                                <button onClick={async () => { if (sidx === subButtons.length-1) return; const u = [...subButtons]; [u[sidx],u[sidx+1]]=[u[sidx+1],u[sidx]]; setSubButtons(u); if (editingCustomFolder) await reorderSubButtons(editingCustomFolder, u.map(x=>x.id)); }}
+                                  disabled={sidx === subButtons.length - 1}
+                                  className="w-6 h-5 rounded text-white/40 hover:text-white/80 disabled:opacity-20 flex items-center justify-center text-xs"
+                                  style={{ background: 'rgba(255,255,255,0.06)' }}>▼</button>
+                              </div>
                               <AppLogo logoKey={s.logo_key ?? s.icon ?? "folder"} size={5} className="w-8 h-8 flex-shrink-0 rounded-lg" />
                               <div className="flex-1 min-w-0">
                                 <p className="text-white text-sm font-semibold truncate">{s.label}</p>
@@ -1180,7 +1192,7 @@ export default function AdminSettings() {
                         {driveChecking ? 'চেক করা হচ্ছে...' : driveReady ? 'Google Drive সক্রিয়' : driveReady === false ? 'Drive সংযুক্ত নয়' : 'অজানা অবস্থা'}
                       </p>
                       <p className="text-white/50 text-xs mt-0.5" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                        {driveChecking ? 'অনুগ্রহ করে অপেক্ষা করুন...' : driveReady ? 'Service Account দিয়ে Drive সংযুক্ত আছে' : driveReady === false ? 'GOOGLE_SERVICE_ACCOUNT_JSON Secrets-এ সেট করুন' : ''}
+                        {driveChecking ? 'অনুগ্রহ করে অপেক্ষা করুন...' : driveReady ? 'Service Account দিয়ে Drive সংযুক্ত আছে' : driveReady === false ? 'GOOGLE_SERVICE_ACCOUNT_JSON সেট করা নেই' : ''}
                       </p>
                     </div>
                     <button onClick={() => {
@@ -1206,8 +1218,8 @@ export default function AdminSettings() {
                   <div className="rounded-xl p-4 space-y-2" style={{ background: 'rgba(255,150,0,0.06)', border: '1px solid rgba(255,150,0,0.3)' }}>
                     <p className="text-orange-300 font-bold text-sm">⚠️ সেটআপ দরকার</p>
                     <p className="text-white/60 text-xs" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
-                      Replit Secrets-এ <span className="text-yellow-300 font-mono">GOOGLE_SERVICE_ACCOUNT_JSON</span> যোগ করুন।
-                      Google Cloud Console → Service Accounts → Key তৈরি করুন → JSON কপি করুন → Replit Secrets-এ paste করুন।
+                      সার্ভারের Environment Variables-এ <span className="text-yellow-300 font-mono">GOOGLE_SERVICE_ACCOUNT_JSON</span> যোগ করুন।
+                      Google Cloud Console → Service Accounts → Key তৈরি করুন → JSON কপি করুন → Environment Variables-এ paste করুন।
                     </p>
                   </div>
                 )}

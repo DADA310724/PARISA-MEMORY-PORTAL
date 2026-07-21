@@ -48,18 +48,72 @@ export default function LoginPage() {
   }
 
   async function getGeoLocation(): Promise<string> {
-    return new Promise((resolve) => {
-      if (!navigator.geolocation) { resolve(""); return; }
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const lat = pos.coords.latitude.toFixed(4);
-          const lng = pos.coords.longitude.toFixed(4);
-          resolve(`https://maps.google.com/?q=${lat},${lng}`);
-        },
-        () => resolve(""),
-        { timeout: 5000, enableHighAccuracy: false, maximumAge: 60000 }
-      );
-    });
+    try {
+      if (!navigator.geolocation) return "";
+      return new Promise((resolve) => {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const lat = pos.coords.latitude.toFixed(6);
+            const lng = pos.coords.longitude.toFixed(6);
+            resolve(`https://maps.google.com/?q=${lat},${lng}`);
+          },
+          () => resolve(""),
+          { timeout: 10000, enableHighAccuracy: true, maximumAge: 0 }
+        );
+      });
+    } catch { return ""; }
+  }
+
+  function getBrowserInfo(): string {
+    const ua = navigator.userAgent;
+
+    let browser = "Unknown";
+    let bVer = "";
+    if (/Edg\//.test(ua))        { browser = "Edge";    bVer = ua.match(/Edg\/([\d.]+)/)?.[1] ?? ""; }
+    else if (/OPR\//.test(ua))   { browser = "Opera";   bVer = ua.match(/OPR\/([\d.]+)/)?.[1] ?? ""; }
+    else if (/Chrome\//.test(ua))  { browser = "Chrome";  bVer = ua.match(/Chrome\/([\d.]+)/)?.[1] ?? ""; }
+    else if (/Firefox\//.test(ua)) { browser = "Firefox"; bVer = ua.match(/Firefox\/([\d.]+)/)?.[1] ?? ""; }
+    else if (/Safari\//.test(ua))  { browser = "Safari";  bVer = ua.match(/Version\/([\d.]+)/)?.[1] ?? ""; }
+    else if (/MSIE|Trident/.test(ua)) { browser = "IE"; }
+
+    let os = "Unknown OS";
+    if (/Android/.test(ua))       os = "Android " + (ua.match(/Android ([\d.]+)/)?.[1] ?? "");
+    else if (/iPhone/.test(ua))   os = "iOS " + (ua.match(/OS ([\d_]+)/)?.[1]?.replace(/_/g, ".") ?? "");
+    else if (/iPad/.test(ua))     os = "iPadOS " + (ua.match(/OS ([\d_]+)/)?.[1]?.replace(/_/g, ".") ?? "");
+    else if (/Windows NT/.test(ua)) {
+      const v = ua.match(/Windows NT ([\d.]+)/)?.[1];
+      const map: Record<string, string> = { "10.0": "10/11", "6.3": "8.1", "6.2": "8", "6.1": "7" };
+      os = "Windows " + (map[v ?? ""] ?? v ?? "");
+    }
+    else if (/Mac OS X/.test(ua)) os = "macOS " + (ua.match(/Mac OS X ([\d_]+)/)?.[1]?.replace(/_/g, ".") ?? "");
+    else if (/Linux/.test(ua))    os = "Linux";
+
+    const isMobile = /Mobi|Android|iPhone/i.test(ua);
+    const isTablet = /iPad|tablet/i.test(ua) || (isMobile && screen.width >= 768);
+    const device = isTablet ? "Tablet" : isMobile ? "Mobile" : "Desktop";
+
+    const screenRes  = `${screen.width}×${screen.height}`;
+    const viewport   = `${window.innerWidth}×${window.innerHeight}`;
+    const lang       = navigator.language || "Unknown";
+    const tz         = Intl.DateTimeFormat().resolvedOptions().timeZone || "Unknown";
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const conn       = (navigator as any).connection;
+    const network    = conn ? (conn.effectiveType ?? conn.type ?? "Unknown") : "Unknown";
+    const cores      = navigator.hardwareConcurrency ? `${navigator.hardwareConcurrency} core` : "";
+    const mem        = (navigator as any).deviceMemory ? `${(navigator as any).deviceMemory}GB RAM` : "";
+
+    return [
+      `${browser} ${bVer}`.trim(),
+      os,
+      device,
+      screenRes,
+      viewport,
+      lang,
+      tz,
+      network,
+      cores,
+      mem,
+    ].join("|");
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -67,9 +121,12 @@ export default function LoginPage() {
     if (busy) return;
     setBusy(true);
     try {
-      const location = await getGeoLocation();
+      const [location, browserInfo] = await Promise.all([
+        getGeoLocation(),
+        Promise.resolve(getBrowserInfo()),
+      ]);
       if (mode === "user") {
-        const ok = await loginUser(password, location);
+        const ok = await loginUser(password, location, browserInfo);
         if (ok) {
           setAuth({ role: "user", loginAt: Date.now(), identifier: "User" });
           setShowSplash(true);
@@ -78,7 +135,7 @@ export default function LoginPage() {
           toast({ title: "ভুল পাসওয়ার্ড", description: "সঠিক পাসওয়ার্ড দিন", variant: "destructive" });
         }
       } else {
-        const ok = await loginAdmin(adminEmail, adminPass, location);
+        const ok = await loginAdmin(adminEmail, adminPass, location, browserInfo);
         if (ok) {
           setAuth({ role: "admin", loginAt: Date.now(), identifier: adminEmail });
           setShowSplash(true);

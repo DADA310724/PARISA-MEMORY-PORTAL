@@ -1,20 +1,13 @@
 ---
 name: Parisa Portal setup
-description: Architecture notes for the PARISA MEMORY PORTAL project — where things live, key quirks.
+description: How Parisa Memory Portal (React+Vite frontend + Express api-server) is structured, deployed, and a recurring risk to watch for.
 ---
 
-## App structure
-- Frontend: `artifacts/parisa-portal` — React + Vite, port 23236, preview path `/`
-- API: `artifacts/api-server` — Express 5, port 8080; TypeScript source only has health routes, but the compiled `dist/index.mjs` (1.4 MB) contains full routes from the original GitHub repo (https://github.com/DADA310724/nusrat2024). Do NOT trust `/src/routes/` as the source of truth for what the running server can handle.
-- Firebase Realtime DB: used for buttons, ai_config, folder_passwords, login_attempts, app_config
-- No PostgreSQL — all state is in Firebase or localStorage
-
-## Key decisions
-- TTS: Microsoft Web Speech API only (`window.speechSynthesis`). ElevenLabs fully removed from UI and config.
-- AI system prompt: full Rubel & Parisa history embedded in `HISTORY_CONTEXT` constant in `AIChat.tsx`. Do NOT store sensitive prompt in Firebase — it's hardcoded in the frontend.
-- Folder reorder: uses `reorderButtons(ids)` from `AppContext` — writes `order` field to Firebase for each button.
-- InAppViewer back: use `window.history.back()` not `setLocation(-1)` (wouter does not support numeric history navigation).
-
-**Why:**
-- `setLocation(-1)` caused a runtime crash because wouter's `setLocation` only accepts strings.
-- ElevenLabs was removed permanently per user preference; no ElevenLabs tab/keys in AdminSettings.
+- parisa-portal is a React+Vite PWA (port 5000 dev / 23236 preview) with Firebase Realtime DB (no SQL DB); api-server is Express on port 8080, built with tsc, serving oauth/drive/ai/telegram/voice/chat/config routes.
+- Production (Render) build/run comes from `.replit` `[deployment]`: build = `pnpm --filter @workspace/parisa-portal run build && pnpm --filter @workspace/api-server run build`, run = `node artifacts/api-server/dist/index.js`. api-server serves the built frontend as static files when `artifacts/parisa-portal/dist/public` exists.
+- There is also a legacy, unrelated `artifacts/portal` (plain JS server.js + public/app.js) — an old standalone implementation with no package.json, not part of the pnpm workspace, not wired into `.replit` build/run. Leave it alone; it's dead code, not a foreign app.
+- **Risk to watch for:** this repo has been accidentally used as a push target by an agent working on a different app (the user's other app "Porichoy") from another Replit/GitHub account tied to the same GitHub repo. A prior cleanup attempt ("clean: remove wrongly added parisa-portal React app") mistakenly deleted the entire legitimate `artifacts/parisa-portal` frontend (107 files) instead of the actually-foreign files, because the agent doing the cleanup assumed the whole frontend was the mistaken addition. It was recovered via `git checkout <last-good-commit> -- artifacts/parisa-portal` since full git history (unshallowed) still had it.
+- **Why this matters:** don't trust a "wrongly added, removing it" commit message at face value — diff it against the parent commit first to confirm exactly what is foreign vs. legitimate before deleting, especially in repos shared across multiple Replit accounts/apps.
+- Known separate bug (present even before the deletion incident): `api-server/src/index.ts` imported `aiRouter`/`voiceRouter` as named exports and `telegramRouter` from `telegram.ts`, but those files had been refactored to default exports / plain notify functions (no router) in a later commit, so `tsc build` failed and the login-notify frontend call to `POST /api/telegram/notify` 404'd. Fixed by switching to default imports for ai/voice and re-adding a small `telegramRouter` with a `/notify` endpoint in `telegram.ts`.
+- Legacy `artifacts/portal/` folder was later confirmed to actually be foreign/misplaced content (added fresh, no prior history, in commits just before the deletion) — its service-worker cache jumped straight to `"PARISA-V12"` with no V1–V11 ever existing in this repo, proving it was copy-pasted in from a different environment. Removed it and `attached_assets/` (old chat-attachment screenshots/zips, ~103MB, also never referenced by any code) at the user's request to keep the repo clean. **Lesson:** when suspecting misplaced/foreign content, check version numbers, cache-name counters, or similar monotonic identifiers in the suspect files against their actual git history (`git log --diff-filter=A` for first-add, `git log -p` for prior values) — a version jump with no prior in-repo history is strong evidence of external origin.
+- `GITHUB_TOKEN`/`GITHUB_PERSONAL_ACCESS_TOKEN` secrets already present in this env were invalid/expired for pushing to this repo's GitHub remote (`Invalid username or token`). Pushing needs a valid PAT with repo write scope; get it via `requestSecrets`, never accept one pasted directly in chat (treat as compromised and tell the user to revoke it immediately if that happens).

@@ -96,7 +96,7 @@ export async function notifyTelegram(payload: Record<string, unknown>) {
   }
 }
 
-export async function loginUser(password: string, location?: string): Promise<boolean> {
+export async function loginUser(password: string, location?: string, browserInfo?: string): Promise<boolean> {
   let cfg: AuthConfig = { user_password_static: "310724" };
   try { cfg = await getAuthConfig(); } catch { /* Firebase unavailable, use default */ }
   const validPasswords = collectPasswords(cfg);
@@ -108,14 +108,15 @@ export async function loginUser(password: string, location?: string): Promise<bo
     role: "user",
     success: ok,
     identifier: ok ? "User" : "unknown",
-    location: location ?? "N/A",
+    location: location ?? "",
+    browserInfo: browserInfo ?? "",
     extra: ok ? "" : `ভুল পাসওয়ার্ড দেওয়া হয়েছে`,
   });
   if (ok) saveAuth({ role: "user", loginAt: Date.now(), identifier: "User" });
   return ok;
 }
 
-export async function loginAdmin(email: string, password: string, location?: string): Promise<boolean> {
+export async function loginAdmin(email: string, password: string, location?: string, browserInfo?: string): Promise<boolean> {
   try {
     const fbAuth = await getFirebaseAuth();
     await signInWithEmailAndPassword(fbAuth, email.trim(), password);
@@ -124,7 +125,8 @@ export async function loginAdmin(email: string, password: string, location?: str
       role: "admin",
       success: true,
       identifier: email,
-      location: location ?? "N/A",
+      location: location ?? "",
+      browserInfo: browserInfo ?? "",
     });
     saveAuth({ role: "admin", loginAt: Date.now(), identifier: email });
     return true;
@@ -134,7 +136,8 @@ export async function loginAdmin(email: string, password: string, location?: str
       role: "admin",
       success: false,
       identifier: email || "unknown",
-      location: location ?? "N/A",
+      location: location ?? "",
+      browserInfo: browserInfo ?? "",
       extra: "ভুল email বা password",
     });
     return false;

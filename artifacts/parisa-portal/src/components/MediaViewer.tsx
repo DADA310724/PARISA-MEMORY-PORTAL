@@ -9,6 +9,7 @@ import {
   isText,
   isVideo,
   proxyUrl,
+  streamUrl,
   fetchText,
 } from "@/lib/drive";
 import { Button } from "@/components/ui/button";
@@ -38,8 +39,10 @@ export function MediaViewer({ file, className = "" }: MediaViewerProps) {
   if (isVideo(file)) {
     return (
       <video
-        src={url}
+        src={streamUrl(file.id)}
         controls
+        playsInline
+        preload="auto"
         className={`w-full max-h-[70vh] rounded-lg bg-black ${className}`}
         data-testid={`media-video-${file.id}`}
       />
@@ -53,8 +56,9 @@ export function MediaViewer({ file, className = "" }: MediaViewerProps) {
           🎙️ {file.name}
         </div>
         <audio
-          src={url}
+          src={streamUrl(file.id)}
           controls
+          preload="auto"
           className="w-full"
           data-testid={`media-audio-${file.id}`}
         />
