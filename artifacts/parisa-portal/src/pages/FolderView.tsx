@@ -81,10 +81,21 @@ export default function FolderView() {
       const val = snap.val() as FolderLock | null;
       if (val?.password) { setLockData(val); setLocked(true); } else { setLockData(null); setLocked(false); }
     } catch (e) {
-      // Firebase error — treat as no lock (don't block access on network errors)
-      console.warn("folder lock check failed:", e);
-      setLockData(null);
-      setLocked(false);
+      // Firebase error — retry once after 1.5s (anonymous auth may still be initializing)
+      console.warn("folder lock check failed, retrying:", e);
+      setTimeout(async () => {
+        try {
+          const db2 = await ensureFirebase();
+          const snap2 = await get(ref(db2, `folder_passwords/${folderId}`));
+          const val2 = snap2.val() as FolderLock | null;
+          if (val2?.password) { setLockData(val2); setLocked(true); } else { setLockData(null); setLocked(false); }
+        } catch {
+          // Still failing — fail open (no lock) rather than block forever
+          setLockData(null);
+          setLocked(false);
+        } finally { setLockChecking(false); }
+      }, 1500);
+      return; // early return so finally below doesn't double-set lockChecking
     }
     finally { setLockChecking(false); }
   }, []);

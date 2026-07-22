@@ -231,15 +231,19 @@ interface Msg { role: "user" | "assistant" | "system"; content: string }
 async function tryGroq(messages: Msg[], sysPrompt: string): Promise<string> {
   const keys = shuffle(getEnvKeys("GROQ_API_KEYS"));
   if (!keys.length) throw new Error("No Groq keys");
-  const models = ["llama-3.1-8b-instant", "llama3-8b-8192", "llama-3.3-70b-versatile"];
-  const safe = sysPrompt.length > 5000 ? sysPrompt.slice(0, 5000) : sysPrompt;
+  // Groq has strict token limits — truncate system prompt to avoid 413/400
+  const safe = sysPrompt.length > 3000 ? sysPrompt.slice(0, 3000) : sysPrompt;
+  // Also truncate messages to last 6 only (avoid context overflow)
+  const recentMsgs = messages.slice(-6);
+  // Use only reliable, larger-context models
+  const models = ["llama-3.3-70b-versatile", "llama-3.1-8b-instant"];
   for (const key of keys) {
     for (const model of models) {
       try {
         const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-          body: JSON.stringify({ model, messages: [{ role: "system", content: safe }, ...messages], max_tokens: 1200, temperature: 0.85 }),
+          body: JSON.stringify({ model, messages: [{ role: "system", content: safe }, ...recentMsgs], max_tokens: 1000, temperature: 0.85 }),
         });
         if (!r.ok) { console.warn(`Groq ${model} ${r.status}`); continue; }
         const d = await r.json() as { choices: Array<{ message: { content: string } }> };
