@@ -1,42 +1,43 @@
 # PARISA MEMORY PORTAL — Changelog
 
-All notable changes are recorded here. Version format: `MAJOR.MINOR.PATCH`
+Version format used in the app: **V-N** (shown on Login page and Sidebar)
+This is the single source of truth for versioning. Each update increments the V number.
 
 ---
 
-## [1.1.0] — 2026-07-22
+## [V-16] — 2026-07-22
 
 ### Fixed
-- **Folder passwords (save/remove):** Server-side Firebase writes now use a
-  proper Google OAuth2 token (Firebase Database scope) obtained from the
-  Service Account. Previously the REST calls were unauthenticated, causing
-  silent write failures even though Anonymous Auth was enabled.
-- **Audio / video playback hanging:** Removed the dynamic `import("node:stream")`
-  inside the request handler (now a static top-level import). Also changed
-  `Cache-Control` for stream responses from `no-store` to
-  `private, max-age=3600` so the browser can cache video/audio chunks —
-  eliminating re-buffering on seek or replay.
-- **OAuth token cold-start:** Both Google Drive and Firebase Database tokens
-  are now pre-warmed at server startup so the first media or password request
-  is instant.
+- **Folder password save/remove:** ALL server-side Firebase REST calls (GET, PUT, DELETE)
+  now use a Google OAuth2 token with Firebase Database scope. Previously the reads
+  were unauthenticated and the writes were also unauthenticated — causing silent
+  failures. Now every request is authenticated via the Google Service Account.
+- **Firebase rules fully private:** Because every request (read AND write) now uses
+  an authenticated token, you can safely set Firebase Database rules to require auth
+  (`".read": "auth != null", ".write": "auth != null"`). Nothing will break.
+- **Audio/video playback:** Removed dynamic `import("node:stream")` from inside
+  the request handler (now a static top-level import). Changed stream
+  `Cache-Control` from `no-store` to `private, max-age=3600` so the browser
+  caches video/audio chunks — seeking and replay no longer re-buffer.
+- **OAuth token cold-start:** Both Drive and Firebase Database tokens are
+  pre-warmed at server startup, so the first media/password request is instant.
 
 ### Added
-- `artifacts/api-server/src/lib/googleAuth.ts` — shared OAuth2 token helper
-  used by both `drive.ts` (Drive scope) and `folderLock.ts` (Firebase scope).
-  Tokens are cached per-scope and refreshed automatically before expiry.
-- `CHANGELOG.md` — this file. Every future update must bump the version and
-  add an entry here so any agent or developer knows exactly what changed.
+- `artifacts/api-server/src/lib/googleAuth.ts` — shared OAuth2 helper with
+  per-scope token caching (Drive + Firebase scopes). All future routes use this.
 
-### Versioning rule for agents
-> Before committing any change, bump `"version"` in **both**
-> `artifacts/parisa-portal/package.json` and `artifacts/api-server/package.json`,
-> then add an entry to `CHANGELOG.md` (date, what changed, why).
-> Use semantic versioning: patch for bug fixes, minor for new features,
-> major for breaking changes.
+### Versioning rules for agents
+> **App version** is in `artifacts/parisa-portal/src/lib/version.ts` → `APP_VERSION`.
+> This is what users see on the Login page and Sidebar.
+> Format: `"V-N"` (V-15, V-16, V-17 …).
+>
+> Before committing any change, increment `APP_VERSION` by 1 in `version.ts`
+> and add an entry to this CHANGELOG. The `package.json` `"version"` fields
+> are internal build metadata and stay at `"0.0.0"` — do NOT change them.
 
 ---
 
-## [1.0.0] — Initial baseline (pre-changelog)
+## [V-15] — 2026-07 (pre-changelog baseline)
 
 - PARISA MEMORY PORTAL launched on Render via GitHub.
 - Features: Google Drive file browser, folder password locks (Firebase),
