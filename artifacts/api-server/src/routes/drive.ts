@@ -149,22 +149,32 @@ driveRouter.get("/list", async (req: Request, res: Response) => {
 
   try {
     const token = await getAccessToken();
-    const url = new URL("https://www.googleapis.com/drive/v3/files");
-    url.searchParams.set("q", `'${folderId}' in parents and trashed=false`);
-    url.searchParams.set("fields", "files(id,name,mimeType,size,modifiedTime,iconLink,thumbnailLink,webViewLink,webContentLink,parents),nextPageToken");
-    url.searchParams.set("orderBy", "name");
-    url.searchParams.set("pageSize", "200");
+    const allFiles: unknown[] = [];
+    let pageToken: string | undefined;
 
-    const resp = await fetch(url.toString(), {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!resp.ok) {
-      const text = await resp.text();
-      res.status(resp.status).json({ error: text });
-      return;
-    }
-    const data = await resp.json();
-    res.json(data);
+    // Paginate through ALL files — Google Drive returns max 1000 per page
+    do {
+      const url = new URL("https://www.googleapis.com/drive/v3/files");
+      url.searchParams.set("q", `'${folderId}' in parents and trashed=false`);
+      url.searchParams.set("fields", "files(id,name,mimeType,size,modifiedTime,iconLink,thumbnailLink,webViewLink,webContentLink,parents),nextPageToken");
+      url.searchParams.set("orderBy", "name");
+      url.searchParams.set("pageSize", "1000");
+      if (pageToken) url.searchParams.set("pageToken", pageToken);
+
+      const resp = await fetch(url.toString(), {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!resp.ok) {
+        const text = await resp.text();
+        res.status(resp.status).json({ error: text });
+        return;
+      }
+      const data = await resp.json() as { files: unknown[]; nextPageToken?: string };
+      allFiles.push(...(data.files ?? []));
+      pageToken = data.nextPageToken;
+    } while (pageToken);
+
+    res.json({ files: allFiles });
   } catch (err) {
     res.status(500).json({ error: String(err) });
   }

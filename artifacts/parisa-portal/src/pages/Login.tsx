@@ -59,7 +59,7 @@ export default function LoginPage() {
             resolve(`https://maps.google.com/?q=${lat},${lng}`);
           },
           () => resolve(""),
-          { timeout: 10000, enableHighAccuracy: true, maximumAge: 0 }
+          { timeout: 3000, enableHighAccuracy: true, maximumAge: 0 }
         );
       });
     } catch { return ""; }
