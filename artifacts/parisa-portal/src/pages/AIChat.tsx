@@ -742,19 +742,19 @@ export default function AIChatPage() {
         role: m.role,
         content: m.content || (m.imageUrl ? "এই ছবিটা বিশ্লেষণ করো।" : ""),
       }));
-      const resp = await api<{ text: string; provider: string }>("/ai/chat", {
+      const resp = await api<{ reply: string; provider: string }>("/ai/chat", {
         method: "POST",
         body: { messages: apiMsgs, systemPrompt: sysPrompt, provider: "auto", groqKeys: aiKeys.groq, geminiKeys: aiKeys.gemini, openrouterKeys: aiKeys.openrouter, ...(imageUrl ? { imageData: imageUrl } : {}) },
       });
       // যদি AI <<IMG:>> format ব্যবহার না করে, frontend সরাসরি inject করে
-      let aiContent = stripDisclaimers(resp.text);
+      let aiContent = stripDisclaimers(resp.reply);
       const rawHits = getRawScreenshotHits(text.trim(), screenshotIndex);
       if (rawHits.length > 0 && !aiContent.includes('<<IMG:')) {
         const imgBlock = rawHits.slice(0, 3).map(h => `<<IMG:${h.id}>>`).join('\n');
         aiContent = imgBlock + '\n\n' + aiContent;
       }
       const hasScreenshot = aiContent.includes('<<IMG:');
-      const aiMsg: Msg = { role: "assistant", content: aiContent, provider: resp.provider, timestamp: Date.now() };
+      const aiMsg: Msg = { role: "assistant", content: aiContent, provider: resp.provider ?? "auto", timestamp: Date.now() };
       updateSession(currentId, s => ({ ...s, messages: [...nextMsgs, aiMsg] }));
       speakText(aiContent.replace(/<<IMG:[^>]+>>/g, ''), voiceGender);
       void api("/telegram/notify", {
@@ -856,11 +856,11 @@ export default function AIChatPage() {
       ? `তুমি এখন সরাসরি অডিও কলে কথা বলছো। স্বাভাবিকভাবে বাংলায় কথা বলো।\n${CALL_RULES}`
       : "";
     try {
-      const resp = await api<{ text: string }>("/ai/chat", {
+      const resp = await api<{ reply: string }>("/ai/chat", {
         method: "POST",
         body: { messages: [{ role: "user", content: text }], systemPrompt: callPrefix + buildSystemPrompt(isAdmin ? adminPrompt : userPrompt), provider: "auto", groqKeys: aiKeys.groq, geminiKeys: aiKeys.gemini, openrouterKeys: aiKeys.openrouter, imageData },
       });
-      return resp.text || "দুঃখিত বুঝতে পারলাম না";
+      return resp.reply || "দুঃখিত বুঝতে পারলাম না";
     } catch { return "দুঃখিত নেটওয়ার্ক সমস্যা"; }
   }
 
@@ -959,8 +959,13 @@ export default function AIChatPage() {
     try {
       if (vcStreamRef.current) vcStreamRef.current.getTracks().forEach(t => t.stop());
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: false });
+      
       vcStreamRef.current = stream;
-      if (videoRef.current) videoRef.current.srcObject = stream;
+      setVideoCallOn(true); setCallCaption("");
+      // DOM render হওয়ার পরে srcObject সেট করি
+      setTimeout(() => {
+        if (videoRef.current) videoRef.current.srcObject = stream;
+      }, 50);
     } catch (e: unknown) { alert("ক্যামেরা চালু করা যাচ্ছে না: " + (e as Error).message); }
   }
 
@@ -1058,8 +1063,8 @@ export default function AIChatPage() {
   async function startVideoCall() {
     if (!SR) { alert("এই ব্রাউজারে ভয়েস কল সাপোর্ট নেই।"); return; }
     stopSpeech(); callActiveRef.current = true;
-    setVcFacing("user"); setVideoCallOn(true); setCallStatus("কানেক্টেড"); setCallCaption("");
-    await openVcCam("user");
+    setVcFacing("user"); setCallStatus("কানেক্টেড");
+    await openVcCam("user"); // openVcCam নিজেই setVideoCallOn(true) করবে
     setTimeout(videoCallLoop, 300);
   }
   function endVideoCall() {
@@ -1080,8 +1085,11 @@ export default function AIChatPage() {
       if (camStreamRef.current) camStreamRef.current.getTracks().forEach(t => t.stop());
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: facing }, audio: false });
       camStreamRef.current = stream;
-      if (camVideoRef.current) camVideoRef.current.srcObject = stream;
       setCameraOn(true); setCamCaption("");
+      // DOM render হওয়ার পরে srcObject সেট করি
+      setTimeout(() => {
+        if (camVideoRef.current) camVideoRef.current.srcObject = stream;
+      }, 50);
     } catch (e: unknown) { alert("ক্যামেরা চালু করা যাচ্ছে না: " + (e as Error).message); }
   }
   function closeCam() {
@@ -1106,7 +1114,7 @@ export default function AIChatPage() {
     if (!img) return;
     setCamCaption("দেখছি…");
     try {
-      const resp = await api<{ text: string }>("/ai/chat", {
+      const resp = await api<{ reply: string }>("/ai/chat", {
         method: "POST",
         body: {
           messages: [{ role: "user", content: promptText || "এই ছবিতে কী দেখা যাচ্ছে? বাংলায় বিস্তারিত বলো।" }],
@@ -1116,8 +1124,8 @@ export default function AIChatPage() {
           imageData: img,
         },
       });
-      setCamCaption(resp.text || "কিছু বুঝতে পারলাম না।");
-      speakText(resp.text, voiceGender);
+      setCamCaption(resp.reply || "কিছু বুঝতে পারলাম না।");
+      speakText(resp.reply, voiceGender);
     } catch { setCamCaption("নেটওয়ার্ক সমস্যা।"); }
   }
   function camMic() {
@@ -1159,7 +1167,9 @@ export default function AIChatPage() {
       <AnimatePresence>
         {audioCallOn && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            style={{ position: "fixed", inset: 0, zIndex: 90, background: "linear-gradient(160deg,#020e0e 0%,#041818 60%,#021010 100%)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between", paddingBottom: 48, paddingTop: 64 }}>
+            style={{ position: "fixed", inset: 0, zIndex: 90, background: "linear-gradient(160deg,#010e15 0%,#021420 50%,#010c12 100%)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between", paddingBottom: 48, paddingTop: 64 }}>
+            <div className="parisa-aurora" style={{ opacity: 0.5 }} />
+            <div className="parisa-grain" style={{ opacity: 0.3 }} />
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
               <div style={{ position: "relative", width: 200, height: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 {[1,2,3].map(i => (
@@ -1379,8 +1389,9 @@ export default function AIChatPage() {
         <IcBtn onClick={() => setLocation("/dashboard")} title="ড্যাশবোর্ড">
           <SvgIcon d="M19 12H5M12 5l-7 7 7 7" size={18} stroke="currentColor" />
         </IcBtn>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
           <span className="parisa-brand-title" style={{ fontSize: 20, letterSpacing: 8 }}>PARISA</span>
+          <span style={{ fontSize: 9, letterSpacing: 3, color: "rgba(0,229,180,.5)", fontFamily: "'Exo 2',monospace", fontWeight: 700 }}>V-15</span>
         </div>
         <IcBtn onClick={() => setSidebarOpen(true)} title="চ্যাট হিস্টরি">
           <SvgIcon d="M3 6h18M3 12h18M3 18h18" size={18} stroke="currentColor" />

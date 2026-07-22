@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { ArrowLeft, AlertTriangle, ExternalLink } from "lucide-react";
+import { ArrowLeft, AlertTriangle } from "lucide-react";
 import { motion } from "framer-motion";
 
 function normalizeUrl(raw: string): string {
@@ -23,10 +23,6 @@ export default function InAppViewer() {
   function goBack() {
     if (window.history.length > 1) { window.history.back(); }
     else { setLocation("/"); }
-  }
-
-  function openInBrowser() {
-    window.open(url, "_blank", "noopener,noreferrer");
   }
 
   return (
@@ -59,13 +55,12 @@ export default function InAppViewer() {
         <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6"
           style={{ background: "rgba(10,14,31,0.97)" }}>
           <AlertTriangle className="w-14 h-14 text-yellow-400" />
-          <p className="text-white/80 text-center font-medium">এই পেজটি এখানে লোড হচ্ছে না।</p>
-          <p className="text-white/40 text-center text-sm">সাইটটি হয়তো ইন-অ্যাপ দেখানো বন্ধ রেখেছে।</p>
-          <button onClick={openInBrowser}
+          <p className="text-white/80 text-center font-medium">এই পেজটি লোড হচ্ছে না।</p>
+          <p className="text-white/40 text-center text-sm">সাইটটি হয়তো সংযোগ বা নেটওয়ার্ক সমস্যার কারণে দেখা যাচ্ছে না।</p>
+          <button onClick={() => { setIframeError(false); setLoaded(false); }}
             className="flex items-center gap-2 px-5 py-2.5 rounded-xl font-semibold text-sm transition-all"
             style={{ background: "rgba(0,229,255,0.15)", border: "1px solid rgba(0,229,255,0.4)", color: "#00e5ff" }}>
-            <ExternalLink className="w-4 h-4" />
-            ব্রাউজারে খুলুন
+            আবার চেষ্টা করুন
           </button>
         </div>
       ) : (

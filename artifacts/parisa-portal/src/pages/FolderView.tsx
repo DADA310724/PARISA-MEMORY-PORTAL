@@ -380,14 +380,7 @@ export default function FolderView() {
             ))}
           </div>
           {isAdmin && (
-            <>
-              <button onClick={handleUploadClick} disabled={uploading}
-                className="text-xs text-cyan-300 px-3 py-1.5 rounded-lg whitespace-nowrap flex-shrink-0 disabled:opacity-50"
-                style={{ background:'rgba(0,229,255,0.1)', border:'1px solid rgba(0,229,255,0.3)' }}>
-                {uploading ? "আপলোড..." : "📤 আপলোড"}
-              </button>
-              <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleUpload} disabled={uploading} />
-            </>
+            <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleUpload} disabled={uploading} />
           )}
           <button onClick={() => navigate("/ai-chat")}
             className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 transition-all active:scale-90"

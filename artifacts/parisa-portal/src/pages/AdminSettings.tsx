@@ -741,8 +741,7 @@ export default function AdminSettings() {
             <ArrowLeft className="w-5 h-5" />
           </button>
           <h1 className="flex-1 text-center font-black uppercase neon-cyan text-sm" style={{ fontFamily: "'Exo 2',sans-serif" }}>ADMIN PANEL</h1>
-          <button onClick={() => { setAuth(null); navigate("/"); }}
-            className="text-xs text-red-400 px-3 py-1.5 rounded-lg" style={{ border: '1px solid rgba(255,80,80,0.3)' }}>লগআউট</button>
+          <div className="w-9 h-9 flex-shrink-0" />
         </div>
         {/* Tabs */}
         <div className="flex gap-1 px-2 pb-2 overflow-x-auto scrollbar-thin">

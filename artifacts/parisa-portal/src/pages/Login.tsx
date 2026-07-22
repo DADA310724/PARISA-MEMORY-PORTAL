@@ -278,6 +278,11 @@ export default function LoginPage() {
             <div className="mt-5 pt-4 border-t border-border/40 text-center text-[11px] text-muted-foreground leading-relaxed px-2">
               ব্যক্তিগত ও পাসওয়ার্ড সুরক্ষিত আর্কাইভ। সকল তথ্য গোপন এবং<br />শুধুমাত্র সত্য উদঘাটনের প্রয়োজনে সংরক্ষিত।🔒
             </div>
+            <div className="mt-3 flex justify-center">
+              <span style={{ fontSize: 10, letterSpacing: 4, fontWeight: 800, color: "rgba(0,212,170,0.55)", fontFamily: "'Exo 2',monospace", padding: "3px 12px", borderRadius: 999, border: "1px solid rgba(0,212,170,0.2)", background: "rgba(0,212,170,0.06)" }}>
+                V-15
+              </span>
+            </div>
           </div>
         </motion.div>
       </div>
