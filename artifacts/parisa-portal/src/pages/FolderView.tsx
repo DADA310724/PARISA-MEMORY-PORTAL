@@ -611,7 +611,7 @@ export default function FolderView() {
                     <video
                       key={`v-${viewerFile.id}-${mediaRetryKey}`}
                       ref={videoRef}
-                      src={proxyUrl(viewerFile.id)}
+                      src={streamUrl(viewerFile.id)}
                       controls
                       playsInline
                       autoPlay
@@ -688,7 +688,7 @@ export default function FolderView() {
                   <audio
                     key={`a-${viewerFile.id}-${mediaRetryKey}`}
                     ref={audioRef}
-                    src={proxyUrl(viewerFile.id)}
+                    src={streamUrl(viewerFile.id)}
                     controls
                     autoPlay
                     preload="auto"

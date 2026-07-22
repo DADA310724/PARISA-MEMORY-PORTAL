@@ -327,11 +327,19 @@ router.post("/chat", async (req: Request, res: Response) => {
       userName?: string;
       image?: string;
       callType?: "audio" | "video";
+      systemPrompt?: string;
+      imageData?: string;
     };
 
     const rawMessages = Array.isArray(body.messages) ? body.messages : [];
-    const imageData = typeof body.image === "string" && body.image ? body.image : undefined;
+    const imageData = (typeof body.imageData === "string" && body.imageData)
+      ? body.imageData
+      : (typeof body.image === "string" && body.image ? body.image : undefined);
     const callType = body.callType;
+    // Use frontend-provided system prompt when available (richer context from AIChat.tsx)
+    const activeSystemPrompt = (typeof body.systemPrompt === "string" && body.systemPrompt.trim())
+      ? body.systemPrompt.trim()
+      : SYSTEM_PROMPT;
 
     if (!rawMessages.length && !imageData) {
       res.status(400).json({ reply: "মেসেজ খালি।" });
@@ -353,11 +361,11 @@ router.post("/chat", async (req: Request, res: Response) => {
 
     const lastUserMsg = [...messages].reverse().find(m => m.role === "user")?.content ?? "";
 
-    // Chat DB context
-    const chatContext = searchChatDB(lastUserMsg);
+    // Chat DB context — only inject if using default system prompt (frontend sends its own context)
+    const chatContext = (activeSystemPrompt === SYSTEM_PROMPT) ? searchChatDB(lastUserMsg) : "";
     const enhancedPrompt = chatContext
-      ? `${SYSTEM_PROMPT}\n\n=== প্রাসঙ্গিক চ্যাট হিস্টরি ===\n${chatContext}\n=== শেষ ===`
-      : SYSTEM_PROMPT;
+      ? `${activeSystemPrompt}\n\n=== প্রাসঙ্গিক চ্যাট হিস্টরি ===\n${chatContext}\n=== শেষ ===`
+      : activeSystemPrompt;
 
     // Choose providers based on whether image present
     let reply = "";
