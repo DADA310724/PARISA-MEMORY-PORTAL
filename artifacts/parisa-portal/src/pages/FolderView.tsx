@@ -86,9 +86,9 @@ export default function FolderView() {
         setLocked(false);
       }
     } catch {
-      // Server unavailable — fail secure (keep locked)
-      setLockData(null);
-      setLocked(false);
+      // Server unavailable — fail secure: keep locked so folder cannot be opened
+      setLockData({ password: "__server_verified__", hint: undefined });
+      setLocked(true);
     } finally {
       setLockChecking(false);
     }

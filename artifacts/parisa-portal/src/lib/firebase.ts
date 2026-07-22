@@ -10,7 +10,7 @@ import {
   push,
   onValue,
 } from "firebase/database";
-import { getAuth, signInAnonymously, signInWithCustomToken, signInWithEmailAndPassword } from "firebase/auth";
+import { getAuth, signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword } from "firebase/auth";
 import { api } from "./api";
 
 export interface AppConfig {
@@ -83,8 +83,14 @@ export async function ensureFirebase(): Promise<Database> {
   app = getApps().length > 0 ? getApp() : initializeApp(cfg.firebase);
   db = getDatabase(app);
   // Authenticate using Anonymous Auth so Firebase rules (auth != null) are satisfied.
+  // onAuthStateChanged fires once immediately when the SDK has restored any persisted
+  // session from localStorage — so we reuse cached anonymous users instead of
+  // creating a new one every page load.
   try {
     const auth = getAuth(app);
+    await new Promise<void>((resolve) => {
+      const unsub = onAuthStateChanged(auth, () => { unsub(); resolve(); });
+    });
     if (!auth.currentUser) {
       await signInAnonymously(auth);
     }
