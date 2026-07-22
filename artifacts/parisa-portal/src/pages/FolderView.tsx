@@ -156,20 +156,22 @@ export default function FolderView() {
   }, [viewerFile, currentFolder.name]);
 
   // ── Back button intercept: ফোনের back বাটন viewer বন্ধ করবে, folder থেকে বের হবে না ──
+  const closeViewerRef = useRef(closeViewer);
+  useEffect(() => { closeViewerRef.current = closeViewer; }, [closeViewer]);
   useEffect(() => {
     if (!viewerOpen) return;
-    // Push a fake history entry so browser back pops to here
+    // Push a fake history entry so browser back pops to here (only once per open)
     window.history.pushState({ viewerOpen: true }, "");
     historyPushed.current = true;
     const onPop = () => {
       historyPushed.current = false;
-      closeViewer();
+      closeViewerRef.current();
     };
     window.addEventListener("popstate", onPop);
     return () => {
       window.removeEventListener("popstate", onPop);
     };
-  }, [viewerOpen, closeViewer]);
+  }, [viewerOpen]); // closeViewer বাদ — ref ব্যবহার করে সর্বদা latest version পাচ্ছি
 
   const unlockFolder = () => {
     if (!lockData) return;

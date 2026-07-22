@@ -1168,8 +1168,6 @@ export default function AIChatPage() {
         {audioCallOn && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
             style={{ position: "fixed", inset: 0, zIndex: 90, background: "linear-gradient(160deg,#010e15 0%,#021420 50%,#010c12 100%)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between", paddingBottom: 48, paddingTop: 64 }}>
-            <div className="parisa-aurora" style={{ opacity: 0.5 }} />
-            <div className="parisa-grain" style={{ opacity: 0.3 }} />
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
               <div style={{ position: "relative", width: 200, height: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 {[1,2,3].map(i => (
