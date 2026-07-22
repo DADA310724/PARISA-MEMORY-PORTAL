@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { loginUser, loginAdmin, notifyTelegram } from "@/lib/auth";
 import { useApp } from "@/contexts/AppContext";
+import { APP_VERSION } from "@/lib/version";
 
 const QUOTE = "মায়া কখনোই কাটানো যায় না..\nএটা মৃত্যুর আগ পর্যন্ত থেকে যায়...😘😘";
 
@@ -280,7 +281,7 @@ export default function LoginPage() {
             </div>
             <div className="mt-3 flex justify-center">
               <span style={{ fontSize: 10, letterSpacing: 4, fontWeight: 800, color: "rgba(0,212,170,0.55)", fontFamily: "'Exo 2',monospace", padding: "3px 12px", borderRadius: 999, border: "1px solid rgba(0,212,170,0.2)", background: "rgba(0,212,170,0.06)" }}>
-                V-15
+                {APP_VERSION}
               </span>
             </div>
           </div>

@@ -62,7 +62,6 @@ export default function FolderView() {
   const panRef = useRef({ active: false, startX: 0, startY: 0, ox: 0, oy: 0 });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const viewerOpenedAt = useRef<number>(0);
-  const historyPushed = useRef(false);
 
   const imageFiles = files.filter(isImage);
   const audioFiles = files.filter(isAudio);
@@ -155,23 +154,6 @@ export default function FolderView() {
     setMediaBuffering(false);
   }, [viewerFile, currentFolder.name]);
 
-  // ── Back button intercept: ফোনের back বাটন viewer বন্ধ করবে, folder থেকে বের হবে না ──
-  const closeViewerRef = useRef(closeViewer);
-  useEffect(() => { closeViewerRef.current = closeViewer; }, [closeViewer]);
-  useEffect(() => {
-    if (!viewerOpen) return;
-    // Push a fake history entry so browser back pops to here (only once per open)
-    window.history.pushState({ viewerOpen: true }, "");
-    historyPushed.current = true;
-    const onPop = () => {
-      historyPushed.current = false;
-      closeViewerRef.current();
-    };
-    window.addEventListener("popstate", onPop);
-    return () => {
-      window.removeEventListener("popstate", onPop);
-    };
-  }, [viewerOpen]); // closeViewer বাদ — ref ব্যবহার করে সর্বদা latest version পাচ্ছি
 
   const unlockFolder = () => {
     if (!lockData) return;
@@ -683,14 +665,6 @@ export default function FolderView() {
                         style={{ width:3, borderRadius:2, background:`linear-gradient(180deg,rgba(200,120,255,0.9),rgba(100,60,200,0.5))`, minHeight:6 }}
                       />
                     ))}
-                  </div>
-
-                  {/* Back / close button inside audio card */}
-                  <div style={{ display:'flex', justifyContent:'flex-start', marginBottom:8 }}>
-                    <button onClick={closeViewer}
-                      style={{ display:'flex', alignItems:'center', gap:4, color:'rgba(200,120,255,0.7)', fontSize:13, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(200,120,255,0.2)', borderRadius:8, padding:'4px 10px', cursor:'pointer' }}>
-                      <ArrowLeft size={14} /> ফিরে যাও
-                    </button>
                   </div>
 
                   {/* Icon */}

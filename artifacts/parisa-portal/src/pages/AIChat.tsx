@@ -415,11 +415,14 @@ async function speakText(text: string, voiceGender: "female" | "male" = "female"
 
 function speakAndWait(text: string, voiceGender: "female" | "male"): Promise<void> {
   return new Promise(resolve => {
+    // Safety: never hang more than 35s no matter what
+    const safetyTimer = setTimeout(() => { resolve(); }, 35000);
+    const done = () => { clearTimeout(safetyTimer); resolve(); };
     (async () => {
       try {
         stopSpeech();
         const clean = cleanForTTS(text);
-        if (!clean.trim()) { resolve(); return; }
+        if (!clean.trim()) { done(); return; }
         try {
           const res = await fetch("/api/voice", {
             method: "POST", headers: { "Content-Type": "application/json" },
@@ -431,21 +434,21 @@ function speakAndWait(text: string, voiceGender: "female" | "male"): Promise<voi
             const url = URL.createObjectURL(blob);
             const audio = new Audio(url);
             _currentAudio = audio;
-            audio.onended = () => { URL.revokeObjectURL(url); _currentAudio = null; resolve(); };
+            audio.onended = () => { URL.revokeObjectURL(url); _currentAudio = null; done(); };
             audio.onerror = async () => {
               URL.revokeObjectURL(url); _currentAudio = null;
-              await fallbackSpeakAndWait(clean, voiceGender); resolve();
+              await fallbackSpeakAndWait(clean, voiceGender); done();
             };
             await audio.play().catch(async () => {
               URL.revokeObjectURL(url);
-              await fallbackSpeakAndWait(clean, voiceGender); resolve();
+              await fallbackSpeakAndWait(clean, voiceGender); done();
             });
             return;
           }
         } catch {}
         await fallbackSpeakAndWait(clean, voiceGender);
-        resolve();
-      } catch { resolve(); }
+        done();
+      } catch { done(); }
     })();
   });
 }
@@ -517,6 +520,7 @@ export default function AIChatPage() {
   const [videoCallOn, setVideoCallOn] = useState(false);
   const [callStatus, setCallStatus] = useState("শুনছি…");
   const [callCaption, setCallCaption] = useState("");
+  const [captionIsAi, setCaptionIsAi] = useState(false);
   const [vcFacing, setVcFacing] = useState<"user" | "environment">("user");
 
   const [cameraOn, setCameraOn] = useState(false);
@@ -906,21 +910,23 @@ export default function AIChatPage() {
     recognizerRef.current = r;
     let finalText = "";
     (r as unknown as Record<string, unknown>).onresult = (e: { resultIndex: number; results: { isFinal: boolean; [k: number]: { transcript: string }[] }[] }) => {
+      let interim = "";
       for (let i = e.resultIndex; i < e.results.length; i++) {
         if (e.results[i].isFinal) finalText += (e.results[i][0] as unknown as { transcript: string }).transcript;
+        else interim += (e.results[i][0] as unknown as { transcript: string }).transcript;
       }
-      setCallCaption(finalText);
+      setCaptionIsAi(false);
+      setCallCaption(finalText || interim);
     };
     r.onerror = () => { if (callActiveRef.current) setTimeout(audioCallLoop, 600); };
     r.onend = async () => {
       if (!callActiveRef.current) return;
       const said = finalText.trim();
-      if (!said) { setTimeout(audioCallLoop, 200); return; }
-      setCallStatus("ভাবছি…");
+      if (!said) { setCallCaption(""); setTimeout(audioCallLoop, 200); return; }
+      setCallStatus("ভাবছি…"); setCallCaption("");
       const reply = await callApiDirect(said, "audiocall");
       if (!callActiveRef.current) return;
       const cleanReply = stripDisclaimers(reply);
-      // চ্যাট হিস্টরিতে সেভ করো
       setSessions(prev => {
         const updated = prev.map(s => s.id === currentId ? {
           ...s,
@@ -934,13 +940,13 @@ export default function AIChatPage() {
         return updated;
       });
       void api("/telegram/notify", { method: "POST", body: { event: "audio_call", role: isAdmin ? "admin" : "user", name: userName || "User", user_msg: said.slice(0, 300), ai_reply: cleanReply.slice(0, 300), provider: "audiocall" } });
-      setCallStatus("বলছি…"); setCallCaption(cleanReply);
+      setCaptionIsAi(true); setCallStatus("বলছি…"); setCallCaption(cleanReply);
       await speakAndWait(cleanReply, voiceGender);
       if (!callActiveRef.current) return;
-      setCallCaption(""); setCallStatus("শুনছি…");
+      setCaptionIsAi(false); setCallCaption(""); setCallStatus("শুনছি…");
       audioCallLoop();
     };
-    r.start();
+    try { r.start(); } catch { if (callActiveRef.current) setTimeout(audioCallLoop, 600); }
   }
 
   function startAudioCall() {
@@ -1022,22 +1028,24 @@ export default function AIChatPage() {
     recognizerRef.current = r;
     let finalText = "";
     (r as unknown as Record<string, unknown>).onresult = (e: { resultIndex: number; results: { isFinal: boolean; [k: number]: { transcript: string }[] }[] }) => {
+      let interim = "";
       for (let i = e.resultIndex; i < e.results.length; i++) {
         if (e.results[i].isFinal) finalText += (e.results[i][0] as unknown as { transcript: string }).transcript;
+        else interim += (e.results[i][0] as unknown as { transcript: string }).transcript;
       }
-      setCallCaption(finalText);
+      setCaptionIsAi(false);
+      setCallCaption(finalText || interim);
     };
     r.onerror = () => { if (callActiveRef.current) setTimeout(videoCallLoop, 600); };
     r.onend = async () => {
       if (!callActiveRef.current) return;
       const said = finalText.trim();
-      if (!said) { setTimeout(videoCallLoop, 200); return; }
-      setCallStatus("ভাবছি…");
+      if (!said) { setCallCaption(""); setTimeout(videoCallLoop, 200); return; }
+      setCallStatus("ভাবছি…"); setCallCaption("");
       const frame = snapVideoFrame();
       const reply = await callApiDirect(said, "videocall", frame ?? undefined);
       if (!callActiveRef.current) return;
       const cleanReply = stripDisclaimers(reply);
-      // চ্যাট হিস্টরিতে সেভ করো
       setSessions(prev => {
         const updated = prev.map(s => s.id === currentId ? {
           ...s,
@@ -1051,13 +1059,13 @@ export default function AIChatPage() {
         return updated;
       });
       void api("/telegram/notify", { method: "POST", body: { event: "video_call", role: isAdmin ? "admin" : "user", name: userName || "User", user_msg: said.slice(0, 300), ai_reply: cleanReply.slice(0, 300), provider: "videocall" } });
-      setCallStatus("বলছি…"); setCallCaption(cleanReply);
+      setCaptionIsAi(true); setCallStatus("বলছি…"); setCallCaption(cleanReply);
       await speakAndWait(cleanReply, voiceGender);
       if (!callActiveRef.current) return;
-      setCallCaption(""); setCallStatus("কানেক্টেড");
+      setCaptionIsAi(false); setCallCaption(""); setCallStatus("কানেক্টেড");
       videoCallLoop();
     };
-    r.start();
+    try { r.start(); } catch { if (callActiveRef.current) setTimeout(videoCallLoop, 600); }
   }
 
   async function startVideoCall() {
@@ -1167,7 +1175,7 @@ export default function AIChatPage() {
       <AnimatePresence>
         {audioCallOn && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            style={{ position: "fixed", inset: 0, zIndex: 90, background: "linear-gradient(160deg,#010e15 0%,#021420 50%,#010c12 100%)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between", paddingBottom: 48, paddingTop: 64 }}>
+            style={{ position: "fixed", inset: 0, zIndex: 90, background: "rgba(2,14,20,0.78)", backdropFilter: "blur(24px)", WebkitBackdropFilter: "blur(24px)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "space-between", paddingBottom: 48, paddingTop: 64 }}>
             <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
               <div style={{ position: "relative", width: 200, height: 200, display: "flex", alignItems: "center", justifyContent: "center" }}>
                 {[1,2,3].map(i => (
@@ -1190,13 +1198,35 @@ export default function AIChatPage() {
               }}>PARISA AI</p>
               <p style={{ color: "rgba(255,255,255,.7)", fontSize: 14, fontFamily: "'Noto Sans Bengali','Hind Siliguri',sans-serif" }}>{callStatus}</p>
             </div>
-            <div style={{ width: "100%", padding: "0 24px" }}>
-              {callCaption ? (
-                <div style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,.1)", backdropFilter: "blur(8px)", borderRadius: 16, padding: "12px 16px", textAlign: "center" }}>
-                  <p style={{ color: "rgba(255,255,255,.9)", fontSize: 14, lineHeight: 1.6, fontFamily: "'Noto Sans Bengali','Hind Siliguri',sans-serif" }}>{callCaption}</p>
-                </div>
-              ) : <div style={{ height: 48 }} />}
+
+            {/* ── Gemini-style center live caption ── */}
+            <div style={{ position: "absolute", left: 0, right: 0, top: "50%", transform: "translateY(-50%)", display: "flex", justifyContent: "center", padding: "0 24px", pointerEvents: "none" }}>
+              <AnimatePresence mode="wait">
+                {callCaption ? (
+                  <motion.div key={callCaption.slice(0, 20)}
+                    initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.97 }}
+                    transition={{ duration: 0.22 }}
+                    style={{
+                      maxWidth: 380, width: "100%", textAlign: "center",
+                      padding: "14px 20px", borderRadius: 20,
+                      background: captionIsAi ? "rgba(74,222,128,0.10)" : "rgba(34,211,238,0.10)",
+                      backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
+                      border: captionIsAi ? "1px solid rgba(74,222,128,0.22)" : "1px solid rgba(34,211,238,0.22)",
+                      boxShadow: captionIsAi ? "0 4px 24px rgba(74,222,128,0.08)" : "0 4px 24px rgba(34,211,238,0.08)",
+                    }}>
+                    <p style={{
+                      color: captionIsAi ? "rgba(167,243,208,0.95)" : "rgba(207,250,254,0.95)",
+                      fontSize: 15, lineHeight: 1.65,
+                      fontFamily: "'Noto Sans Bengali','Hind Siliguri',sans-serif",
+                      letterSpacing: 0.2,
+                    }}>{callCaption}</p>
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
             </div>
+
             <button onClick={endAudioCall}
               style={{ padding: "14px 48px", borderRadius: 999, background: "linear-gradient(135deg,#dc2626,#b91c1c)", boxShadow: "0 0 24px rgba(220,38,38,0.5)", color: "#fff", fontWeight: 700, fontSize: 15, fontFamily: "'Noto Sans Bengali','Hind Siliguri',sans-serif", cursor: "pointer", border: "none" }}>
               কল শেষ করুন
@@ -1221,12 +1251,29 @@ export default function AIChatPage() {
                 <p style={{ color: "#fff", fontSize: 14, fontWeight: 700, fontFamily: "'Hind Siliguri',sans-serif" }}>ভিডিও কল • পারিসা AI</p>
                 <p style={{ color: "rgba(255,255,255,.6)", fontSize: 12, marginLeft: 8, fontFamily: "'Hind Siliguri',sans-serif" }}>{callStatus}</p>
               </div>
+              {/* Gemini-style center caption for video call */}
+              <div style={{ position: "absolute", left: 0, right: 0, top: "50%", transform: "translateY(-50%)", display: "flex", justifyContent: "center", padding: "0 24px", pointerEvents: "none" }}>
+                <AnimatePresence mode="wait">
+                  {callCaption ? (
+                    <motion.div key={callCaption.slice(0, 20)}
+                      initial={{ opacity: 0, y: 8, scale: 0.97 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: -8, scale: 0.97 }}
+                      transition={{ duration: 0.22 }}
+                      style={{
+                        maxWidth: 360, width: "100%", textAlign: "center",
+                        padding: "12px 18px", borderRadius: 18,
+                        background: captionIsAi ? "rgba(74,222,128,0.13)" : "rgba(34,211,238,0.13)",
+                        backdropFilter: "blur(18px)", WebkitBackdropFilter: "blur(18px)",
+                        border: captionIsAi ? "1px solid rgba(74,222,128,0.28)" : "1px solid rgba(34,211,238,0.28)",
+                      }}>
+                      <p style={{ color: "#fff", fontSize: 14, lineHeight: 1.65, fontFamily: "'Hind Siliguri',sans-serif" }}>{callCaption}</p>
+                    </motion.div>
+                  ) : null}
+                </AnimatePresence>
+              </div>
               <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 12, paddingBottom: 16, padding: "0 24px 16px" }}>
-                {callCaption && (
-                  <div style={{ width: "100%", background: "rgba(0,0,0,.65)", border: "1px solid rgba(255,255,255,.15)", backdropFilter: "blur(8px)", borderRadius: 14, padding: "10px 14px", textAlign: "center" }}>
-                    <p style={{ color: "#fff", fontSize: 14, lineHeight: 1.6, fontFamily: "'Hind Siliguri',sans-serif" }}>{callCaption}</p>
-                  </div>
-                )}
+                {/* spacer - caption moved to center */}
                 <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
                   <button onClick={endVideoCall}
                     style={{ padding: "10px 32px", borderRadius: 999, background: "#d23b3b", border: "1px solid #ff6b6b", color: "#fff", fontWeight: 700, fontSize: 14, fontFamily: "'Hind Siliguri',sans-serif", cursor: "pointer" }}>
@@ -1389,7 +1436,6 @@ export default function AIChatPage() {
         </IcBtn>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
           <span className="parisa-brand-title" style={{ fontSize: 20, letterSpacing: 8 }}>PARISA</span>
-          <span style={{ fontSize: 9, letterSpacing: 3, color: "rgba(0,229,180,.5)", fontFamily: "'Exo 2',monospace", fontWeight: 700 }}>V-15</span>
         </div>
         <IcBtn onClick={() => setSidebarOpen(true)} title="চ্যাট হিস্টরি">
           <SvgIcon d="M3 6h18M3 12h18M3 18h18" size={18} stroke="currentColor" />
