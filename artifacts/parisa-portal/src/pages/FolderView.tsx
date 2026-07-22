@@ -632,61 +632,50 @@ export default function FolderView() {
             {/* ── Video Player ── */}
             {viewerType === 'video' && (
               <div className="flex-1 flex flex-col" style={{ background:'#000' }}>
-                <div className="flex-1 flex flex-col">
-                  {/* Video element */}
-                  <div className="flex-1 flex items-center justify-center relative" style={{ background:'#000' }}>
-                    <video
-                      key={`v-${viewerFile.id}-${mediaRetryKey}`}
-                      ref={videoRef}
-                      src={streamUrl(viewerFile.id)}
-                      controls
-                      playsInline
-                      autoPlay
-                      preload="auto"
-                      controlsList="nodownload nofullscreen noremoteplayback"
-                      disablePictureInPicture
-                      style={{ width:'100%', maxHeight:'calc(100vh - 180px)', objectFit:'contain', display:'block' }}
-                      onContextMenu={e => e.preventDefault()}
-                      onTimeUpdate={e => setMediaCurTime((e.target as HTMLVideoElement).currentTime)}
-                      onLoadedMetadata={e => setMediaDuration((e.target as HTMLVideoElement).duration)}
-                      onWaiting={() => setMediaBuffering(true)}
-                      onPlaying={() => setMediaBuffering(false)}
-                      onCanPlay={() => setMediaBuffering(false)}
-                    />
-                    {/* Buffering indicator */}
-                    {mediaBuffering && (
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="w-12 h-12 border-2 border-white/20 border-t-white rounded-full animate-spin" />
-                      </div>
-                    )}
+                {/* Native browser video — fullscreen enabled, no extra overlay */}
+                <video
+                  key={`v-${viewerFile.id}-${mediaRetryKey}`}
+                  ref={videoRef}
+                  src={streamUrl(viewerFile.id)}
+                  controls
+                  playsInline
+                  autoPlay
+                  preload="auto"
+                  controlsList="nodownload noremoteplayback"
+                  style={{ width:'100%', height:'100%', flex:1, objectFit:'contain', display:'block', background:'#000' }}
+                  onContextMenu={e => e.preventDefault()}
+                  onTimeUpdate={e => setMediaCurTime((e.target as HTMLVideoElement).currentTime)}
+                  onLoadedMetadata={e => setMediaDuration((e.target as HTMLVideoElement).duration)}
+                  onWaiting={() => setMediaBuffering(true)}
+                  onPlaying={() => setMediaBuffering(false)}
+                  onCanPlay={() => setMediaBuffering(false)}
+                  onError={() => { setTimeout(() => setMediaRetryKey(k => k + 1), 2000); }}
+                  onStalled={() => { setTimeout(() => { videoRef.current?.load(); videoRef.current?.play().catch(() => null); }, 1500); }}
+                />
+                {/* Prev / Next — only shown when multiple videos */}
+                {videoFiles.length > 1 && (
+                  <div className="flex-shrink-0 flex items-center justify-center gap-6 py-2" style={{ background:'rgba(0,0,0,0.85)' }}>
+                    <button onClick={prevVideo} disabled={currentVideoIdx <= 0}
+                      className="text-white/60 disabled:text-white/20 text-2xl px-3 active:scale-90 transition-transform">⏮</button>
+                    <span className="text-white/40 text-xs">{currentVideoIdx + 1} / {videoFiles.length}</span>
+                    <button onClick={nextVideo} disabled={currentVideoIdx >= videoFiles.length - 1}
+                      className="text-white/60 disabled:text-white/20 text-2xl px-3 active:scale-90 transition-transform">⏭</button>
                   </div>
-                  {/* Timestamp bar + prev/next */}
-                  <div className="flex-shrink-0 px-4 pb-3 pt-2" style={{ background:'rgba(0,0,0,0.8)' }}>
-                    {/* Progress bar */}
-                    <div className="w-full h-1 rounded-full mb-2 overflow-hidden" style={{ background:'rgba(255,255,255,0.12)' }}>
-                      <div className="h-full rounded-full transition-all duration-300"
-                        style={{ width: mediaDuration > 0 ? `${(mediaCurTime / mediaDuration) * 100}%` : '0%', background:'linear-gradient(90deg,#3b82f6,#60a5fa)' }} />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-white/50 text-xs">{fmtTime(mediaCurTime)} / {fmtTime(mediaDuration)}</span>
-                      {videoFiles.length > 1 && (
-                        <div className="flex gap-3">
-                          <button onClick={prevVideo} disabled={currentVideoIdx <= 0}
-                            className="text-white/60 disabled:text-white/20 text-lg px-2 active:scale-90 transition-transform">⏮</button>
-                          <button onClick={nextVideo} disabled={currentVideoIdx >= videoFiles.length - 1}
-                            className="text-white/60 disabled:text-white/20 text-lg px-2 active:scale-90 transition-transform">⏭</button>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                )}
               </div>
             )}
 
             {/* ── Audio Player ── */}
             {viewerType === 'audio' && (
               <div className="flex-1 flex items-center justify-center p-4">
-                <div className="w-full max-w-md" style={{ background:'linear-gradient(145deg,rgba(20,10,40,0.95),rgba(10,5,25,0.98))', border:'1px solid rgba(180,100,255,0.25)', borderRadius:24, padding:'28px 20px', boxShadow:'0 20px 60px rgba(0,0,0,0.6), 0 0 40px rgba(140,80,255,0.08)' }}>
+                <div className="w-full max-w-md" style={{ background:'linear-gradient(145deg,rgba(20,10,40,0.95),rgba(10,5,25,0.98))', border:'1px solid rgba(180,100,255,0.25)', borderRadius:24, padding:'28px 20px', boxShadow:'0 20px 60px rgba(0,0,0,0.6), 0 0 40px rgba(140,80,255,0.08)', position:'relative' }}>
+
+                  {/* Back button — top-left corner of card */}
+                  <button onClick={closeViewer}
+                    className="w-9 h-9 rounded-xl flex items-center justify-center text-white/70 hover:text-white transition-colors"
+                    style={{ position:'absolute', top:14, left:14, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)' }}>
+                    <ArrowLeft className="w-5 h-5" />
+                  </button>
 
                   {/* Waveform animation */}
                   <div style={{ display:'flex', alignItems:'flex-end', justifyContent:'center', gap:3, height:48, marginBottom:20 }}>
@@ -724,6 +713,8 @@ export default function FolderView() {
                     onContextMenu={e => e.preventDefault()}
                     onTimeUpdate={e => setMediaCurTime((e.target as HTMLAudioElement).currentTime)}
                     onLoadedMetadata={e => setMediaDuration((e.target as HTMLAudioElement).duration)}
+                    onError={() => { setTimeout(() => setMediaRetryKey(k => k + 1), 2000); }}
+                    onStalled={() => { setTimeout(() => { audioRef.current?.load(); audioRef.current?.play().catch(() => null); }, 1500); }}
                   />
 
                   {/* Progress bar */}
