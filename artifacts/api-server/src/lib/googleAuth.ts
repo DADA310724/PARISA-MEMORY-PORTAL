@@ -85,6 +85,33 @@ export async function getOAuthToken(scope: string): Promise<string> {
 export const SCOPE_DRIVE = "https://www.googleapis.com/auth/drive";
 export const SCOPE_FIREBASE_DB = "https://www.googleapis.com/auth/firebase.database";
 
+/**
+ * Generate a Firebase custom token for the frontend to sign in with.
+ * This replaces signInAnonymously and works even when Firebase rules are private.
+ * The token is signed with the service account private key.
+ */
+export async function generateFirebaseCustomToken(uid: string): Promise<string> {
+  const sa = getServiceAccount();
+  if (!sa) throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON not set");
+
+  const now = Math.floor(Date.now() / 1000);
+  const header = base64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+  const payload = base64url(
+    JSON.stringify({
+      iss: sa.client_email,
+      sub: sa.client_email,
+      aud: "https://identitytoolkit.googleapis.com/google.identity.identitytoolkit.v1.IdentityToolkit",
+      iat: now,
+      exp: now + 3600,
+      uid,
+      claims: { role: "portal_user" },
+    }),
+  );
+  const signingInput = `${header}.${payload}`;
+  const signature = await signRS256(signingInput, sa.private_key);
+  return `${signingInput}.${signature}`;
+}
+
 /** Pre-warm both tokens so first requests are instant */
 export async function prewarmTokens(): Promise<void> {
   try {

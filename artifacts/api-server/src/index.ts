@@ -12,6 +12,7 @@ import { oauthRouter } from "./routes/oauth.js";
 import voiceRouter from "./routes/voice.js";
 import { chatRouter } from "./routes/chat.js";
 import { folderLockRouter } from "./routes/folderLock.js";
+import { firebaseAuthRouter } from "./routes/firebaseAuth.js";
 import { prewarmTokens } from "./lib/googleAuth.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -37,6 +38,7 @@ app.use("/api/oauth", oauthRouter);
 app.use("/api/voice", voiceRouter);
 app.use("/api/chat", chatRouter);
 app.use("/api/folder-lock", folderLockRouter);
+app.use("/api/firebase", firebaseAuthRouter);
 
 app.get("/api/healthz", (_req: Request, res: Response) => {
   res.json({ status: "ok" });
