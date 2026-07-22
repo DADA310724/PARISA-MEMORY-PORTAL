@@ -419,11 +419,11 @@ export default function AdminSettings() {
     setLoading(true);
     try {
       const db = await ensureFirebase();
-      const [aiSnap, logSnap, serverCfg, pwData] = await Promise.all([
+      const [aiSnap, pwSnap, logSnap, serverCfg] = await Promise.all([
         get(ref(db, "ai_config")),
+        get(ref(db, "folder_passwords")),
         get(ref(db, "login_attempts")),
         api<{ groqKeys?: string[]; geminiKeys?: string[]; openrouterKeys?: string[] }>("/config").catch(() => ({} as { groqKeys?: string[]; geminiKeys?: string[]; openrouterKeys?: string[] })),
-        api<Record<string, FolderPassword>>("/folder-lock").catch(() => ({} as Record<string, FolderPassword>)),
       ]);
 
       const makeEntries = (keys: string[] | undefined, existing: ApiKeyEntry[]): ApiKeyEntry[] => {
@@ -453,7 +453,7 @@ export default function AdminSettings() {
         }));
       }
 
-      if (pwData && Object.keys(pwData).length > 0) setFolderPasswords(pwData);
+      if (pwSnap.val()) setFolderPasswords(pwSnap.val() as Record<string, FolderPassword>);
       if (logSnap.val()) {
         const raw = logSnap.val() as Record<string, LoginLog>;
         setLogs(Object.values(raw).sort((a, b) => b.ts - a.ts).slice(0, 50));
@@ -623,10 +623,8 @@ export default function AdminSettings() {
       // Password must be keyed by drive_folder_id (same key FolderView checks)
       const driveFolderId = btn.drive_folder_id || "";
       if (pw && driveFolderId) {
-        await api(`/folder-lock/${encodeURIComponent(driveFolderId)}`, {
-          method: "POST",
-          body: { password: pw, hint: "", name: btn.label },
-        });
+        const db = await ensureFirebase();
+        await set(ref(db, `folder_passwords/${driveFolderId}`), { name: btn.label, folderId: driveFolderId, password: pw });
         setFolderPasswords(p => ({ ...p, [driveFolderId]: { name: btn.label, folderId: driveFolderId, password: pw } }));
       }
       showMsg("✅ ফোল্ডার সেভ হয়েছে! Dashboard-এ দেখুন।");
@@ -687,11 +685,9 @@ export default function AdminSettings() {
     if (!pwInput.trim()) { removeFolderPassword(folderId); return; }
     setSaving(true);
     try {
-      await api(`/folder-lock/${encodeURIComponent(folderId)}`, {
-        method: "POST",
-        body: { password: pwInput.trim(), hint: hintInput.trim() || "", name },
-      });
+      const db = await ensureFirebase();
       const data: FolderPassword = { name, folderId, password: pwInput.trim(), hint: hintInput.trim() || undefined };
+      await set(ref(db, `folder_passwords/${folderId}`), data);
       setFolderPasswords(p => ({ ...p, [folderId]: data }));
       setEditingFolder(null); setPwInput(""); setHintInput("");
       showMsg("✅ পাসওয়ার্ড সেট হয়েছে");
@@ -702,7 +698,8 @@ export default function AdminSettings() {
   const removeFolderPassword = async (folderId: string) => {
     setSaving(true);
     try {
-      await api(`/folder-lock/${encodeURIComponent(folderId)}`, { method: "DELETE" });
+      const db = await ensureFirebase();
+      await remove(ref(db, `folder_passwords/${folderId}`));
       setFolderPasswords(p => { const n = { ...p }; delete n[folderId]; return n; });
       setEditingFolder(null); setPwInput(""); setHintInput("");
       showMsg("🔓 পাসওয়ার্ড সরানো হয়েছে");
