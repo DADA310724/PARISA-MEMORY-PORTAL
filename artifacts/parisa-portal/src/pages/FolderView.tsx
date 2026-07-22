@@ -80,7 +80,12 @@ export default function FolderView() {
       const snap = await get(ref(db, `folder_passwords/${folderId}`));
       const val = snap.val() as FolderLock | null;
       if (val?.password) { setLockData(val); setLocked(true); } else { setLockData(null); setLocked(false); }
-    } catch { setLocked(false); }
+    } catch (e) {
+      // Firebase error — treat as no lock (don't block access on network errors)
+      console.warn("folder lock check failed:", e);
+      setLockData(null);
+      setLocked(false);
+    }
     finally { setLockChecking(false); }
   }, []);
 

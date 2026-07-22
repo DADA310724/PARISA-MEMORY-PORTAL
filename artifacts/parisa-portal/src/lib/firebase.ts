@@ -48,16 +48,30 @@ const FALLBACK_FIREBASE = {
 export async function loadAppConfig(): Promise<AppConfig> {
   if (configCache) return configCache;
   try {
-    configCache = await api<AppConfig>("/config");
-    if (!configCache?.firebase?.apiKey) throw new Error("empty config");
+    const remote = await api<AppConfig>("/config");
+    // Require BOTH apiKey and databaseURL — if either is missing fall through to fallback
+    if (!remote?.firebase?.apiKey || !remote?.firebase?.databaseURL) throw new Error("incomplete config");
+    configCache = remote;
     return configCache;
   } catch {
+    // Merge: use api values where available, baked-in FALLBACK for anything missing (especially databaseURL)
+    let partial: AppConfig | null = null;
+    try { partial = await api<AppConfig>("/config"); } catch { /* ignore */ }
     configCache = {
-      firebase: FALLBACK_FIREBASE,
-      logoUrl: "https://i.ibb.co/Z1WPYY7P/x.jpg",
-      driveParentFolderId: "",
-      telegramLink: "https://t.me/DADA310724",
-      oauthClientId: "",
+      firebase: {
+        apiKey:            partial?.firebase?.apiKey            || FALLBACK_FIREBASE.apiKey,
+        authDomain:        partial?.firebase?.authDomain        || FALLBACK_FIREBASE.authDomain,
+        databaseURL:       FALLBACK_FIREBASE.databaseURL        || partial?.firebase?.databaseURL || "",
+        projectId:         partial?.firebase?.projectId         || FALLBACK_FIREBASE.projectId,
+        storageBucket:     partial?.firebase?.storageBucket     || FALLBACK_FIREBASE.storageBucket,
+        messagingSenderId: partial?.firebase?.messagingSenderId || FALLBACK_FIREBASE.messagingSenderId,
+        appId:             partial?.firebase?.appId             || FALLBACK_FIREBASE.appId,
+        measurementId:     partial?.firebase?.measurementId     || FALLBACK_FIREBASE.measurementId,
+      },
+      logoUrl:             partial?.logoUrl             || "https://i.ibb.co/Z1WPYY7P/x.jpg",
+      driveParentFolderId: partial?.driveParentFolderId || "",
+      telegramLink:        partial?.telegramLink         || "https://t.me/DADA310724",
+      oauthClientId:       partial?.oauthClientId       || "",
     };
     return configCache;
   }
