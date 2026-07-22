@@ -85,6 +85,7 @@ Run: `node --enable-source-maps artifacts/api-server/dist/index.mjs & PORT=23236
 - No refresh icon in folder viewer header
 - No design changes to existing UI
 - Bengali language throughout
+- **MANDATORY: Every code change/fix must bump the version in `artifacts/parisa-portal/src/lib/version.ts` (e.g. V-17 → V-18) before building and pushing. No exceptions. This is how the user tracks which version is live.**
 
 ## Gotchas
 
