@@ -1,27 +1,16 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
-import { getOAuthToken, SCOPE_FIREBASE_DB } from "../lib/googleAuth.js";
 
 export const folderLockRouter = Router();
 
 const DB_URL = () => (process.env.FIREBASE_DATABASE_URL ?? "").replace(/\/$/, "");
 
-// Get a Firebase-scoped OAuth token — used for ALL reads and writes so that
-// Firebase rules can be set to require authentication (fully private/secret).
-// Falls back gracefully if service account not configured.
-async function getFirebaseToken(): Promise<string | null> {
-  try {
-    return await getOAuthToken(SCOPE_FIREBASE_DB);
-  } catch {
-    return null;
-  }
-}
-
-// Build a Firebase REST URL, always attaching the OAuth token when available.
-// This makes every request authenticated → compatible with fully-private rules.
-function fbUrl(dbUrl: string, path: string, token: string | null): string {
+// Use Firebase Database Secret (?auth=) for all server-side reads/writes.
+// This bypasses security rules entirely — folder_passwords stay fully private from clients.
+function fbUrl(dbUrl: string, path: string): string {
+  const secret = process.env.FIREBASE_DATABASE_SECRET ?? "";
   const base = `${dbUrl}/${path}.json`;
-  return token ? `${base}?access_token=${token}` : base;
+  return secret ? `${base}?auth=${secret}` : base;
 }
 
 // ── GET /api/folder-lock — list ALL folder passwords (admin) ──
@@ -29,8 +18,7 @@ folderLockRouter.get("/", async (_req: Request, res: Response): Promise<void> =>
   const dbUrl = DB_URL();
   if (!dbUrl) { res.json({}); return; }
   try {
-    const token = await getFirebaseToken();
-    const r = await fetch(fbUrl(dbUrl, "folder_passwords", token));
+    const r = await fetch(fbUrl(dbUrl, "folder_passwords"));
     if (!r.ok) { res.json({}); return; }
     const val = await r.json() as Record<string, { password?: string; hint?: string; name?: string }> | null;
     res.json(val ?? {});
@@ -45,8 +33,7 @@ folderLockRouter.get("/:folderId", async (req: Request, res: Response): Promise<
   const dbUrl = DB_URL();
   if (!dbUrl) { res.json({ locked: false }); return; }
   try {
-    const token = await getFirebaseToken();
-    const r = await fetch(fbUrl(dbUrl, `folder_passwords/${encodeURIComponent(folderId)}`, token));
+    const r = await fetch(fbUrl(dbUrl, `folder_passwords/${encodeURIComponent(folderId)}`));
     if (!r.ok) { res.json({ locked: false }); return; }
     const val = await r.json() as { password?: string; hint?: string; name?: string } | null;
     if (val?.password) {
@@ -66,8 +53,7 @@ folderLockRouter.post("/:folderId/verify", async (req: Request, res: Response): 
   const dbUrl = DB_URL();
   if (!dbUrl) { res.json({ ok: false }); return; }
   try {
-    const token = await getFirebaseToken();
-    const r = await fetch(fbUrl(dbUrl, `folder_passwords/${encodeURIComponent(folderId)}`, token));
+    const r = await fetch(fbUrl(dbUrl, `folder_passwords/${encodeURIComponent(folderId)}`));
     if (!r.ok) { res.json({ ok: false }); return; }
     const val = await r.json() as { password?: string } | null;
     res.json({ ok: !!val?.password && val.password === password });
@@ -84,10 +70,8 @@ folderLockRouter.post("/:folderId", async (req: Request, res: Response): Promise
   if (!dbUrl) { res.status(500).json({ ok: false, error: "No database URL" }); return; }
   if (!password?.trim()) { res.status(400).json({ ok: false, error: "Password required" }); return; }
   try {
-    const token = await getFirebaseToken();
     const data = { folderId, password: password.trim(), hint: hint?.trim() || null, name: name || folderId };
-    const url = `${dbUrl}/folder_passwords/${encodeURIComponent(folderId)}.json${token ? `?access_token=${token}` : ""}`;
-    const r = await fetch(url, {
+    const r = await fetch(fbUrl(dbUrl, `folder_passwords/${encodeURIComponent(folderId)}`), {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -109,9 +93,7 @@ folderLockRouter.delete("/:folderId", async (req: Request, res: Response): Promi
   const dbUrl = DB_URL();
   if (!dbUrl) { res.status(500).json({ ok: false, error: "No database URL" }); return; }
   try {
-    const token = await getFirebaseToken();
-    const url = `${dbUrl}/folder_passwords/${encodeURIComponent(folderId)}.json${token ? `?access_token=${token}` : ""}`;
-    const r = await fetch(url, { method: "DELETE" });
+    const r = await fetch(fbUrl(dbUrl, `folder_passwords/${encodeURIComponent(folderId)}`), { method: "DELETE" });
     if (!r.ok) {
       const text = await r.text();
       res.status(500).json({ ok: false, error: text });

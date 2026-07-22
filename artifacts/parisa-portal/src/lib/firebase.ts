@@ -82,31 +82,14 @@ export async function ensureFirebase(): Promise<Database> {
   const cfg = await loadAppConfig();
   app = getApps().length > 0 ? getApp() : initializeApp(cfg.firebase);
   db = getDatabase(app);
-  // Authenticate using a server-issued custom token so Firebase rules (auth != null) are satisfied.
-  // This works even when Anonymous Auth is disabled in Firebase console.
-  // Falls back to signInAnonymously if the server token endpoint is unavailable.
+  // Authenticate using Anonymous Auth so Firebase rules (auth != null) are satisfied.
   try {
     const auth = getAuth(app);
     if (!auth.currentUser) {
-      let signedIn = false;
-      try {
-        const resp = await fetch("/api/firebase/token");
-        if (resp.ok) {
-          const { token } = await resp.json() as { token: string };
-          await signInWithCustomToken(auth, token);
-          signedIn = true;
-        }
-      } catch {
-        // server token endpoint unavailable — fall through to anonymous
-      }
-      if (!signedIn) {
-        // Fallback: try anonymous auth (works if enabled in Firebase console)
-        await signInAnonymously(auth);
-      }
+      await signInAnonymously(auth);
     }
   } catch {
     // Auth failed entirely — continue without auth
-    // Firebase rules may still allow unauthenticated reads on some paths
   }
   return db;
 }
