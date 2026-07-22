@@ -197,6 +197,7 @@ export default function FolderView() {
     setMediaCurTime(0);
     setMediaDuration(0);
     setMediaBuffering(false);
+    setDirectMediaUrl(null); // clear old URL — new one fetched by effect below
     setMediaRetryKey(k => k + 1);
     const type = isImage(f) ? "photo" : isVideo(f) ? "video" : isAudio(f) ? "audio" : isPdf(f) ? "pdf" : isHtml(f) ? "html" : isText(f) ? "text" : "file";
     notifyFileOpen(f, type);
@@ -208,6 +209,19 @@ export default function FolderView() {
     if (isText(f)) { setViewerType("text"); setViewerOpen(true); return; }
     setViewerType("generic"); setViewerOpen(true);
   };
+
+  // When audio/video opens, fetch a direct Google Drive URL (streams from Google, no proxy)
+  useEffect(() => {
+    if (!viewerFile || (viewerType !== 'audio' && viewerType !== 'video')) return;
+    let cancelled = false;
+    setDirectMediaUrl(null);
+    setDirectMediaLoading(true);
+    api<{ url: string }>(`/drive/direct-url/${encodeURIComponent(viewerFile.id)}`)
+      .then(r => { if (!cancelled) setDirectMediaUrl(r.url); })
+      .catch(() => { if (!cancelled) setDirectMediaUrl(streamUrl(viewerFile.id)); }) // fallback to proxy
+      .finally(() => { if (!cancelled) setDirectMediaLoading(false); });
+    return () => { cancelled = true; };
+  }, [viewerFile?.id, viewerType]);
 
   const prevImage = () => setViewerIndex(i => (i - 1 + imageFiles.length) % imageFiles.length);
   const nextImage = () => setViewerIndex(i => (i + 1) % imageFiles.length);
