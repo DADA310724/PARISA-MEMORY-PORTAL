@@ -262,29 +262,30 @@ export function Sidebar({ onClose }: SidebarProps) {
 
       {/* Footer */}
       <div style={{ borderTop: "1px solid hsl(var(--primary) / 0.1)" }}>
-        <a href="https://t.me/DADA310724" target="_blank" rel="noopener noreferrer"
-          className="px-4 py-2 flex items-center justify-between hover:bg-white/5 transition-all"
-        >
-          <p className="text-[10px] font-medium tracking-[0.2em] uppercase" style={{ color: "rgba(255,255,255,0.35)" }}>
-            Development by <span style={{ color: "hsl(var(--primary) / 0.85)", fontWeight: 700 }}>DADA</span>
-          </p>
-          <div
-            className="flex items-center justify-center flex-shrink-0"
-            style={{
-              width: 32, height: 32, borderRadius: 10,
-              background: "rgba(33,150,243,0.1)",
-              border: "1px solid rgba(33,186,252,0.3)",
-              backdropFilter: "blur(12px)",
-              boxShadow: "inset 0 1px 0 rgba(255,255,255,0.15), 0 2px 10px rgba(33,186,252,0.2)",
-            }}
-          >
-            <SiTelegram style={{ width: 16, height: 16, color: "rgba(33,186,252,0.9)" }} />
-          </div>
-        </a>
+        <div className="px-4 py-2.5 flex items-center justify-center">
+          <a href="https://t.me/DADA310724" target="_blank" rel="noopener noreferrer"
+            className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
+            <p className="text-[11px] font-medium tracking-[0.25em] uppercase" style={{ color: "rgba(255,255,255,0.35)" }}>
+              This Apps Development By <span style={{ color: "rgba(0,212,170,0.85)", fontWeight: 700 }}>DADA</span>
+            </p>
+            <div
+              className="flex items-center justify-center flex-shrink-0"
+              style={{
+                width: 32, height: 32, borderRadius: 10,
+                background: "rgba(33,150,243,0.1)",
+                border: "1px solid rgba(33,186,252,0.3)",
+                backdropFilter: "blur(12px)",
+                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.15), 0 2px 10px rgba(33,186,252,0.2)",
+              }}
+            >
+              <SiTelegram style={{ width: 16, height: 16, color: "rgba(33,186,252,0.9)" }} />
+            </div>
+          </a>
+        </div>
         <div className="pb-2 flex items-center justify-center">
           <span className="text-[9px] font-mono px-1.5 py-0.5 rounded"
             style={{ background: "hsl(var(--primary) / 0.08)", border: "1px solid hsl(var(--primary) / 0.2)", color: "hsl(var(--primary) / 0.5)" }}>
-            v{APP_VERSION}
+            {APP_VERSION}
           </span>
         </div>
       </div>
