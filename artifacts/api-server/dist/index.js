@@ -10,6 +10,7 @@ import { telegramRouter } from "./routes/telegram.js";
 import { oauthRouter } from "./routes/oauth.js";
 import voiceRouter from "./routes/voice.js";
 import { chatRouter } from "./routes/chat.js";
+import { folderLockRouter } from "./routes/folderLock.js";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT ? Number(process.env.PORT) : 8080;
@@ -32,6 +33,7 @@ app.use("/api/telegram", telegramRouter);
 app.use("/api/oauth", oauthRouter);
 app.use("/api/voice", voiceRouter);
 app.use("/api/chat", chatRouter);
+app.use("/api/folder-lock", folderLockRouter);
 app.get("/api/healthz", (_req, res) => {
     res.json({ status: "ok" });
 });

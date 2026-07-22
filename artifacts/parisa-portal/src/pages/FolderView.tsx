@@ -76,28 +76,22 @@ export default function FolderView() {
   const checkFolderLock = useCallback(async (folderId: string) => {
     setLockChecking(true);
     try {
-      const db = await ensureFirebase();
-      const snap = await get(ref(db, `folder_passwords/${folderId}`));
-      const val = snap.val() as FolderLock | null;
-      if (val?.password) { setLockData(val); setLocked(true); } else { setLockData(null); setLocked(false); }
-    } catch (e) {
-      // Firebase error — retry once after 1.5s (anonymous auth may still be initializing)
-      console.warn("folder lock check failed, retrying:", e);
-      setTimeout(async () => {
-        try {
-          const db2 = await ensureFirebase();
-          const snap2 = await get(ref(db2, `folder_passwords/${folderId}`));
-          const val2 = snap2.val() as FolderLock | null;
-          if (val2?.password) { setLockData(val2); setLocked(true); } else { setLockData(null); setLocked(false); }
-        } catch {
-          // Still failing — fail open (no lock) rather than block forever
-          setLockData(null);
-          setLocked(false);
-        } finally { setLockChecking(false); }
-      }, 1500);
-      return; // early return so finally below doesn't double-set lockChecking
+      // Server-side check via Firebase REST API — reliable regardless of client SDK auth state
+      const result = await api<{ locked: boolean; hint?: string | null; name?: string | null }>(`/folder-lock/${encodeURIComponent(folderId)}`);
+      if (result?.locked) {
+        setLockData({ password: "__server_verified__", hint: result.hint ?? undefined });
+        setLocked(true);
+      } else {
+        setLockData(null);
+        setLocked(false);
+      }
+    } catch {
+      // Server unavailable — fail secure (keep locked)
+      setLockData(null);
+      setLocked(false);
+    } finally {
+      setLockChecking(false);
     }
-    finally { setLockChecking(false); }
   }, []);
 
   const loadFolder = useCallback(async (folderId: string, folderName?: string) => {
@@ -171,10 +165,18 @@ export default function FolderView() {
   }, [viewerFile, currentFolder.name]);
 
 
-  const unlockFolder = () => {
-    if (!lockData) return;
-    if (lockInput === lockData.password) { setLocked(false); setLockInput(""); setLockError(""); }
-    else { setLockError("পাসওয়ার্ড ভুল! আবার চেষ্টা করুন।"); }
+  const unlockFolder = async () => {
+    if (!lockData || !lockInput.trim()) return;
+    try {
+      const result = await api<{ ok: boolean }>(`/folder-lock/${encodeURIComponent(currentFolder.id)}/verify`, {
+        method: "POST",
+        body: { password: lockInput.trim() },
+      });
+      if (result?.ok) { setLocked(false); setLockInput(""); setLockError(""); }
+      else { setLockError("পাসওয়ার্ড ভুল! আবার চেষ্টা করুন।"); }
+    } catch {
+      setLockError("সংযোগ সমস্যা। আবার চেষ্টা করুন।");
+    }
   };
 
   const openFolder = (f: DriveFile) => { setBreadcrumbs(b => [...b, { id: f.id, name: f.name }]); setFiles([]); };

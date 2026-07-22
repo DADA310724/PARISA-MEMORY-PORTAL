@@ -68,3 +68,13 @@ description: Summary of all implemented features across sessions for parisa-port
 **Why preload="auto"**: preload="metadata" caused initial play delay; auto allows browser to buffer eagerly for instant playback.
 **Why force push**: GitHub remote had diverged commits; local has all latest changes; force push overwrites correctly.
 **Git push workaround**: `git remote set-url` is blocked but `git push https://TOKEN@url main --force` works directly from Shell.
+
+## Session 8 (folder lock overhaul)
+- **Workflow env var fix**: api-server workflow process had empty Firebase env vars on first start; requires workflow restart to pick up secrets (Replit injects secrets after bash init, not before).
+- **Folder lock — server-side API**: created `GET/POST/DELETE /api/folder-lock/:folderId` and `POST /api/folder-lock/:folderId/verify` in `artifacts/api-server/src/routes/folderLock.ts`. Uses Firebase REST API (public reads) + Google SA token (writes). Firebase client SDK anonymous auth is unreliable; server REST API always works.
+- **FolderView lock check**: replaced Firebase SDK `get(ref(...))` with `api('/folder-lock/:folderId')` server call.
+- **FolderView unlockFolder**: now async, calls `/api/folder-lock/:folderId/verify` — server verifies password, client never sees the actual password.
+- **AdminSettings passwords**: saveFolderPassword, removeFolderPassword, folder creation password all use server API (POST/DELETE `/api/folder-lock`). loadAll uses GET `/api/folder-lock` for all passwords.
+
+**Why server-side lock**: Firebase anonymous auth may be disabled in Firebase console; client SDK reads fail silently → catch → locked=false → no lock shown. Server REST API uses public Firebase rules (confirmed working) and SA token for writes.
+**Why server verifies password**: client should never receive the actual password from the server; only yes/no verify response.
