@@ -11,6 +11,7 @@ import { oauthRouter } from "./routes/oauth.js";
 import voiceRouter from "./routes/voice.js";
 import { chatRouter } from "./routes/chat.js";
 import { folderLockRouter } from "./routes/folderLock.js";
+import { prewarmTokens } from "./lib/googleAuth.js";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 const PORT = process.env.PORT ? Number(process.env.PORT) : 8080;
@@ -52,5 +53,7 @@ if (existsSync(staticDir)) {
 const server = createServer(app);
 server.listen(PORT, "0.0.0.0", () => {
     console.log(`API server running on port ${PORT}`);
+    // Pre-warm Google OAuth tokens so first media/password requests are instant
+    prewarmTokens();
 });
 //# sourceMappingURL=index.js.map

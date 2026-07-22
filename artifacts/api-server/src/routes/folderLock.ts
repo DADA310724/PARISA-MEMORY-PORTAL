@@ -1,9 +1,20 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
+import { getOAuthToken, SCOPE_FIREBASE_DB } from "../lib/googleAuth.js";
 
 export const folderLockRouter = Router();
 
 const DB_URL = () => (process.env.FIREBASE_DATABASE_URL ?? "").replace(/\/$/, "");
+
+// Get a Firebase-scoped OAuth token for server-side writes
+// Falls back to unauthenticated (read-only) if service account not configured
+async function getFirebaseToken(): Promise<string | null> {
+  try {
+    return await getOAuthToken(SCOPE_FIREBASE_DB);
+  } catch {
+    return null;
+  }
+}
 
 // ── GET /api/folder-lock — list ALL folder passwords ──
 folderLockRouter.get("/", async (_req: Request, res: Response): Promise<void> => {
@@ -62,8 +73,10 @@ folderLockRouter.post("/:folderId", async (req: Request, res: Response): Promise
   if (!dbUrl) { res.status(500).json({ ok: false, error: "No database URL" }); return; }
   if (!password?.trim()) { res.status(400).json({ ok: false, error: "Password required" }); return; }
   try {
+    const token = await getFirebaseToken();
     const data = { folderId, password: password.trim(), hint: hint?.trim() || null, name: name || folderId };
-    const r = await fetch(`${dbUrl}/folder_passwords/${encodeURIComponent(folderId)}.json`, {
+    const url = `${dbUrl}/folder_passwords/${encodeURIComponent(folderId)}.json${token ? `?access_token=${token}` : ""}`;
+    const r = await fetch(url, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
@@ -85,9 +98,9 @@ folderLockRouter.delete("/:folderId", async (req: Request, res: Response): Promi
   const dbUrl = DB_URL();
   if (!dbUrl) { res.status(500).json({ ok: false, error: "No database URL" }); return; }
   try {
-    const r = await fetch(`${dbUrl}/folder_passwords/${encodeURIComponent(folderId)}.json`, {
-      method: "DELETE",
-    });
+    const token = await getFirebaseToken();
+    const url = `${dbUrl}/folder_passwords/${encodeURIComponent(folderId)}.json${token ? `?access_token=${token}` : ""}`;
+    const r = await fetch(url, { method: "DELETE" });
     if (!r.ok) {
       const text = await r.text();
       res.status(500).json({ ok: false, error: text });

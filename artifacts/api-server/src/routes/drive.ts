@@ -1,47 +1,16 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
 import multer from "multer";
+import { Readable } from "node:stream";
+import { getOAuthToken, SCOPE_DRIVE } from "../lib/googleAuth.js";
 
 export const driveRouter = Router();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 100 * 1024 * 1024 } });
 
-interface ServiceAccount {
-  client_email: string;
-  private_key: string;
+// Thin wrapper so callers don't need to pass the scope
+async function getAccessToken(): Promise<string> {
+  return getOAuthToken(SCOPE_DRIVE);
 }
-
-let _serviceAccount: ServiceAccount | null = null;
-function getServiceAccount(): ServiceAccount | null {
-  if (_serviceAccount) return _serviceAccount;
-  const raw = process.env.GOOGLE_SERVICE_ACCOUNT_JSON ?? "";
-  if (!raw) return null;
-  try {
-    _serviceAccount = JSON.parse(raw) as ServiceAccount;
-    return _serviceAccount;
-  } catch {
-    return null;
-  }
-}
-
-// ── JWT / access-token helpers ──────────────────────────────────────────────
-
-function base64url(data: string): string {
-  return Buffer.from(data)
-    .toString("base64")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-}
-
-async function signRS256(payload: string, privateKey: string): Promise<string> {
-  const { createSign } = await import("node:crypto");
-  const sign = createSign("RSA-SHA256");
-  sign.update(payload);
-  sign.end();
-  return sign.sign(privateKey, "base64url");
-}
-
-let _tokenCache: { token: string; exp: number } | null = null;
 
 // ── Media chunk cache ─────────────────────────────────────────────────────
 // Caches the first CHUNK_BYTES of each media file so first-play is instant.
@@ -90,44 +59,6 @@ async function fetchAndCacheChunk(id: string): Promise<CachedChunk | null> {
   }
 }
 
-async function getAccessToken(): Promise<string> {
-  if (_tokenCache && Date.now() < _tokenCache.exp) return _tokenCache.token;
-
-  const sa = getServiceAccount();
-  if (!sa) throw new Error("GOOGLE_SERVICE_ACCOUNT_JSON not set");
-
-  const now = Math.floor(Date.now() / 1000);
-  const header = base64url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
-  const claimSet = base64url(
-    JSON.stringify({
-      iss: sa.client_email,
-      scope: "https://www.googleapis.com/auth/drive",
-      aud: "https://oauth2.googleapis.com/token",
-      iat: now,
-      exp: now + 3600,
-    }),
-  );
-  const signingInput = `${header}.${claimSet}`;
-  const signature = await signRS256(signingInput, sa.private_key);
-  const jwt = `${signingInput}.${signature}`;
-
-  const resp = await fetch("https://oauth2.googleapis.com/token", {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-      assertion: jwt,
-    }),
-  });
-  if (!resp.ok) {
-    const text = await resp.text();
-    throw new Error(`Token exchange failed: ${text}`);
-  }
-  const data = await resp.json() as { access_token: string; expires_in: number };
-  _tokenCache = { token: data.access_token, exp: (now + data.expires_in - 60) * 1000 };
-  return _tokenCache.token;
-}
-
 async function driveGet(path: string, params?: Record<string, string>): Promise<globalThis.Response> {
   const token = await getAccessToken();
   const url = new URL(`https://www.googleapis.com/drive/v3/${path}`);
@@ -142,8 +73,7 @@ async function driveGet(path: string, params?: Record<string, string>): Promise<
 // ── Routes ───────────────────────────────────────────────────────────────────
 
 driveRouter.get("/ready", async (_req: Request, res: Response) => {
-  const sa = getServiceAccount();
-  if (!sa) {
+  if (!process.env.GOOGLE_SERVICE_ACCOUNT_JSON) {
     res.json({ ready: false, reason: "GOOGLE_SERVICE_ACCOUNT_JSON not set" });
     return;
   }
@@ -155,7 +85,7 @@ driveRouter.get("/ready", async (_req: Request, res: Response) => {
     );
     if (testResp.ok) {
       const data = await testResp.json() as { user?: { emailAddress?: string } };
-      res.json({ ready: true, email: data.user?.emailAddress ?? sa.client_email });
+      res.json({ ready: true, email: data.user?.emailAddress ?? "" });
     } else {
       res.json({ ready: false, reason: `Drive API error: ${testResp.status}` });
     }
@@ -316,11 +246,11 @@ driveRouter.get("/stream/:id", async (req: Request, res: Response) => {
     const cr = driveResp.headers.get("content-range");
     if (cr) res.setHeader("Content-Range", cr);
     res.setHeader("Accept-Ranges", "bytes");
-    res.setHeader("Cache-Control", "no-store");
+    // Allow browser to cache video/audio chunks — critical for smooth seeking & replay
+    res.setHeader("Cache-Control", "private, max-age=3600");
 
     // Pipe directly — data flows from Google to browser with zero buffering in our process
     if (!driveResp.body) { res.end(); return; }
-    const { Readable } = await import("node:stream");
     Readable.fromWeb(driveResp.body as import("stream/web").ReadableStream).pipe(res);
   } catch (err) {
     if (!res.headersSent) res.status(500).send(String(err));
@@ -357,7 +287,6 @@ driveRouter.get("/proxy/:id", async (req: Request, res: Response) => {
     const cl = driveResp.headers.get("content-length");
     if (cl) res.setHeader("Content-Length", cl);
     if (!driveResp.body) { res.end(); return; }
-    const { Readable } = await import("node:stream");
     Readable.fromWeb(driveResp.body as import("stream/web").ReadableStream).pipe(res);
   } catch (err) {
     if (!res.headersSent) res.status(500).json({ error: String(err) });
