@@ -5,6 +5,20 @@ export const folderLockRouter = Router();
 
 const DB_URL = () => (process.env.FIREBASE_DATABASE_URL ?? "").replace(/\/$/, "");
 
+// ── GET /api/folder-lock — list ALL folder passwords ──
+folderLockRouter.get("/", async (_req: Request, res: Response): Promise<void> => {
+  const dbUrl = DB_URL();
+  if (!dbUrl) { res.json({}); return; }
+  try {
+    const r = await fetch(`${dbUrl}/folder_passwords.json`);
+    if (!r.ok) { res.json({}); return; }
+    const val = await r.json() as Record<string, { password?: string; hint?: string; name?: string }> | null;
+    res.json(val ?? {});
+  } catch {
+    res.json({});
+  }
+});
+
 // ── GET /api/folder-lock/:folderId — is this folder locked? (public REST) ──
 folderLockRouter.get("/:folderId", async (req: Request, res: Response): Promise<void> => {
   const folderId = req.params["folderId"] as string;

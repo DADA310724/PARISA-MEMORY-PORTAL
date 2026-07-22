@@ -419,11 +419,11 @@ export default function AdminSettings() {
     setLoading(true);
     try {
       const db = await ensureFirebase();
-      const [aiSnap, pwSnap, logSnap, serverCfg] = await Promise.all([
+      const [aiSnap, logSnap, serverCfg, pwData] = await Promise.all([
         get(ref(db, "ai_config")),
-        get(ref(db, "folder_passwords")),
         get(ref(db, "login_attempts")),
         api<{ groqKeys?: string[]; geminiKeys?: string[]; openrouterKeys?: string[] }>("/config").catch(() => ({} as { groqKeys?: string[]; geminiKeys?: string[]; openrouterKeys?: string[] })),
+        api<Record<string, FolderPassword>>("/folder-lock").catch(() => ({} as Record<string, FolderPassword>)),
       ]);
 
       const makeEntries = (keys: string[] | undefined, existing: ApiKeyEntry[]): ApiKeyEntry[] => {
@@ -453,7 +453,7 @@ export default function AdminSettings() {
         }));
       }
 
-      if (pwSnap.val()) setFolderPasswords(pwSnap.val() as Record<string, FolderPassword>);
+      if (pwData && Object.keys(pwData).length > 0) setFolderPasswords(pwData);
       if (logSnap.val()) {
         const raw = logSnap.val() as Record<string, LoginLog>;
         setLogs(Object.values(raw).sort((a, b) => b.ts - a.ts).slice(0, 50));
