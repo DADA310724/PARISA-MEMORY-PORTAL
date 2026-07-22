@@ -10,7 +10,7 @@ import {
   push,
   onValue,
 } from "firebase/database";
-import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { getAuth, signInAnonymously, signInWithEmailAndPassword } from "firebase/auth";
 import { api } from "./api";
 
 export interface AppConfig {
@@ -82,6 +82,17 @@ export async function ensureFirebase(): Promise<Database> {
   const cfg = await loadAppConfig();
   app = getApps().length > 0 ? getApp() : initializeApp(cfg.firebase);
   db = getDatabase(app);
+  // Sign in anonymously so all users can read Firebase (e.g. folder_passwords)
+  // without needing an account. Admin login replaces this with a real credential.
+  try {
+    const auth = getAuth(app);
+    if (!auth.currentUser) {
+      await signInAnonymously(auth);
+    }
+  } catch {
+    // If anonymous auth fails (disabled in Firebase console), continue anyway
+    // — Firebase rules may allow unauthenticated reads
+  }
   return db;
 }
 

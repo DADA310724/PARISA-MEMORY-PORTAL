@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { useLocation, useParams } from "wouter";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft } from "lucide-react";
-import { listFolder, type DriveFile, isFolder, isImage, isVideo, isAudio, isHtml, isPdf, isText, formatSize, proxyUrl, uploadFiles } from "../lib/drive";
+import { listFolder, type DriveFile, isFolder, isImage, isVideo, isAudio, isHtml, isPdf, isText, formatSize, proxyUrl, streamUrl, uploadFiles } from "../lib/drive";
 import { useApp } from "../contexts/AppContext";
 import { ensureFirebase, ref, get, set } from "../lib/firebase";
 import { api } from "../lib/api";

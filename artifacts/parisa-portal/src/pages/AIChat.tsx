@@ -396,17 +396,19 @@ async function speakText(text: string, voiceGender: "female" | "male" = "female"
       const res = await fetch("/api/voice", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: clean.slice(0, 2000), gender: voiceGender }),
-        signal: AbortSignal.timeout(10000),
+        signal: AbortSignal.timeout(25000),
       });
       if (res.ok) {
         const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const audio = new Audio(url);
-        _currentAudio = audio;
-        audio.onended = () => { URL.revokeObjectURL(url); _currentAudio = null; };
-        audio.onerror = () => { URL.revokeObjectURL(url); _currentAudio = null; fallbackSpeak(clean, voiceGender); };
-        await audio.play().catch(() => { URL.revokeObjectURL(url); fallbackSpeak(clean, voiceGender); });
-        return;
+        if (blob.size > 100) {
+          const url = URL.createObjectURL(blob);
+          const audio = new Audio(url);
+          _currentAudio = audio;
+          audio.onended = () => { URL.revokeObjectURL(url); _currentAudio = null; };
+          audio.onerror = () => { URL.revokeObjectURL(url); _currentAudio = null; fallbackSpeak(clean, voiceGender); };
+          await audio.play().catch(() => { URL.revokeObjectURL(url); fallbackSpeak(clean, voiceGender); });
+          return;
+        }
       }
     } catch {}
     fallbackSpeak(clean, voiceGender);
@@ -427,23 +429,25 @@ function speakAndWait(text: string, voiceGender: "female" | "male"): Promise<voi
           const res = await fetch("/api/voice", {
             method: "POST", headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ text: clean.slice(0, 2000), gender: voiceGender }),
-            signal: AbortSignal.timeout(10000),
+            signal: AbortSignal.timeout(25000),
           });
           if (res.ok) {
             const blob = await res.blob();
-            const url = URL.createObjectURL(blob);
-            const audio = new Audio(url);
-            _currentAudio = audio;
-            audio.onended = () => { URL.revokeObjectURL(url); _currentAudio = null; done(); };
-            audio.onerror = async () => {
-              URL.revokeObjectURL(url); _currentAudio = null;
-              await fallbackSpeakAndWait(clean, voiceGender); done();
-            };
-            await audio.play().catch(async () => {
-              URL.revokeObjectURL(url);
-              await fallbackSpeakAndWait(clean, voiceGender); done();
-            });
-            return;
+            if (blob.size > 100) {
+              const url = URL.createObjectURL(blob);
+              const audio = new Audio(url);
+              _currentAudio = audio;
+              audio.onended = () => { URL.revokeObjectURL(url); _currentAudio = null; done(); };
+              audio.onerror = async () => {
+                URL.revokeObjectURL(url); _currentAudio = null;
+                await fallbackSpeakAndWait(clean, voiceGender); done();
+              };
+              await audio.play().catch(async () => {
+                URL.revokeObjectURL(url);
+                await fallbackSpeakAndWait(clean, voiceGender); done();
+              });
+              return;
+            }
           }
         } catch {}
         await fallbackSpeakAndWait(clean, voiceGender);
