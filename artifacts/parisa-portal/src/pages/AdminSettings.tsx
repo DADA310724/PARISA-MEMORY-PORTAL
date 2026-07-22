@@ -623,8 +623,10 @@ export default function AdminSettings() {
       // Password must be keyed by drive_folder_id (same key FolderView checks)
       const driveFolderId = btn.drive_folder_id || "";
       if (pw && driveFolderId) {
-        const db = await ensureFirebase();
-        await set(ref(db, `folder_passwords/${driveFolderId}`), { name: btn.label, folderId: driveFolderId, password: pw });
+        await api(`/folder-lock/${encodeURIComponent(driveFolderId)}`, {
+          method: "POST",
+          body: { folderId: driveFolderId, name: btn.label, password: pw },
+        }).catch(() => {});
         setFolderPasswords(p => ({ ...p, [driveFolderId]: { name: btn.label, folderId: driveFolderId, password: pw } }));
       }
       showMsg("✅ ফোল্ডার সেভ হয়েছে! Dashboard-এ দেখুন।");
@@ -685,9 +687,12 @@ export default function AdminSettings() {
     if (!pwInput.trim()) { removeFolderPassword(folderId); return; }
     setSaving(true);
     try {
-      const db = await ensureFirebase();
+      const result = await api<{ ok: boolean; error?: string }>(`/folder-lock/${encodeURIComponent(folderId)}`, {
+        method: "POST",
+        body: { folderId, name, password: pwInput.trim(), hint: hintInput.trim() || undefined },
+      });
+      if (!result?.ok) throw new Error(result?.error || "save failed");
       const data: FolderPassword = { name, folderId, password: pwInput.trim(), hint: hintInput.trim() || undefined };
-      await set(ref(db, `folder_passwords/${folderId}`), data);
       setFolderPasswords(p => ({ ...p, [folderId]: data }));
       setEditingFolder(null); setPwInput(""); setHintInput("");
       showMsg("✅ পাসওয়ার্ড সেট হয়েছে");
@@ -698,8 +703,10 @@ export default function AdminSettings() {
   const removeFolderPassword = async (folderId: string) => {
     setSaving(true);
     try {
-      const db = await ensureFirebase();
-      await remove(ref(db, `folder_passwords/${folderId}`));
+      const result = await api<{ ok: boolean; error?: string }>(`/folder-lock/${encodeURIComponent(folderId)}`, {
+        method: "DELETE",
+      });
+      if (!result?.ok) throw new Error(result?.error || "remove failed");
       setFolderPasswords(p => { const n = { ...p }; delete n[folderId]; return n; });
       setEditingFolder(null); setPwInput(""); setHintInput("");
       showMsg("🔓 পাসওয়ার্ড সরানো হয়েছে");
