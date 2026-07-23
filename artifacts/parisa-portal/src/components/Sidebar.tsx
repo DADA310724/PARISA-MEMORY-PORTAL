@@ -262,28 +262,19 @@ export function Sidebar({ onClose }: SidebarProps) {
 
       {/* Footer */}
       <div style={{ borderTop: "1px solid hsl(var(--primary) / 0.1)" }}>
-        <div className="px-4 py-2.5 flex items-center justify-center">
+        {/* Developer credit + Telegram — single line, centered */}
+        <div className="px-3 py-2 flex items-center justify-center">
           <a href="https://t.me/DADA310724" target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-2.5 hover:opacity-80 transition-opacity">
-            <p className="text-[11px] font-medium tracking-[0.25em] uppercase" style={{ color: "rgba(255,255,255,0.35)" }}>
-              This Apps Development By <span style={{ color: "rgba(0,212,170,0.85)", fontWeight: 700 }}>DADA</span>
+            className="flex items-center gap-1.5 hover:opacity-80 transition-opacity min-w-0">
+            <SiTelegram style={{ width: 13, height: 13, color: "rgba(33,186,252,0.85)", flexShrink: 0 }} />
+            <p className="text-[9.5px] font-medium whitespace-nowrap" style={{ color: "rgba(255,255,255,0.32)", letterSpacing: "0.04em" }}>
+              Dev by&nbsp;<span style={{ color: "rgba(0,212,170,0.85)", fontWeight: 700 }}>DADA</span>
             </p>
-            <div
-              className="flex items-center justify-center flex-shrink-0"
-              style={{
-                width: 32, height: 32, borderRadius: 10,
-                background: "rgba(33,150,243,0.1)",
-                border: "1px solid rgba(33,186,252,0.3)",
-                backdropFilter: "blur(12px)",
-                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.15), 0 2px 10px rgba(33,186,252,0.2)",
-              }}
-            >
-              <SiTelegram style={{ width: 16, height: 16, color: "rgba(33,186,252,0.9)" }} />
-            </div>
           </a>
         </div>
-        <div className="pb-2 flex items-center justify-center">
-          <span className="text-[9px] font-mono px-1.5 py-0.5 rounded"
+        {/* Version — centered */}
+        <div className="pb-2.5 flex items-center justify-center">
+          <span className="text-[9px] font-mono px-2 py-0.5 rounded"
             style={{ background: "hsl(var(--primary) / 0.08)", border: "1px solid hsl(var(--primary) / 0.2)", color: "hsl(var(--primary) / 0.5)" }}>
             {APP_VERSION}
           </span>
