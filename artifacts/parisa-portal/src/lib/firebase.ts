@@ -32,6 +32,7 @@ export interface AppConfig {
 
 let app: FirebaseApp | null = null;
 let db: Database | null = null;
+let initPromise: Promise<Database> | null = null;
 let configCache: AppConfig | null = null;
 
 const FALLBACK_FIREBASE = {
@@ -77,11 +78,13 @@ export async function loadAppConfig(): Promise<AppConfig> {
   }
 }
 
-export async function ensureFirebase(): Promise<Database> {
-  if (db) return db;
+// Single shared promise — all concurrent callers wait for the same init.
+// This prevents a race where db is set before auth completes, causing a
+// second caller to receive an unauthenticated db and trigger PERMISSION_DENIED.
+async function _initFirebase(): Promise<Database> {
   const cfg = await loadAppConfig();
   app = getApps().length > 0 ? getApp() : initializeApp(cfg.firebase);
-  db = getDatabase(app);
+  const database = getDatabase(app);
   // Authenticate using Anonymous Auth so Firebase rules (auth != null) are satisfied.
   // onAuthStateChanged fires once immediately when the SDK has restored any persisted
   // session from localStorage — so we reuse cached anonymous users instead of
@@ -93,11 +96,20 @@ export async function ensureFirebase(): Promise<Database> {
     });
     if (!auth.currentUser) {
       await signInAnonymously(auth);
+      // Brief pause so the new auth token propagates to the database WebSocket
+      // connection before callers set up onValue listeners.
+      await new Promise<void>((r) => setTimeout(r, 300));
     }
   } catch {
     // Auth failed entirely — continue without auth
   }
-  return db;
+  db = database;
+  return database;
+}
+
+export function ensureFirebase(): Promise<Database> {
+  if (!initPromise) initPromise = _initFirebase();
+  return initPromise;
 }
 
 export async function getFirebaseAuth() {
