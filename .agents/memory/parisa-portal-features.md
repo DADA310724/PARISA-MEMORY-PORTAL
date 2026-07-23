@@ -1,80 +1,30 @@
 ---
 name: Parisa Portal features done
-description: Summary of all implemented features across sessions for parisa-portal
+description: Session fixes — audio/video loop, SubFolderView lock, version history
 ---
 
-# Features Implemented
+## Session 2 fixes (V-17 context)
+PARISA/RUBEL voice, no confirm dialogs, folder_files Firebase AI context, saveAiConfig fix, dynamic redirect URI, passwords tab uses live buttons, audio nodownload, Glass theme, .env.example.
 
-## Session 1
-- mic/camera removed from AIChat
-- per-message delete button (later removed in session 2)
-- sidebar clear-all
-- 15 themes in 3-col grid (extended to 16 with Glass Morphism in session 2)
-- folder IDs privacy-fixed (empty KNOWN_FOLDER_IDS, Firebase-only)
-- drive.ts TS fix: use pid() helper + String() cast for req.params/query
+## Session 3 fixes (V-18 — 2026-07-23)
 
-## Session 2 (major fixes batch)
-- **AIChat voice labels**: "PARISA" (FEMALE) / "RUBEL" (MALE) instead of Microsoft Female/Male
-- **No delete message button**: removed from message action buttons
-- **No window.confirm anywhere**: clearAllMessages + deleteCustomFolder both no-confirm
-- **Folder files AI context**: FolderView saves file listing to Firebase `folder_files/{folderId}` on each load; AIChat subscribes with onValue and appends file names to system prompt dynamically
-- **saveAiConfig fixed**: explicitly serializes fields (no undefined values in Firebase write)
-- **Drive redirect URI dynamic**: shows `window.location.origin + "/api/oauth/callback"` — always matches current domain (dev + published)
-- **Passwords tab uses live buttons[]**: no longer hardcoded FOLDER_LIST; shows all drive_folder type buttons including custom ones
-- **Audio controlsList**: `nodownload noplaybackrate` + onContextMenu prevent on audio element
-- **Glass Morphism theme**: added to PRESET_THEMES (AdminSettings) and THEME_COLORS (App.tsx); key="glass"
+### Audio/Video infinite retry loop (FolderView.tsx)
+**Problem:** `onStalled` handler called `.load()` after 1.5s on every normal buffering event → reset stream → `onError` → infinite `mediaRetryKey` increment loop.  
+**Fix:** Removed `onStalled` entirely. Added `mediaErrorCountRef` (max 3 retries) for `onError`. Reset ref in `openViewer`.  
+**Why:** `onStalled` is a normal buffering event for streaming; resetting the element mid-stream causes the loop.
 
-**Why no confirm dialogs**: user explicitly requested no dialogs anywhere in the app.
-**Why dynamic redirect URI**: deployed domain differs from dev domain; hardcoded URI caused Google OAuth to reject.
-**Why folder_files Firebase node**: AI needs to know current file inventory without calling Drive API on every chat message.
+### SubFolderView lock not working (SubFolderView.tsx)
+**Problem:** Folders with `has_sub_buttons=true` route to `/sub/:buttonId` (SubFolderView), which had NO lock checking. Locks set in Admin → Passwords tab (keyed by `drive_folder_id`) were saved correctly in Firebase but never checked when opening via SubFolderView.  
+**Fix:** Added full lock checking to SubFolderView using `parentBtn.drive_folder_id`. Lock check runs after AppContext `buttons` load (waits for `appLoading=false`). Sub-buttons only load AFTER lock is verified.  
+**Why:** Dashboard checks `b.has_sub_buttons` first — if true, goes to SubFolderView not FolderView, bypassing all lock logic.
 
-## Session 3 (SA migration + design batch)
-- **Service Account migration**: GOOGLE_SERVICE_ACCOUNT_JSON secret set; drive.ts uses SA auth (google-auth-library)
-- **`/drive/ready` endpoint**: GET /api/drive/ready returns {ready: boolean} — checks SA or OAuth without session
-- **AIChat welcome screen**: large 96px profile photo + "WELCOME" teal heading (Exo 2 font, text-shadow glow) + subtitle + 4 Bengali suggestion question buttons
-- **AdminSettings sub-folder tab**: two-tab system (📁 Main | 🗂 সাব-ফোল্ডার) when editing a button; full CRUD for sub-buttons
-- **AdminSettings Drive tab**: replaced OAuth UI with Service Account status
+### Lock key consistency
+Passwords tab saves lock keyed by `drive_folder_id`. FolderView checks with `currentFolder.id` (= `drive_folder_id` from URL). SubFolderView now also checks with `parentBtn.drive_folder_id`. All consistent.
 
-## Session 4 (24-task polish batch)
-- **Back buttons**: all use window.history.back() (not setLocation(-1) — crashes in wouter)
-- **Fonts**: Google Fonts import for Hind Siliguri + Noto Sans Bengali in index.css
-- **API key test REAL**: calls `/api/ai/chat` with single key; sets status ok/error based on real response
-- **PDF overlay**: white div covers Google Docs viewer's ↗ button
+### Firebase cleanup
+TEST_FOLDER_123 test entry removed via DELETE API call.
 
-**Why real API test**: fake setTimeout gave false "ok" status; real test catches 401/403.
-**Why PDF overlay**: Google Docs viewer ↗ button is cross-origin; white div same bg color covers it.
-
-## Session 5 (Microsoft Edge TTS)
-- **Microsoft Edge TTS server-side**: `msedge-tts` npm package; `POST /api/voice`; voices: bn-BD-NabanitaNeural (female) / bn-BD-PradeepNeural (male)
-- **AIChat TTS**: `speakText()` and `speakAndWait()` call `/api/voice` and play audio blob; module-level `_currentAudio` for stop/cancel
-
-**Why server-side TTS**: window.speechSynthesis Microsoft Neural voices not available on Android; server-side is reliable everywhere.
-**Why module-level `_currentAudio`**: React refs can't be used in module-scope async functions.
-
-## Session 6 (PARISA-main full redesign + chat_database.json integration)
-- **chat_database.json**: 69,011 real messages across 13 conversations (WhatsApp, Messenger, Telegram); stored at `artifacts/api-server/src/chat_database.json` AND `dist/chat_database.json` (must copy to dist on each build)
-- **ai.ts chat DB search**: flattens all nested messages at startup into `FLAT_DB: FlatMsg[]`; `searchChatDB()` searches by date pattern first (timestamp field format: "YYYY-MM-DD HH:MM:SS"), then keyword; top results injected into system prompt as context block
-- **AIChat.tsx full PARISA-main redesign**: aurora animated background, glass surfaces, PARISA brand title, smoke spinning circles on welcome screen, two-row composer, glass message bubbles
-- **Sidebar**: RIGHT side (user requirement)
-
-## Session 7 (media player + Firebase cleanup)
-- **9 Firebase buttons deleted**: AI, AI Assistant x2, AI ASSISTANT x2, New Folder, PARISA AI, Hhu, broken PERSONAL, broken SAJID PRAUL — removed via Firebase REST API
-- **Back button intercept in FolderView**: `window.history.pushState({viewerOpen:true},'')` when viewer opens + popstate listener calls closeViewer() — phone back button closes player not folder
-- **Audio player upgrade**: waveform animation, progress bar (purple), timestamp (mm:ss / mm:ss), ⏮⏭ prev/next between audio files, autoPlay + preload="auto"
-- **Video player upgrade**: progress bar (blue), timestamp, ⏮⏭ prev/next between videos, buffering spinner overlay, autoPlay + preload="auto"
-- **GitHub push**: agent cannot push (Replit sandbox blocks all git write ops for main agent); user must push from Shell using `git push https://$GITHUB_TOKEN@github.com/DADA310724/PARISA-MEMORY.git main --force`
-
-**Why back button intercept**: Android back button navigates browser history; viewer is a modal overlay (no route change), so browser exits folder. pushState + popstate listener intercepts it.
-**Why preload="auto"**: preload="metadata" caused initial play delay; auto allows browser to buffer eagerly for instant playback.
-**Why force push**: GitHub remote had diverged commits; local has all latest changes; force push overwrites correctly.
-**Git push workaround**: `git remote set-url` is blocked but `git push https://TOKEN@url main --force` works directly from Shell.
-
-## Session 8 (folder lock overhaul)
-- **Workflow env var fix**: api-server workflow process had empty Firebase env vars on first start; requires workflow restart to pick up secrets (Replit injects secrets after bash init, not before).
-- **Folder lock — server-side API**: created `GET/POST/DELETE /api/folder-lock/:folderId` and `POST /api/folder-lock/:folderId/verify` in `artifacts/api-server/src/routes/folderLock.ts`. Uses Firebase REST API (public reads) + Google SA token (writes). Firebase client SDK anonymous auth is unreliable; server REST API always works.
-- **FolderView lock check**: replaced Firebase SDK `get(ref(...))` with `api('/folder-lock/:folderId')` server call.
-- **FolderView unlockFolder**: now async, calls `/api/folder-lock/:folderId/verify` — server verifies password, client never sees the actual password.
-- **AdminSettings passwords**: saveFolderPassword, removeFolderPassword, folder creation password all use server API (POST/DELETE `/api/folder-lock`). loadAll uses GET `/api/folder-lock` for all passwords.
-
-**Why server-side lock**: Firebase anonymous auth may be disabled in Firebase console; client SDK reads fail silently → catch → locked=false → no lock shown. Server REST API uses public Firebase rules (confirmed working) and SA token for writes.
-**Why server verifies password**: client should never receive the actual password from the server; only yes/no verify response.
+## Version history
+- V-16: previous baseline
+- V-17: audio/video ReferenceError crash fix, login delay (geolocation 10s→3s), 200-file pagination
+- V-18: audio/video loop fix, SubFolderView lock support
