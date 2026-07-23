@@ -56,6 +56,7 @@ export default function FolderView() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const mediaErrorCountRef = useRef(0);
+  const stallTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const touchStartX = useRef(0);
   const [imgScale, setImgScale] = useState(1);
   const [imgOffset, setImgOffset] = useState({ x: 0, y: 0 });
@@ -149,6 +150,8 @@ export default function FolderView() {
   }, [locked, lockChecking, currentFolder.id, currentFolder.name, loadFolder]);
 
   const closeViewer = useCallback(() => {
+    // Clear any pending stall-recovery timer
+    if (stallTimerRef.current) { clearTimeout(stallTimerRef.current); stallTimerRef.current = null; }
     if (viewerOpenedAt.current > 0) {
       const secs = Math.round((Date.now() - viewerOpenedAt.current) / 1000);
       if (secs > 2 && viewerFile) {
@@ -193,6 +196,8 @@ export default function FolderView() {
 
   const openViewer = (f: DriveFile, imgIdx?: number) => {
     if (isFolder(f)) { openFolder(f); return; }
+    // Clear any lingering stall timer from previous media
+    if (stallTimerRef.current) { clearTimeout(stallTimerRef.current); stallTimerRef.current = null; }
     viewerOpenedAt.current = Date.now();
     setViewerFile(f);
     setMediaCurTime(0);
@@ -632,18 +637,40 @@ export default function FolderView() {
                   controlsList="nodownload noremoteplayback"
                   style={{ width:'100%', height:'100%', flex:1, objectFit:'contain', display:'block', background:'#000' }}
                   onContextMenu={e => e.preventDefault()}
-                  onTimeUpdate={e => setMediaCurTime((e.target as HTMLVideoElement).currentTime)}
+                  onTimeUpdate={e => {
+                    setMediaCurTime((e.target as HTMLVideoElement).currentTime);
+                    // Clear any stall timer when playback is progressing
+                    if (stallTimerRef.current) { clearTimeout(stallTimerRef.current); stallTimerRef.current = null; }
+                  }}
                   onLoadedMetadata={e => setMediaDuration((e.target as HTMLVideoElement).duration)}
-                  onWaiting={() => setMediaBuffering(true)}
-                  onPlaying={() => setMediaBuffering(false)}
-                  onCanPlay={() => setMediaBuffering(false)}
+                  onWaiting={() => {
+                    setMediaBuffering(true);
+                    // If still buffering after 18s without progress → force reload
+                    if (stallTimerRef.current) clearTimeout(stallTimerRef.current);
+                    stallTimerRef.current = setTimeout(() => {
+                      if (mediaErrorCountRef.current < 3) {
+                        mediaErrorCountRef.current += 1;
+                        setMediaRetryKey(k => k + 1);
+                      }
+                      stallTimerRef.current = null;
+                    }, 18000);
+                  }}
+                  onPlaying={() => {
+                    setMediaBuffering(false);
+                    if (stallTimerRef.current) { clearTimeout(stallTimerRef.current); stallTimerRef.current = null; }
+                  }}
+                  onCanPlay={() => {
+                    setMediaBuffering(false);
+                    if (stallTimerRef.current) { clearTimeout(stallTimerRef.current); stallTimerRef.current = null; }
+                  }}
                   onError={(e) => {
-                    // Only retry for transient network errors (code 2).
-                    // Format/decode errors (3/4) won't be fixed by retrying.
+                    if (stallTimerRef.current) { clearTimeout(stallTimerRef.current); stallTimerRef.current = null; }
+                    // Retry for network errors (code 2). Progressive delay: 2s → 4s → 8s
                     const code = (e.currentTarget as HTMLVideoElement).error?.code;
-                    if (code === 2 && mediaErrorCountRef.current < 1) {
+                    if (code === 2 && mediaErrorCountRef.current < 3) {
+                      const delay = [2000, 4000, 8000][mediaErrorCountRef.current] ?? 8000;
                       mediaErrorCountRef.current += 1;
-                      setTimeout(() => setMediaRetryKey(k => k + 1), 3000);
+                      setTimeout(() => setMediaRetryKey(k => k + 1), delay);
                     }
                   }}
                 />
@@ -706,13 +733,34 @@ export default function FolderView() {
                     controlsList="nodownload noplaybackrate"
                     style={{ width:'100%', borderRadius:10, accentColor:'#a855f7', marginBottom:12 }}
                     onContextMenu={e => e.preventDefault()}
-                    onTimeUpdate={e => setMediaCurTime((e.target as HTMLAudioElement).currentTime)}
+                    onTimeUpdate={e => {
+                      setMediaCurTime((e.target as HTMLAudioElement).currentTime);
+                      if (stallTimerRef.current) { clearTimeout(stallTimerRef.current); stallTimerRef.current = null; }
+                    }}
                     onLoadedMetadata={e => setMediaDuration((e.target as HTMLAudioElement).duration)}
+                    onWaiting={() => {
+                      setMediaBuffering(true);
+                      if (stallTimerRef.current) clearTimeout(stallTimerRef.current);
+                      stallTimerRef.current = setTimeout(() => {
+                        if (mediaErrorCountRef.current < 3) { mediaErrorCountRef.current += 1; setMediaRetryKey(k => k + 1); }
+                        stallTimerRef.current = null;
+                      }, 18000);
+                    }}
+                    onPlaying={() => {
+                      setMediaBuffering(false);
+                      if (stallTimerRef.current) { clearTimeout(stallTimerRef.current); stallTimerRef.current = null; }
+                    }}
+                    onCanPlay={() => {
+                      setMediaBuffering(false);
+                      if (stallTimerRef.current) { clearTimeout(stallTimerRef.current); stallTimerRef.current = null; }
+                    }}
                     onError={(e) => {
+                      if (stallTimerRef.current) { clearTimeout(stallTimerRef.current); stallTimerRef.current = null; }
                       const code = (e.currentTarget as HTMLAudioElement).error?.code;
-                      if (code === 2 && mediaErrorCountRef.current < 1) {
+                      if (code === 2 && mediaErrorCountRef.current < 3) {
+                        const delay = [2000, 4000, 8000][mediaErrorCountRef.current] ?? 8000;
                         mediaErrorCountRef.current += 1;
-                        setTimeout(() => setMediaRetryKey(k => k + 1), 3000);
+                        setTimeout(() => setMediaRetryKey(k => k + 1), delay);
                       }
                     }}
                   />
