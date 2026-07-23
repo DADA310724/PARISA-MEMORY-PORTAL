@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { ArrowLeft, Folder, ChevronRight, Lock } from "lucide-react";
+import { ArrowLeft, Folder, ChevronRight } from "lucide-react";
 import { useApp, type SubButton } from "@/contexts/AppContext";
 import { AppLogo } from "@/components/AppLogo";
 import { api } from "@/lib/api";
@@ -141,82 +141,11 @@ export default function SubFolderView() {
     }
   };
 
-  // ── Loading spinner (while checking lock or loading app buttons) ─────────────
-  if (appLoading || lockChecking) {
-    return (
-      <div className="fixed inset-0 flex items-center justify-center z-10"
-        style={{ background: "rgba(10,14,31,0.97)" }}>
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 rounded-full border-2 border-cyan-400/30 border-t-cyan-400 animate-spin" />
-          <p className="text-white/50 text-sm">লোড হচ্ছে…</p>
-        </div>
-      </div>
-    );
-  }
-
-  // ── Lock screen ──────────────────────────────────────────────────────────────
-  if (locked) {
-    return (
-      <div className="min-h-screen flex flex-col">
-        <div className="sticky top-0 z-20"
-          style={{ background: "rgba(10,14,31,0.92)", backdropFilter: "blur(20px)", borderBottom: `1px solid ${parentColor}30` }}>
-          <div className="flex items-center gap-2 px-3 py-3">
-            <button onClick={() => window.history.back()}
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-white/70 hover:text-white transition-colors flex-shrink-0"
-              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <span className="flex-1 text-center text-sm font-bold text-white truncate"
-              style={{ fontFamily: "'Exo 2',sans-serif" }}>
-              {parentBtn?.label ?? "Folder"}
-            </span>
-            <div className="w-9" />
-          </div>
-        </div>
-        <div className="flex-1 flex items-center justify-center p-6">
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-            className="w-full max-w-sm">
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-3"
-                style={{ background: `${parentColor}22`, border: `2px solid ${parentColor}55` }}>
-                <Lock className="w-8 h-8" style={{ color: parentColor }} />
-              </div>
-              <h2 className="text-white font-bold text-lg" style={{ fontFamily: "'Exo 2',sans-serif" }}>
-                পাসওয়ার্ড সুরক্ষিত
-              </h2>
-              {lockHint && (
-                <p className="text-white/40 text-xs mt-2 font-['Hind_Siliguri']">Hint: {lockHint}</p>
-              )}
-            </div>
-            <input
-              type="password"
-              value={lockInput}
-              onChange={e => { setLockInput(e.target.value); setLockError(""); }}
-              onKeyDown={e => e.key === "Enter" && unlockFolder()}
-              placeholder="পাসওয়ার্ড দিন"
-              className="w-full bg-white/5 border rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none mb-3 text-center text-lg tracking-widest"
-              style={{ borderColor: lockError ? "rgba(220,50,50,0.6)" : `${parentColor}40`,
-                       boxShadow: lockError ? "0 0 0 1px rgba(220,50,50,0.3)" : "none" }}
-            />
-            {lockError && (
-              <p className="text-red-400 text-xs text-center mb-3 font-['Hind_Siliguri']">{lockError}</p>
-            )}
-            <button onClick={unlockFolder}
-              className="w-full py-3 rounded-xl font-bold uppercase text-white transition-all active:scale-95"
-              style={{ background: `linear-gradient(135deg, ${parentColor}, ${parentColor}99)`,
-                       boxShadow: `0 4px 20px ${parentColor}40`,
-                       fontFamily: "'Exo 2',sans-serif" }}>
-              UNLOCK 🔓
-            </button>
-          </motion.div>
-        </div>
-      </div>
-    );
-  }
-
-  // ── Main sub-folder list ─────────────────────────────────────────────────────
+  // ── Always render the header + use overlays (matches FolderView pattern) ─────
   return (
-    <div className="w-full pb-12 max-w-2xl mx-auto">
+    <div className="min-h-screen flex flex-col relative">
+
+      {/* Header — always visible, same style as FolderView */}
       <div className="sticky top-0 z-30 flex items-center gap-3 px-3 py-3"
         style={{
           background: "linear-gradient(180deg, rgba(12,10,28,0.97) 0%, rgba(12,10,28,0.92) 100%)",
@@ -238,15 +167,53 @@ export default function SubFolderView() {
         </div>
       </div>
 
-      {loading ? (
-        <div className="fixed inset-0 flex items-center justify-center z-10"
-          style={{ background: "rgba(10,14,31,0.97)" }}>
+      {/* Loading spinner overlay — same style/position as FolderView */}
+      {(appLoading || lockChecking || loading) && (
+        <div className="fixed inset-0 flex items-center justify-center"
+          style={{ background: "rgba(10,14,31,0.97)", zIndex: 50 }}>
           <div className="flex flex-col items-center gap-3">
             <div className="w-8 h-8 rounded-full border-2 border-cyan-400/30 border-t-cyan-400 animate-spin" />
             <p className="text-white/50 text-sm">লোড হচ্ছে…</p>
           </div>
         </div>
-      ) : subs.length === 0 ? (
+      )}
+
+      {/* Lock screen — identical style to FolderView */}
+      {!appLoading && !lockChecking && locked && (
+        <div className="flex-1 flex items-center justify-center p-6">
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+            className="w-full max-w-sm">
+            <div className="text-center mb-6">
+              <div className="text-5xl mb-3">🔒</div>
+              <h2 className="text-white font-bold text-lg" style={{ fontFamily: "'Exo 2',sans-serif" }}>
+                পাসওয়ার্ড সুরক্ষিত
+              </h2>
+              {lockHint && (
+                <p className="text-white/40 text-xs mt-2">Hint: {lockHint}</p>
+              )}
+            </div>
+            <input
+              type="password"
+              value={lockInput}
+              onChange={e => { setLockInput(e.target.value); setLockError(""); }}
+              onKeyDown={e => e.key === "Enter" && unlockFolder()}
+              placeholder="পাসওয়ার্ড দিন"
+              className="w-full bg-white/5 border border-cyan-500/25 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-cyan-400/70 mb-3 text-center text-lg tracking-widest"
+            />
+            {lockError && (
+              <p className="text-red-400 text-xs text-center mb-3">{lockError}</p>
+            )}
+            <button onClick={unlockFolder}
+              className="w-full py-3 rounded-xl btn-cyan font-bold uppercase"
+              style={{ fontFamily: "'Exo 2',sans-serif" }}>
+              UNLOCK 🔓
+            </button>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Sub-folder list — only shown after unlock */}
+      {!appLoading && !lockChecking && !locked && subs.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 px-6 text-center">
           <div className="w-20 h-20 rounded-full flex items-center justify-center mb-4"
             style={{ background: `${parentColor}15`, border: `1px solid ${parentColor}30` }}>

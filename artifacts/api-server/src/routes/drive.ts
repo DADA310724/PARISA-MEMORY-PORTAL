@@ -241,14 +241,17 @@ driveRouter.get("/stream/:id", async (req: Request, res: Response) => {
 
     const driveResp = await fetch(driveUrl, { headers: reqHeaders });
 
-    // 206 Partial Content is expected for ranged requests
+    // Only reject true errors — 206 Partial Content is valid for range requests
     if (!driveResp.ok && driveResp.status !== 206) {
       res.status(driveResp.status).send("Google Drive error");
       return;
     }
 
-    // Forward response headers the browser needs for proper streaming
-    res.status(range ? 206 : driveResp.status);
+    // Forward response headers the browser needs for proper streaming.
+    // IMPORTANT: Always use Google Drive's actual status code — never override it.
+    // Overriding (e.g. forcing 206 when Drive returned 200) breaks the
+    // Content-Range contract and causes browsers to fire MediaError immediately.
+    res.status(driveResp.status);
     const ct = driveResp.headers.get("content-type");
     if (ct) res.setHeader("Content-Type", ct);
     const cl = driveResp.headers.get("content-length");
@@ -261,7 +264,9 @@ driveRouter.get("/stream/:id", async (req: Request, res: Response) => {
 
     // Pipe directly — data flows from Google to browser with zero buffering in our process
     if (!driveResp.body) { res.end(); return; }
-    Readable.fromWeb(driveResp.body as import("stream/web").ReadableStream).pipe(res);
+    const readable = Readable.fromWeb(driveResp.body as import("stream/web").ReadableStream);
+    readable.on("error", () => { if (!res.writableEnded) res.destroy(); });
+    readable.pipe(res);
   } catch (err) {
     if (!res.headersSent) res.status(500).send(String(err));
   }

@@ -637,7 +637,15 @@ export default function FolderView() {
                   onWaiting={() => setMediaBuffering(true)}
                   onPlaying={() => setMediaBuffering(false)}
                   onCanPlay={() => setMediaBuffering(false)}
-                  onError={() => { if (mediaErrorCountRef.current < 3) { mediaErrorCountRef.current += 1; setTimeout(() => setMediaRetryKey(k => k + 1), 2000); } }}
+                  onError={(e) => {
+                    // Only retry for transient network errors (code 2).
+                    // Format/decode errors (3/4) won't be fixed by retrying.
+                    const code = (e.currentTarget as HTMLVideoElement).error?.code;
+                    if (code === 2 && mediaErrorCountRef.current < 1) {
+                      mediaErrorCountRef.current += 1;
+                      setTimeout(() => setMediaRetryKey(k => k + 1), 3000);
+                    }
+                  }}
                 />
                 {/* Prev / Next — only shown when multiple videos */}
                 {videoFiles.length > 1 && (
@@ -700,7 +708,13 @@ export default function FolderView() {
                     onContextMenu={e => e.preventDefault()}
                     onTimeUpdate={e => setMediaCurTime((e.target as HTMLAudioElement).currentTime)}
                     onLoadedMetadata={e => setMediaDuration((e.target as HTMLAudioElement).duration)}
-                    onError={() => { if (mediaErrorCountRef.current < 3) { mediaErrorCountRef.current += 1; setTimeout(() => setMediaRetryKey(k => k + 1), 2000); } }}
+                    onError={(e) => {
+                      const code = (e.currentTarget as HTMLAudioElement).error?.code;
+                      if (code === 2 && mediaErrorCountRef.current < 1) {
+                        mediaErrorCountRef.current += 1;
+                        setTimeout(() => setMediaRetryKey(k => k + 1), 3000);
+                      }
+                    }}
                   />
 
                   {/* Progress bar */}
