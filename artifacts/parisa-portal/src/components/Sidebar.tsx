@@ -11,7 +11,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ onClose }: SidebarProps) {
-  const { auth, setAuth, buttons } = useApp();
+  const { auth, setAuth, buttons, config } = useApp();
   const [location, setLocation] = useLocation();
   const [installPrompt, setInstallPrompt] = useState<Event | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
@@ -260,18 +260,38 @@ export function Sidebar({ onClose }: SidebarProps) {
         </div>
       </nav>
 
-      {/* Footer — single line: Telegram credit + version */}
+      {/* Footer — Dashboard-style Telegram credit + version */}
       <div style={{ borderTop: "1px solid hsl(var(--primary) / 0.1)" }}>
-        <div className="px-3 py-2 flex items-center justify-center gap-2">
-          <a href="https://t.me/DADA310724" target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-1 hover:opacity-80 transition-opacity">
-            <SiTelegram style={{ width: 11, height: 11, color: "rgba(33,186,252,0.85)", flexShrink: 0 }} />
-            <p className="text-[7.5px] font-medium whitespace-nowrap" style={{ color: "rgba(255,255,255,0.32)", letterSpacing: "0.03em" }}>
-              Dev by&nbsp;<span style={{ color: "rgba(0,212,170,0.85)", fontWeight: 700 }}>DADA</span>
+        <div className="px-3 pt-2.5 pb-1 flex items-center justify-center">
+          <a
+            href={config?.telegramLink || "https://t.me/DADA310724"}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2.5 hover:opacity-80 transition-opacity"
+          >
+            <p className="text-[11px] font-medium tracking-[0.25em] uppercase whitespace-nowrap" style={{ color: "rgba(255,255,255,0.35)" }}>
+              This Apps Development By{" "}
+              <span style={{ color: "rgba(0,212,170,0.85)", fontWeight: 700 }}>DADA</span>
             </p>
+            <div
+              className="flex items-center justify-center flex-shrink-0"
+              style={{
+                width: 32, height: 32, borderRadius: 10,
+                background: "rgba(33,150,243,0.1)",
+                border: "1px solid rgba(33,186,252,0.3)",
+                backdropFilter: "blur(12px)",
+                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.15), 0 2px 10px rgba(33,186,252,0.2)",
+              }}
+            >
+              <SiTelegram style={{ width: 16, height: 16, color: "rgba(33,186,252,0.9)" }} />
+            </div>
           </a>
-          <span className="text-[7px] font-mono px-1.5 py-0.5 rounded whitespace-nowrap flex-shrink-0"
-            style={{ background: "hsl(var(--primary) / 0.08)", border: "1px solid hsl(var(--primary) / 0.2)", color: "hsl(var(--primary) / 0.5)" }}>
+        </div>
+        <div className="pb-2.5 flex items-center justify-center">
+          <span
+            className="text-[7px] font-mono px-1.5 py-0.5 rounded whitespace-nowrap"
+            style={{ background: "hsl(var(--primary) / 0.08)", border: "1px solid hsl(var(--primary) / 0.2)", color: "hsl(var(--primary) / 0.5)" }}
+          >
             {APP_VERSION}
           </span>
         </div>
