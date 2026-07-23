@@ -7,12 +7,11 @@ interface FooterProps {
 
 export function Footer({ className = "" }: FooterProps) {
   const { config } = useApp();
-  const rawLink = config?.telegramLink || "https://t.me/DADA310724";
-  const link = rawLink.startsWith("http")
-    ? rawLink
-    : rawLink.startsWith("t.me/")
-    ? `https://${rawLink}`
-    : `https://t.me/${rawLink}`;
+  // Use config value only if it's a proper absolute URL; otherwise fall back to hardcoded default.
+  const link =
+    config?.telegramLink && config.telegramLink.startsWith("http")
+      ? config.telegramLink
+      : "https://t.me/DADA310724";
   return (
     <footer
       className={`w-full py-3 px-6 flex items-center justify-center gap-3 border-t ${className}`}
