@@ -30,7 +30,13 @@ configRouter.get("/", (_req: Request, res: Response) => {
     },
     logoUrl: e.PROFILE_LOGO_URL ?? "https://i.ibb.co/Z1WPYY7P/x.jpg",
     driveParentFolderId: e.GOOGLE_DRIVE_PARENT_FOLDER_ID ?? "",
-    telegramLink: e.TELEGRAM_CONTACT ?? "https://t.me/DADA310724",
+    telegramLink: (() => {
+      const c = e.TELEGRAM_CONTACT ?? "";
+      if (!c) return "https://t.me/DADA310724";
+      if (c.startsWith("http")) return c;
+      if (c.startsWith("t.me/")) return `https://${c}`;
+      return `https://t.me/${c}`;
+    })(),
     oauthClientId: e.GOOGLE_OAUTH_CLIENT_ID ?? "",
     hasSA: !!saEmail,
     saEmail,

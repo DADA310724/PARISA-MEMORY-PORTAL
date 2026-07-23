@@ -8,7 +8,11 @@ interface FooterProps {
 export function Footer({ className = "" }: FooterProps) {
   const { config } = useApp();
   const rawLink = config?.telegramLink || "https://t.me/DADA310724";
-  const link = rawLink.startsWith("http") ? rawLink : `https://${rawLink}`;
+  const link = rawLink.startsWith("http")
+    ? rawLink
+    : rawLink.startsWith("t.me/")
+    ? `https://${rawLink}`
+    : `https://t.me/${rawLink}`;
   return (
     <footer
       className={`w-full py-3 px-6 flex items-center justify-center gap-3 border-t ${className}`}
