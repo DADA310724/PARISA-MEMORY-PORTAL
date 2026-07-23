@@ -55,6 +55,7 @@ export default function FolderView() {
   const [mediaBuffering, setMediaBuffering] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const mediaErrorCountRef = useRef(0);
   const touchStartX = useRef(0);
   const [imgScale, setImgScale] = useState(1);
   const [imgOffset, setImgOffset] = useState({ x: 0, y: 0 });
@@ -198,6 +199,7 @@ export default function FolderView() {
     setMediaDuration(0);
     setMediaBuffering(false);
     setMediaRetryKey(k => k + 1);
+    mediaErrorCountRef.current = 0;
     const type = isImage(f) ? "photo" : isVideo(f) ? "video" : isAudio(f) ? "audio" : isPdf(f) ? "pdf" : isHtml(f) ? "html" : isText(f) ? "text" : "file";
     notifyFileOpen(f, type);
     if (isImage(f)) { setViewerType("image"); setViewerIndex(imgIdx ?? 0); setViewerOpen(true); return; }
@@ -635,8 +637,7 @@ export default function FolderView() {
                   onWaiting={() => setMediaBuffering(true)}
                   onPlaying={() => setMediaBuffering(false)}
                   onCanPlay={() => setMediaBuffering(false)}
-                  onError={() => { setTimeout(() => setMediaRetryKey(k => k + 1), 2000); }}
-                  onStalled={() => { setTimeout(() => { videoRef.current?.load(); videoRef.current?.play().catch(() => null); }, 1500); }}
+                  onError={() => { if (mediaErrorCountRef.current < 3) { mediaErrorCountRef.current += 1; setTimeout(() => setMediaRetryKey(k => k + 1), 2000); } }}
                 />
                 {/* Prev / Next — only shown when multiple videos */}
                 {videoFiles.length > 1 && (
@@ -699,8 +700,7 @@ export default function FolderView() {
                     onContextMenu={e => e.preventDefault()}
                     onTimeUpdate={e => setMediaCurTime((e.target as HTMLAudioElement).currentTime)}
                     onLoadedMetadata={e => setMediaDuration((e.target as HTMLAudioElement).duration)}
-                    onError={() => { setTimeout(() => setMediaRetryKey(k => k + 1), 2000); }}
-                    onStalled={() => { setTimeout(() => { audioRef.current?.load(); audioRef.current?.play().catch(() => null); }, 1500); }}
+                    onError={() => { if (mediaErrorCountRef.current < 3) { mediaErrorCountRef.current += 1; setTimeout(() => setMediaRetryKey(k => k + 1), 2000); } }}
                   />
 
                   {/* Progress bar */}

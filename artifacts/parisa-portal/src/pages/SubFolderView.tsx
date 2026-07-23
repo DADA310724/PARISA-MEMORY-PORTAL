@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { useParams, useLocation } from "wouter";
 import { motion } from "framer-motion";
-import { ArrowLeft, Folder, ChevronRight } from "lucide-react";
+import { ArrowLeft, Folder, ChevronRight, Lock } from "lucide-react";
 import { useApp, type SubButton } from "@/contexts/AppContext";
 import { AppLogo } from "@/components/AppLogo";
+import { api } from "@/lib/api";
 
 const BTN_COLOR: Record<string, string> = {
   whatsapp:  "#25d366",
@@ -32,15 +33,52 @@ export default function SubFolderView() {
   const params = useParams<{ buttonId: string }>();
   const buttonId = params.buttonId;
   const [, setLocation] = useLocation();
-  const { buttons, getSubButtons } = useApp();
+  const { buttons, loading: appLoading, getSubButtons } = useApp();
   const [subs, setSubs] = useState<SubButton[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // ── Lock state ──────────────────────────────────────────────────────────────
+  const [locked, setLocked] = useState(true);
+  const [lockChecking, setLockChecking] = useState(true);
+  const [lockHint, setLockHint] = useState<string | null>(null);
+  const [lockInput, setLockInput] = useState("");
+  const [lockError, setLockError] = useState("");
 
   const parentBtn = buttons.find((b) => b.id === buttonId);
   const parentColor = BTN_COLOR[parentBtn?.logo_key ?? parentBtn?.icon ?? "default"] ?? BTN_COLOR.default;
 
+  // ── Check lock once app buttons are loaded ──────────────────────────────────
   useEffect(() => {
-    if (!buttonId) return;
+    if (appLoading) return; // wait for buttons to load from Firebase
+    const driveFolderId = parentBtn?.drive_folder_id;
+    if (!driveFolderId) {
+      // No drive folder linked — no lock
+      setLocked(false);
+      setLockChecking(false);
+      return;
+    }
+    setLockChecking(true);
+    api<{ locked: boolean; hint?: string | null }>(`/folder-lock/${encodeURIComponent(driveFolderId)}`)
+      .then(result => {
+        if (result?.locked) {
+          setLocked(true);
+          setLockHint(result.hint ?? null);
+        } else {
+          setLocked(false);
+        }
+      })
+      .catch(() => {
+        // Fail secure — keep locked if server unreachable
+        setLocked(true);
+      })
+      .finally(() => {
+        setLockChecking(false);
+      });
+  }, [appLoading, parentBtn?.drive_folder_id]);
+
+  // ── Load sub-buttons only after lock is verified ────────────────────────────
+  useEffect(() => {
+    if (!buttonId || locked || lockChecking) return;
     getSubButtons(buttonId).then(async (data) => {
       setSubs(data);
       setLoading(false);
@@ -73,17 +111,110 @@ export default function SubFolderView() {
         console.warn("Sub-button count sync failed", e);
       }
     });
-  }, [buttonId]);
+  }, [buttonId, locked, lockChecking]);
 
   function handleSubClick(sub: SubButton) {
     if (sub.link_type === "external" && sub.link_value) {
-      // Open in-app viewer instead of leaving the app
       setLocation(`/view?url=${encodeURIComponent(sub.link_value)}&title=${encodeURIComponent(sub.label)}`);
     } else if (sub.link_type === "drive_folder" && sub.drive_folder_id) {
       setLocation(`/folder/${sub.drive_folder_id}?label=${encodeURIComponent(sub.label)}`);
     }
   }
 
+  const unlockFolder = async () => {
+    const driveFolderId = parentBtn?.drive_folder_id;
+    if (!driveFolderId || !lockInput.trim()) return;
+    try {
+      const result = await api<{ ok: boolean }>(`/folder-lock/${encodeURIComponent(driveFolderId)}/verify`, {
+        method: "POST",
+        body: { password: lockInput.trim() },
+      });
+      if (result?.ok) {
+        setLocked(false);
+        setLockInput("");
+        setLockError("");
+      } else {
+        setLockError("পাসওয়ার্ড ভুল! আবার চেষ্টা করুন।");
+      }
+    } catch {
+      setLockError("সংযোগ সমস্যা। আবার চেষ্টা করুন।");
+    }
+  };
+
+  // ── Loading spinner (while checking lock or loading app buttons) ─────────────
+  if (appLoading || lockChecking) {
+    return (
+      <div className="fixed inset-0 flex items-center justify-center z-10"
+        style={{ background: "rgba(10,14,31,0.97)" }}>
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 rounded-full border-2 border-cyan-400/30 border-t-cyan-400 animate-spin" />
+          <p className="text-white/50 text-sm">লোড হচ্ছে…</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Lock screen ──────────────────────────────────────────────────────────────
+  if (locked) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <div className="sticky top-0 z-20"
+          style={{ background: "rgba(10,14,31,0.92)", backdropFilter: "blur(20px)", borderBottom: `1px solid ${parentColor}30` }}>
+          <div className="flex items-center gap-2 px-3 py-3">
+            <button onClick={() => window.history.back()}
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-white/70 hover:text-white transition-colors flex-shrink-0"
+              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <span className="flex-1 text-center text-sm font-bold text-white truncate"
+              style={{ fontFamily: "'Exo 2',sans-serif" }}>
+              {parentBtn?.label ?? "Folder"}
+            </span>
+            <div className="w-9" />
+          </div>
+        </div>
+        <div className="flex-1 flex items-center justify-center p-6">
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
+            className="w-full max-w-sm">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-3"
+                style={{ background: `${parentColor}22`, border: `2px solid ${parentColor}55` }}>
+                <Lock className="w-8 h-8" style={{ color: parentColor }} />
+              </div>
+              <h2 className="text-white font-bold text-lg" style={{ fontFamily: "'Exo 2',sans-serif" }}>
+                পাসওয়ার্ড সুরক্ষিত
+              </h2>
+              {lockHint && (
+                <p className="text-white/40 text-xs mt-2 font-['Hind_Siliguri']">Hint: {lockHint}</p>
+              )}
+            </div>
+            <input
+              type="password"
+              value={lockInput}
+              onChange={e => { setLockInput(e.target.value); setLockError(""); }}
+              onKeyDown={e => e.key === "Enter" && unlockFolder()}
+              placeholder="পাসওয়ার্ড দিন"
+              className="w-full bg-white/5 border rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none mb-3 text-center text-lg tracking-widest"
+              style={{ borderColor: lockError ? "rgba(220,50,50,0.6)" : `${parentColor}40`,
+                       boxShadow: lockError ? "0 0 0 1px rgba(220,50,50,0.3)" : "none" }}
+            />
+            {lockError && (
+              <p className="text-red-400 text-xs text-center mb-3 font-['Hind_Siliguri']">{lockError}</p>
+            )}
+            <button onClick={unlockFolder}
+              className="w-full py-3 rounded-xl font-bold uppercase text-white transition-all active:scale-95"
+              style={{ background: `linear-gradient(135deg, ${parentColor}, ${parentColor}99)`,
+                       boxShadow: `0 4px 20px ${parentColor}40`,
+                       fontFamily: "'Exo 2',sans-serif" }}>
+              UNLOCK 🔓
+            </button>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Main sub-folder list ─────────────────────────────────────────────────────
   return (
     <div className="w-full pb-12 max-w-2xl mx-auto">
       <div className="sticky top-0 z-30 flex items-center gap-3 px-3 py-3"
@@ -109,7 +240,7 @@ export default function SubFolderView() {
 
       {loading ? (
         <div className="fixed inset-0 flex items-center justify-center z-10"
-          style={{ background: 'rgba(10,14,31,0.97)' }}>
+          style={{ background: "rgba(10,14,31,0.97)" }}>
           <div className="flex flex-col items-center gap-3">
             <div className="w-8 h-8 rounded-full border-2 border-cyan-400/30 border-t-cyan-400 animate-spin" />
             <p className="text-white/50 text-sm">লোড হচ্ছে…</p>
