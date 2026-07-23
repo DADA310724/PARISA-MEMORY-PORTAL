@@ -7,7 +7,7 @@ interface FooterProps {
 
 export function Footer({ className = "" }: FooterProps) {
   const { config } = useApp();
-  const link = config?.telegramLink ?? "https://t.me/DADA310724";
+  const link = config?.telegramLink || "https://t.me/DADA310724";
   return (
     <footer
       className={`w-full py-3 px-6 flex items-center justify-center gap-3 border-t ${className}`}

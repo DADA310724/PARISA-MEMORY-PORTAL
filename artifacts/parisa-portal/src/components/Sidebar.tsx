@@ -267,7 +267,7 @@ export function Sidebar({ onClose }: SidebarProps) {
           <a href="https://t.me/DADA310724" target="_blank" rel="noopener noreferrer"
             className="flex items-center gap-1.5 hover:opacity-80 transition-opacity min-w-0">
             <SiTelegram style={{ width: 13, height: 13, color: "rgba(33,186,252,0.85)", flexShrink: 0 }} />
-            <p className="text-[9.5px] font-medium whitespace-nowrap" style={{ color: "rgba(255,255,255,0.32)", letterSpacing: "0.04em" }}>
+            <p className="text-[8px] font-medium whitespace-nowrap" style={{ color: "rgba(255,255,255,0.32)", letterSpacing: "0.03em" }}>
               Dev by&nbsp;<span style={{ color: "rgba(0,212,170,0.85)", fontWeight: 700 }}>DADA</span>
             </p>
           </a>
