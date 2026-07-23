@@ -260,21 +260,17 @@ export function Sidebar({ onClose }: SidebarProps) {
         </div>
       </nav>
 
-      {/* Footer */}
+      {/* Footer — single line: Telegram credit + version */}
       <div style={{ borderTop: "1px solid hsl(var(--primary) / 0.1)" }}>
-        {/* Developer credit + Telegram — single line, centered */}
-        <div className="px-3 py-2 flex items-center justify-center">
+        <div className="px-3 py-2 flex items-center justify-center gap-2">
           <a href="https://t.me/DADA310724" target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-1.5 hover:opacity-80 transition-opacity min-w-0">
-            <SiTelegram style={{ width: 13, height: 13, color: "rgba(33,186,252,0.85)", flexShrink: 0 }} />
-            <p className="text-[8px] font-medium whitespace-nowrap" style={{ color: "rgba(255,255,255,0.32)", letterSpacing: "0.03em" }}>
+            className="flex items-center gap-1 hover:opacity-80 transition-opacity">
+            <SiTelegram style={{ width: 11, height: 11, color: "rgba(33,186,252,0.85)", flexShrink: 0 }} />
+            <p className="text-[7.5px] font-medium whitespace-nowrap" style={{ color: "rgba(255,255,255,0.32)", letterSpacing: "0.03em" }}>
               Dev by&nbsp;<span style={{ color: "rgba(0,212,170,0.85)", fontWeight: 700 }}>DADA</span>
             </p>
           </a>
-        </div>
-        {/* Version — centered */}
-        <div className="pb-2.5 flex items-center justify-center">
-          <span className="text-[9px] font-mono px-2 py-0.5 rounded"
+          <span className="text-[7px] font-mono px-1.5 py-0.5 rounded whitespace-nowrap flex-shrink-0"
             style={{ background: "hsl(var(--primary) / 0.08)", border: "1px solid hsl(var(--primary) / 0.2)", color: "hsl(var(--primary) / 0.5)" }}>
             {APP_VERSION}
           </span>

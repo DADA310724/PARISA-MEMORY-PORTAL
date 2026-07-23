@@ -77,9 +77,15 @@ export default function FolderView() {
 
   const checkFolderLock = useCallback(async (folderId: string) => {
     setLockChecking(true);
+    // 8-second timeout — if server hangs, don't leave user stuck on loading screen forever
+    const ctrl = new AbortController();
+    const timeoutId = setTimeout(() => ctrl.abort(), 8000);
     try {
       // Server-side check via Firebase REST API — reliable regardless of client SDK auth state
-      const result = await api<{ locked: boolean; hint?: string | null; name?: string | null }>(`/folder-lock/${encodeURIComponent(folderId)}`);
+      const result = await api<{ locked: boolean; hint?: string | null; name?: string | null }>(
+        `/folder-lock/${encodeURIComponent(folderId)}`,
+        { signal: ctrl.signal }
+      );
       if (result?.locked) {
         setLockData({ password: "__server_verified__", hint: result.hint ?? undefined });
         setLocked(true);
@@ -88,10 +94,11 @@ export default function FolderView() {
         setLocked(false);
       }
     } catch {
-      // Server unavailable — fail secure: keep locked so folder cannot be opened
+      // Server unavailable or timeout — fail secure: keep locked so folder cannot be opened
       setLockData({ password: "__server_verified__", hint: undefined });
       setLocked(true);
     } finally {
+      clearTimeout(timeoutId);
       setLockChecking(false);
     }
   }, []);
@@ -401,7 +408,7 @@ export default function FolderView() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 relative">
+      <div className="flex-1 relative" style={{ scrollPaddingTop: '60px' }}>
         {(loading || lockChecking) && (
           <div className="fixed inset-0 flex items-center justify-center"
             style={{ background: 'rgba(10,14,31,0.97)', zIndex: 50 }}>
@@ -411,7 +418,7 @@ export default function FolderView() {
             </div>
           </div>
         )}
-        <div className="p-3 w-full">
+        <div className="px-3 pb-3 pt-1 w-full">
         {error && (
           <div className="rounded-xl p-6 text-center" style={{ background:'rgba(255,50,50,0.08)', border:'1px solid rgba(255,50,50,0.2)' }}>
             <p className="text-red-400 mb-3">{error}</p>
@@ -663,11 +670,10 @@ export default function FolderView() {
                     setMediaBuffering(false);
                     if (stallTimerRef.current) { clearTimeout(stallTimerRef.current); stallTimerRef.current = null; }
                   }}
-                  onError={(e) => {
+                  onError={() => {
                     if (stallTimerRef.current) { clearTimeout(stallTimerRef.current); stallTimerRef.current = null; }
-                    // Retry for network errors (code 2). Progressive delay: 2s → 4s → 8s
-                    const code = (e.currentTarget as HTMLVideoElement).error?.code;
-                    if (code === 2 && mediaErrorCountRef.current < 3) {
+                    // Retry on ANY error (network, server 500, token failure, etc.) — progressive delay: 2s → 4s → 8s
+                    if (mediaErrorCountRef.current < 3) {
                       const delay = [2000, 4000, 8000][mediaErrorCountRef.current] ?? 8000;
                       mediaErrorCountRef.current += 1;
                       setTimeout(() => setMediaRetryKey(k => k + 1), delay);
@@ -754,10 +760,10 @@ export default function FolderView() {
                       setMediaBuffering(false);
                       if (stallTimerRef.current) { clearTimeout(stallTimerRef.current); stallTimerRef.current = null; }
                     }}
-                    onError={(e) => {
+                    onError={() => {
                       if (stallTimerRef.current) { clearTimeout(stallTimerRef.current); stallTimerRef.current = null; }
-                      const code = (e.currentTarget as HTMLAudioElement).error?.code;
-                      if (code === 2 && mediaErrorCountRef.current < 3) {
+                      // Retry on ANY error (network, server 500, token failure, etc.) — progressive delay: 2s → 4s → 8s
+                      if (mediaErrorCountRef.current < 3) {
                         const delay = [2000, 4000, 8000][mediaErrorCountRef.current] ?? 8000;
                         mediaErrorCountRef.current += 1;
                         setTimeout(() => setMediaRetryKey(k => k + 1), delay);

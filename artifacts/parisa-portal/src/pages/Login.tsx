@@ -149,7 +149,13 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen w-full flex flex-col relative overflow-hidden">
+    <div className="min-h-screen w-full flex flex-col relative">
+      {/* Background blur blobs — clipped inside their own layer so they don't affect scroll */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -top-32 -left-32 h-96 w-96 rounded-full bg-primary/15 blur-3xl" />
+        <div className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-accent/15 blur-3xl" />
+      </div>
+
       <AnimatePresence>
         {showSplash && (
           <motion.div key="splash" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
@@ -179,9 +185,6 @@ export default function LoginPage() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      <div className="pointer-events-none absolute -top-32 -left-32 h-96 w-96 rounded-full bg-primary/15 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-accent/15 blur-3xl" />
 
       <div className="flex-1 flex items-center justify-center px-4 py-10">
         <motion.div initial={{ opacity: 0, y: 24 }} animate={{ opacity: 1, y: 0 }}
