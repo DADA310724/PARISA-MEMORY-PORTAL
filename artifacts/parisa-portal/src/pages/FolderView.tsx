@@ -190,9 +190,27 @@ export default function FolderView() {
     }
   };
 
-  const openFolder = (f: DriveFile) => { setBreadcrumbs(b => [...b, { id: f.id, name: f.name }]); setFiles([]); };
-  const navigateBreadcrumb = (idx: number) => { setBreadcrumbs(b => b.slice(0, idx + 1)); setFiles([]); };
-  const goBack = () => { if (breadcrumbs.length > 1) { setBreadcrumbs(b => b.slice(0, -1)); setFiles([]); } else { navigate("/"); } };
+  const openFolder = (f: DriveFile) => {
+    // Reset lock state and scroll for the new folder before changing breadcrumbs
+    setLocked(true); setLockChecking(true); setFiles([]);
+    window.scrollTo({ top: 0, behavior: "instant" });
+    setBreadcrumbs(b => [...b, { id: f.id, name: f.name }]);
+  };
+  const navigateBreadcrumb = (idx: number) => {
+    if (idx === breadcrumbs.length - 1) return; // already here
+    setLocked(true); setLockChecking(true); setFiles([]);
+    window.scrollTo({ top: 0, behavior: "instant" });
+    setBreadcrumbs(b => b.slice(0, idx + 1));
+  };
+  const goBack = () => {
+    if (breadcrumbs.length > 1) {
+      setLocked(true); setLockChecking(true); setFiles([]);
+      window.scrollTo({ top: 0, behavior: "instant" });
+      setBreadcrumbs(b => b.slice(0, -1));
+    } else {
+      navigate("/");
+    }
+  };
 
   const notifyFileOpen = (f: DriveFile, type: string) => {
     void api("/telegram/notify", {

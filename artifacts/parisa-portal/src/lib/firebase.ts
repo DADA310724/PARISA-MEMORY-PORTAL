@@ -10,7 +10,13 @@ import {
   push,
   onValue,
 } from "firebase/database";
-import { getAuth, signInAnonymously, onAuthStateChanged, signInWithEmailAndPassword } from "firebase/auth";
+import {
+  getAuth,
+  signInAnonymously,
+  signInWithCustomToken,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+} from "firebase/auth";
 import { api } from "./api";
 
 export interface AppConfig {
@@ -85,23 +91,42 @@ async function _initFirebase(): Promise<Database> {
   const cfg = await loadAppConfig();
   app = getApps().length > 0 ? getApp() : initializeApp(cfg.firebase);
   const database = getDatabase(app);
-  // Authenticate using Anonymous Auth so Firebase rules (auth != null) are satisfied.
-  // onAuthStateChanged fires once immediately when the SDK has restored any persisted
-  // session from localStorage — so we reuse cached anonymous users instead of
-  // creating a new one every page load.
+
+  // Authenticate so Firebase private rules (auth != null) are satisfied.
+  // We use the server-issued custom token first (works even if Anonymous Auth
+  // is disabled in Firebase Console). Falls back to signInAnonymously if the
+  // token endpoint is unavailable. onAuthStateChanged fires once immediately
+  // when the SDK has restored any persisted session from localStorage — so we
+  // reuse cached sessions instead of creating a new auth request every load.
   try {
     const auth = getAuth(app);
     await new Promise<void>((resolve) => {
       const unsub = onAuthStateChanged(auth, () => { unsub(); resolve(); });
     });
     if (!auth.currentUser) {
-      await signInAnonymously(auth);
+      // 1️⃣ Try server custom token (preferred — independent of Anonymous Auth setting)
+      let authenticated = false;
+      try {
+        const res = await fetch("/api/firebase/token");
+        if (res.ok) {
+          const { token } = await res.json() as { token: string };
+          await signInWithCustomToken(auth, token);
+          authenticated = true;
+        }
+      } catch { /* fall through */ }
+
+      // 2️⃣ Fallback: anonymous auth
+      if (!authenticated) {
+        await signInAnonymously(auth);
+      }
+
       // Brief pause so the new auth token propagates to the database WebSocket
       // connection before callers set up onValue listeners.
       await new Promise<void>((r) => setTimeout(r, 300));
     }
   } catch {
-    // Auth failed entirely — continue without auth
+    // Auth failed entirely — continue without auth (read-only public data still works
+    // if rules allow it; writes will fail which is acceptable as a degraded state)
   }
   db = database;
   return database;
