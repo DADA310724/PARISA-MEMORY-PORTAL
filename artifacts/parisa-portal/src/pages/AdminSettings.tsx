@@ -1130,7 +1130,7 @@ export default function AdminSettings() {
               <div className="space-y-3">
                 <p className="text-white/40 text-xs px-1 mb-3" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>যেকোনো ফোল্ডারে পাসওয়ার্ড সেট করুন।</p>
                 {buttons
-                  .filter(b => b.link_type === "drive_folder" && b.drive_folder_id)
+                  .filter(b => b.link_type === "drive_folder" && b.drive_folder_id && !b.has_sub_buttons)
                   .map(folder => {
                     const fid = folder.drive_folder_id!;
                     const hasPw = !!folderPasswords[fid];

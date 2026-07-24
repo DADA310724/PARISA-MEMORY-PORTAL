@@ -4,7 +4,6 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Folder, ChevronRight } from "lucide-react";
 import { useApp, type SubButton } from "@/contexts/AppContext";
 import { AppLogo } from "@/components/AppLogo";
-import { api } from "@/lib/api";
 
 const BTN_COLOR: Record<string, string> = {
   whatsapp:  "#25d366",
@@ -37,48 +36,12 @@ export default function SubFolderView() {
   const [subs, setSubs] = useState<SubButton[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // ── Lock state ──────────────────────────────────────────────────────────────
-  const [locked, setLocked] = useState(true);
-  const [lockChecking, setLockChecking] = useState(true);
-  const [lockHint, setLockHint] = useState<string | null>(null);
-  const [lockInput, setLockInput] = useState("");
-  const [lockError, setLockError] = useState("");
-
   const parentBtn = buttons.find((b) => b.id === buttonId);
   const parentColor = BTN_COLOR[parentBtn?.logo_key ?? parentBtn?.icon ?? "default"] ?? BTN_COLOR.default;
 
-  // ── Check lock once app buttons are loaded ──────────────────────────────────
+  // ── Load sub-buttons once app is ready ─────────────────────────────────────
   useEffect(() => {
-    if (appLoading) return; // wait for buttons to load from Firebase
-    const driveFolderId = parentBtn?.drive_folder_id;
-    if (!driveFolderId) {
-      // No drive folder linked — no lock
-      setLocked(false);
-      setLockChecking(false);
-      return;
-    }
-    setLockChecking(true);
-    api<{ locked: boolean; hint?: string | null }>(`/folder-lock/${encodeURIComponent(driveFolderId)}`)
-      .then(result => {
-        if (result?.locked) {
-          setLocked(true);
-          setLockHint(result.hint ?? null);
-        } else {
-          setLocked(false);
-        }
-      })
-      .catch(() => {
-        // Fail secure — keep locked if server unreachable
-        setLocked(true);
-      })
-      .finally(() => {
-        setLockChecking(false);
-      });
-  }, [appLoading, parentBtn?.drive_folder_id]);
-
-  // ── Load sub-buttons only after lock is verified ────────────────────────────
-  useEffect(() => {
-    if (!buttonId || locked || lockChecking) return;
+    if (!buttonId || appLoading) return;
     getSubButtons(buttonId).then(async (data) => {
       setSubs(data);
       setLoading(false);
@@ -111,7 +74,7 @@ export default function SubFolderView() {
         console.warn("Sub-button count sync failed", e);
       }
     });
-  }, [buttonId, locked, lockChecking]);
+  }, [buttonId, appLoading]);
 
   function handleSubClick(sub: SubButton) {
     if (sub.link_type === "external" && sub.link_value) {
@@ -121,27 +84,7 @@ export default function SubFolderView() {
     }
   }
 
-  const unlockFolder = async () => {
-    const driveFolderId = parentBtn?.drive_folder_id;
-    if (!driveFolderId || !lockInput.trim()) return;
-    try {
-      const result = await api<{ ok: boolean }>(`/folder-lock/${encodeURIComponent(driveFolderId)}/verify`, {
-        method: "POST",
-        body: { password: lockInput.trim() },
-      });
-      if (result?.ok) {
-        setLocked(false);
-        setLockInput("");
-        setLockError("");
-      } else {
-        setLockError("পাসওয়ার্ড ভুল! আবার চেষ্টা করুন।");
-      }
-    } catch {
-      setLockError("সংযোগ সমস্যা। আবার চেষ্টা করুন।");
-    }
-  };
-
-  // ── Always render the header + use overlays (matches FolderView pattern) ─────
+  // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen flex flex-col relative">
 
@@ -167,8 +110,8 @@ export default function SubFolderView() {
         </div>
       </div>
 
-      {/* Loading spinner overlay — same style/position as FolderView */}
-      {(appLoading || lockChecking || loading) && (
+      {/* Loading spinner overlay */}
+      {(appLoading || loading) && (
         <div className="fixed inset-0 flex items-center justify-center"
           style={{ background: "rgba(10,14,31,0.97)", zIndex: 50 }}>
           <div className="flex flex-col items-center gap-3">
@@ -178,42 +121,8 @@ export default function SubFolderView() {
         </div>
       )}
 
-      {/* Lock screen — identical style to FolderView */}
-      {!appLoading && !lockChecking && locked && (
-        <div className="flex-1 flex items-center justify-center p-6">
-          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-            className="w-full max-w-sm">
-            <div className="text-center mb-6">
-              <div className="text-5xl mb-3">🔒</div>
-              <h2 className="text-white font-bold text-lg" style={{ fontFamily: "'Exo 2',sans-serif" }}>
-                পাসওয়ার্ড সুরক্ষিত
-              </h2>
-              {lockHint && (
-                <p className="text-white/40 text-xs mt-2">Hint: {lockHint}</p>
-              )}
-            </div>
-            <input
-              type="password"
-              value={lockInput}
-              onChange={e => { setLockInput(e.target.value); setLockError(""); }}
-              onKeyDown={e => e.key === "Enter" && unlockFolder()}
-              placeholder="পাসওয়ার্ড দিন"
-              className="w-full bg-white/5 border border-cyan-500/25 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-cyan-400/70 mb-3 text-center text-lg tracking-widest"
-            />
-            {lockError && (
-              <p className="text-red-400 text-xs text-center mb-3">{lockError}</p>
-            )}
-            <button onClick={unlockFolder}
-              className="w-full py-3 rounded-xl btn-cyan font-bold uppercase"
-              style={{ fontFamily: "'Exo 2',sans-serif" }}>
-              UNLOCK 🔓
-            </button>
-          </motion.div>
-        </div>
-      )}
-
-      {/* Sub-folder list — only shown after unlock */}
-      {!appLoading && !lockChecking && !locked && subs.length === 0 ? (
+      {/* Sub-folder list */}
+      {!appLoading && !loading && subs.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 px-6 text-center">
           <div className="w-20 h-20 rounded-full flex items-center justify-center mb-4"
             style={{ background: `${parentColor}15`, border: `1px solid ${parentColor}30` }}>
