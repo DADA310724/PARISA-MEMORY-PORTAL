@@ -1,30 +1,43 @@
 ---
 name: Parisa Portal features done
-description: Session fixes — audio/video loop, SubFolderView lock, version history
+description: Session 2-3 fixes — what was done and what to watch out for
 ---
 
-## Session 2 fixes (V-17 context)
-PARISA/RUBEL voice, no confirm dialogs, folder_files Firebase AI context, saveAiConfig fix, dynamic redirect URI, passwords tab uses live buttons, audio nodownload, Glass theme, .env.example.
+## Session 2 fixes (from prior summary)
+- PARISA/RUBEL voice, no confirm dialogs, folder_files Firebase AI context
+- saveAiConfig fix, dynamic redirect URI, passwords tab uses live buttons
+- audio nodownload, Glass theme, .env.example
 
-## Session 3 fixes (V-18 — 2026-07-23)
+## Session 3 fixes (2026-07-24)
 
-### Audio/Video infinite retry loop (FolderView.tsx)
-**Problem:** `onStalled` handler called `.load()` after 1.5s on every normal buffering event → reset stream → `onError` → infinite `mediaRetryKey` increment loop.  
-**Fix:** Removed `onStalled` entirely. Added `mediaErrorCountRef` (max 3 retries) for `onError`. Reset ref in `openViewer`.  
-**Why:** `onStalled` is a normal buffering event for streaming; resetting the element mid-stream causes the loop.
+### Sidebar footer (Sidebar.tsx)
+Scaled DOWN to match Dashboard footer proportionally for w-72 sidebar:
+- `text-[8px]`, `tracking-[0.1em]`, `uppercase`
+- icon: 24×24px, borderRadius 7, `blur(12px)` glass
+- Telegram SVG: 12×12px
+- Container: `px-3 py-2 overflow-hidden justify-center`
+- Version badge stays below, centered
 
-### SubFolderView lock not working (SubFolderView.tsx)
-**Problem:** Folders with `has_sub_buttons=true` route to `/sub/:buttonId` (SubFolderView), which had NO lock checking. Locks set in Admin → Passwords tab (keyed by `drive_folder_id`) were saved correctly in Firebase but never checked when opening via SubFolderView.  
-**Fix:** Added full lock checking to SubFolderView using `parentBtn.drive_folder_id`. Lock check runs after AppContext `buttons` load (waits for `appLoading=false`). Sub-buttons only load AFTER lock is verified.  
-**Why:** Dashboard checks `b.has_sub_buttons` first — if true, goes to SubFolderView not FolderView, bypassing all lock logic.
+### Firebase auth (firebase.ts)
+- Anonymous Auth + initPromise singleton stays — this is correct
+- Service account (`parisa-portal` project) ≠ Firebase project (`parisa-my-wife`) → custom token auth does NOT work (different GCP projects)
+- Do NOT attempt `/api/firebase/token` from frontend — causes noisy 400 errors
+- PERMISSION_DENIED errors: caused by Firebase RULES change (public → private) + race condition; initPromise fix resolves race condition
+- For private rules, Firebase Console must have: `{ ".read": "auth != null", ".write": "auth != null" }` AND Anonymous Auth enabled
 
-### Lock key consistency
-Passwords tab saves lock keyed by `drive_folder_id`. FolderView checks with `currentFolder.id` (= `drive_folder_id` from URL). SubFolderView now also checks with `parentBtn.drive_folder_id`. All consistent.
+### FolderView navigation (FolderView.tsx)
+openFolder, navigateBreadcrumb, goBack now ALL do:
+1. `setLocked(true); setLockChecking(true); setFiles([])` — reset state BEFORE breadcrumb change
+2. `window.scrollTo({ top: 0, behavior: "instant" })` — prevent subfolder header overlap
 
-### Firebase cleanup
-TEST_FOLDER_123 test entry removed via DELETE API call.
+**Why reset lock state first:** Without resetting, loadFolder useEffect fires with old lock state (locked=false, lockChecking=false) before checkFolderLock can set lockChecking=true → loads content without lock check.
 
-## Version history
-- V-16: previous baseline
-- V-17: audio/video ReferenceError crash fix, login delay (geolocation 10s→3s), 200-file pagination
-- V-18: audio/video loop fix, SubFolderView lock support
+### Google Service Account
+`GOOGLE_SERVICE_ACCOUNT_JSON not set` at startup = timing/race on cold start, NOT a real error. After full restart: `✅ Google OAuth tokens pre-warmed` — Drive + Firebase token generation works.
+
+### Version
+V-19 → V-20
+
+### GitHub state
+Commits pushed: `e264a15`, `6dbde5d` → `DADA310724/PARISA-MEMORY` main branch
+Render will auto-deploy from GitHub.
