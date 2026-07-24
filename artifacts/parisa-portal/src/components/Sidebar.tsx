@@ -271,10 +271,10 @@ export function Sidebar({ onClose }: SidebarProps) {
             }
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-1.5 hover:opacity-80 transition-opacity"
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
           >
             <p
-              className="text-[8px] font-medium tracking-[0.1em] uppercase whitespace-nowrap"
+              className="text-[10px] font-medium tracking-[0.15em] uppercase whitespace-nowrap"
               style={{ color: "rgba(255,255,255,0.35)" }}
             >
               This Apps Development By{" "}
@@ -283,20 +283,20 @@ export function Sidebar({ onClose }: SidebarProps) {
             <div
               className="flex items-center justify-center flex-shrink-0"
               style={{
-                width: 24, height: 24, borderRadius: 7,
+                width: 28, height: 28, borderRadius: 8,
                 background: "rgba(33,150,243,0.1)",
                 border: "1px solid rgba(33,186,252,0.3)",
                 backdropFilter: "blur(12px)",
                 boxShadow: "inset 0 1px 0 rgba(255,255,255,0.15), 0 2px 8px rgba(33,186,252,0.2)",
               }}
             >
-              <SiTelegram style={{ width: 12, height: 12, color: "rgba(33,186,252,0.9)" }} />
+              <SiTelegram style={{ width: 14, height: 14, color: "rgba(33,186,252,0.9)" }} />
             </div>
           </a>
         </div>
         <div className="pb-2 flex items-center justify-center">
           <span
-            className="text-[7px] font-mono px-1.5 py-0.5 rounded whitespace-nowrap"
+            className="text-[8px] font-mono px-2 py-0.5 rounded whitespace-nowrap"
             style={{ background: "hsl(var(--primary) / 0.08)", border: "1px solid hsl(var(--primary) / 0.2)", color: "hsl(var(--primary) / 0.5)" }}
           >
             {APP_VERSION}

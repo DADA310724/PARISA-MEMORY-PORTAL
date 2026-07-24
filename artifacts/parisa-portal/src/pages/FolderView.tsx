@@ -50,6 +50,7 @@ export default function FolderView() {
   const [viewerType, setViewerType] = useState<"image"|"video"|"audio"|"html"|"pdf"|"text"|"generic">("image");
   const [viewerFile, setViewerFile] = useState<DriveFile | null>(null);
   const [mediaRetryKey, setMediaRetryKey] = useState(0);
+  const [mediaError, setMediaError] = useState(false);
   const [mediaCurTime, setMediaCurTime] = useState(0);
   const [mediaDuration, setMediaDuration] = useState(0);
   const [mediaBuffering, setMediaBuffering] = useState(false);
@@ -79,7 +80,7 @@ export default function FolderView() {
     setLockChecking(true);
     // 8-second timeout — if server hangs, don't leave user stuck on loading screen forever
     const ctrl = new AbortController();
-    const timeoutId = setTimeout(() => ctrl.abort(), 8000);
+    const timeoutId = setTimeout(() => ctrl.abort(), 4000);
     try {
       // Server-side check via Firebase REST API — reliable regardless of client SDK auth state
       const result = await api<{ locked: boolean; hint?: string | null; name?: string | null }>(
@@ -173,6 +174,7 @@ export default function FolderView() {
     setMediaCurTime(0);
     setMediaDuration(0);
     setMediaBuffering(false);
+    setMediaError(false);
   }, [viewerFile, currentFolder.name]);
 
 
@@ -228,6 +230,7 @@ export default function FolderView() {
     setMediaCurTime(0);
     setMediaDuration(0);
     setMediaBuffering(false);
+    setMediaError(false);
     setMediaRetryKey(k => k + 1);
     mediaErrorCountRef.current = 0;
     const type = isImage(f) ? "photo" : isVideo(f) ? "video" : isAudio(f) ? "audio" : isPdf(f) ? "pdf" : isHtml(f) ? "html" : isText(f) ? "text" : "file";
@@ -687,17 +690,31 @@ export default function FolderView() {
                   onCanPlay={() => {
                     setMediaBuffering(false);
                     if (stallTimerRef.current) { clearTimeout(stallTimerRef.current); stallTimerRef.current = null; }
+                    videoRef.current?.play().catch(() => {});
                   }}
                   onError={() => {
                     if (stallTimerRef.current) { clearTimeout(stallTimerRef.current); stallTimerRef.current = null; }
-                    // Retry on ANY error (network, server 500, token failure, etc.) — progressive delay: 2s → 4s → 8s
+                    // Retry on ANY error — progressive delay: 2s → 4s → 8s; then show download option
                     if (mediaErrorCountRef.current < 3) {
                       const delay = [2000, 4000, 8000][mediaErrorCountRef.current] ?? 8000;
                       mediaErrorCountRef.current += 1;
                       setTimeout(() => setMediaRetryKey(k => k + 1), delay);
+                    } else {
+                      setMediaError(true);
                     }
                   }}
                 />
+                {/* Download fallback when video fails after all retries */}
+                {mediaError && (
+                  <div className="flex-shrink-0 flex flex-col items-center justify-center gap-2 py-4" style={{ background: 'rgba(0,0,0,0.9)', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+                    <p className="text-red-400/80 text-xs">ভিডিওটি প্লে হচ্ছে না</p>
+                    <a href={streamUrl(viewerFile.id)} download={viewerFile.name}
+                      className="text-xs px-4 py-2 rounded-xl"
+                      style={{ background: 'rgba(0,212,170,0.15)', border: '1px solid rgba(0,212,170,0.3)', color: '#00d4aa' }}>
+                      ⬇️ ডাউনলোড করুন
+                    </a>
+                  </div>
+                )}
                 {/* Prev / Next — only shown when multiple videos */}
                 {videoFiles.length > 1 && (
                   <div className="flex-shrink-0 flex items-center justify-center gap-6 py-2" style={{ background:'rgba(0,0,0,0.85)' }}>
@@ -777,17 +794,31 @@ export default function FolderView() {
                     onCanPlay={() => {
                       setMediaBuffering(false);
                       if (stallTimerRef.current) { clearTimeout(stallTimerRef.current); stallTimerRef.current = null; }
+                      audioRef.current?.play().catch(() => {});
                     }}
                     onError={() => {
                       if (stallTimerRef.current) { clearTimeout(stallTimerRef.current); stallTimerRef.current = null; }
-                      // Retry on ANY error (network, server 500, token failure, etc.) — progressive delay: 2s → 4s → 8s
+                      // Retry on ANY error — progressive delay: 2s → 4s → 8s; then show download option
                       if (mediaErrorCountRef.current < 3) {
                         const delay = [2000, 4000, 8000][mediaErrorCountRef.current] ?? 8000;
                         mediaErrorCountRef.current += 1;
                         setTimeout(() => setMediaRetryKey(k => k + 1), delay);
+                      } else {
+                        setMediaError(true);
                       }
                     }}
                   />
+
+                  {/* Download fallback when audio fails after all retries */}
+                  {mediaError && (
+                    <div className="flex flex-col items-center gap-2 py-3 mb-2">
+                      <p style={{ color: 'rgba(255,80,80,0.8)', fontSize: 11, textAlign: 'center', fontFamily:"'Hind Siliguri',sans-serif" }}>অডিওটি প্লে হচ্ছে না</p>
+                      <a href={streamUrl(viewerFile.id)} download={viewerFile.name}
+                        style={{ fontSize: 11, color: '#00d4aa', padding: '6px 16px', borderRadius: 10, background: 'rgba(0,212,170,0.15)', border: '1px solid rgba(0,212,170,0.3)' }}>
+                        ⬇️ ডাউনলোড করুন
+                      </a>
+                    </div>
+                  )}
 
                   {/* Progress bar */}
                   <div className="w-full h-1 rounded-full mb-2 overflow-hidden" style={{ background:'rgba(255,255,255,0.1)' }}>
