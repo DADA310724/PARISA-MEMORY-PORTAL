@@ -1,6 +1,6 @@
 ---
 name: Parisa Portal features done
-description: Session 2-3 fixes — what was done and what to watch out for
+description: Session 2-4 fixes — what was done and what to watch out for
 ---
 
 ## Session 2 fixes (from prior summary)
@@ -35,9 +35,49 @@ openFolder, navigateBreadcrumb, goBack now ALL do:
 ### Google Service Account
 `GOOGLE_SERVICE_ACCOUNT_JSON not set` at startup = timing/race on cold start, NOT a real error. After full restart: `✅ Google OAuth tokens pre-warmed` — Drive + Firebase token generation works.
 
+## Session 4 fixes (2026-07-24) — V-21
+
+### Version system
+- `artifacts/parisa-portal/src/lib/version.ts` holds APP_VERSION ("V-21") and APP_BUILD_DATE
+- MUST bump version on every update — V-20 → V-21 etc.
+- Git commit message must include the version: `feat(V-21): ...`
+
+### SubFolderView lock — REMOVED (was wrong)
+- SubFolderView (`/sub/:buttonId`) shows sub-button navigation list, NOT drive folder content
+- Lock logic was incorrectly added by a previous agent — user never uses locks on sub-folders
+- SOLUTION: Remove ALL lock code from SubFolderView. Lock only lives in FolderView.
+- SubFolderView loading: `(appLoading || loading)` only — no lockChecking
+- **Why:** Locks only make sense at FolderView level (actual Drive content). SubFolderView is a nav menu.
+
+### AdminSettings passwords tab — filter rule
+- Filter: `b.link_type === "drive_folder" && b.drive_folder_id` — show ALL drive_folder buttons
+- Do NOT add `!b.has_sub_buttons` — that incorrectly hides folders that have sub-buttons configured
+- Lock in passwords tab is informational for ALL folders; enforcement only happens in FolderView
+
+### Audio Player — custom UI (FolderView.tsx)
+- `<audio>` element now has `style={{ display:'none' }}` — NO `controls` attribute
+- Custom purple card UI with: Back button, waveform (animates only when playing), album icon (glows when playing), clickable progress bar, time display, big Play/Pause button with buffering spinner, Prev/Next, volume slider + mute toggle
+- New state: `isPlaying`, `isMuted`, `audioVolume`
+- `onPlay/onPause/onEnded` drive isPlaying state
+- `onEnded` → calls `nextAudio()` for auto-play
+- Progress bar click: calculates ratio from clientX, seeks audioRef.current.currentTime
+- Volume slider: `input[type=range]` with accentColor #a855f7, syncs to audioRef.current.volume
+
+### Audio/Video streaming — position restore on retry
+- New ref: `savedTimeRef` — tracks currentTime on every timeupdate
+- On `onError`: save mediaCurTime, increment retry count, set `savedTimeRef.current = saved`, then change mediaRetryKey (remount element)
+- On `onLoadedMetadata`: if `savedTimeRef.current > 0`, seek to that position → user resumes from where it stopped
+- Stall timer (18s restart from beginning) REMOVED — browser handles range-resume natively
+- **Why removing stall timer:** 18s timer called `setMediaRetryKey(k=>k+1)` which remounted the element and lost position. Browser's native range-request mechanism resumes buffering automatically.
+
+### Download buttons — REMOVED from both audio and video
+- No download anywhere in FolderView
+- Error state shows "আবার চেষ্টা করুন" retry button instead
+
 ### Version
-V-19 → V-20
+V-20 → V-21
 
 ### GitHub state
-Commits pushed: `e264a15`, `6dbde5d` → `DADA310724/PARISA-MEMORY` main branch
-Render will auto-deploy from GitHub.
+Latest commits on `DADA310724/PARISA-MEMORY` main:
+- `26efec9` — SubFolderView lock removed
+- `7c2112d` — V-21: audio player + video fix + passwords tab fix
