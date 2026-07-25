@@ -81,3 +81,21 @@ V-20 → V-21
 Latest commits on `DADA310724/PARISA-MEMORY` main:
 - `26efec9` — SubFolderView lock removed
 - `7c2112d` — V-21: audio player + video fix + passwords tab fix
+
+## Session 5 (2026-07-25) — V-22
+
+### Root cause of both reported bugs (lock + audio/video)
+Both failures had the SAME single cause: **the running `node artifacts/api-server/dist/index.js` process did not have env vars injected** (Replit cold-start race). The compiled process started before secrets were ready.
+
+Symptoms:
+- `/api/drive/ready` → `{"ready":false,"reason":"GOOGLE_SERVICE_ACCOUNT_JSON not set"}` → stream returns 500 → audio/video 3x retry then error
+- `/api/folder-lock` → `{}` (FIREBASE_DATABASE_SECRET missing, fallback returns empty) → lock returns `locked:false` → folder opens without password
+
+Fix: rebuild api-server (`pnpm run build` in artifacts/api-server), restart `Start application` workflow.
+
+After restart: `✅ Google OAuth tokens pre-warmed (Drive + Firebase DB)` — both env vars available. `/api/drive/ready` = true, `/api/folder-lock` returns 6 lock entries.
+
+**Why this happens / how to catch:** If audio/video fail with 3 retries AND lock doesn't work AND `/api/drive/ready` returns false — always check if server process has env vars BEFORE touching code. Fix = restart workflow (NOT code changes).
+
+### Version
+V-21 → V-22
