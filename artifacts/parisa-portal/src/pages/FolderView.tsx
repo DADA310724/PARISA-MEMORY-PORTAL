@@ -54,10 +54,14 @@ export default function FolderView() {
   const [mediaCurTime, setMediaCurTime] = useState(0);
   const [mediaDuration, setMediaDuration] = useState(0);
   const [mediaBuffering, setMediaBuffering] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [audioVolume, setAudioVolume] = useState(1);
   const videoRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const mediaErrorCountRef = useRef(0);
   const stallTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const savedTimeRef = useRef<number>(0);
   const touchStartX = useRef(0);
   const [imgScale, setImgScale] = useState(1);
   const [imgOffset, setImgOffset] = useState({ x: 0, y: 0 });
@@ -175,6 +179,8 @@ export default function FolderView() {
     setMediaDuration(0);
     setMediaBuffering(false);
     setMediaError(false);
+    setIsPlaying(false);
+    savedTimeRef.current = 0;
   }, [viewerFile, currentFolder.name]);
 
 
@@ -231,8 +237,10 @@ export default function FolderView() {
     setMediaDuration(0);
     setMediaBuffering(false);
     setMediaError(false);
+    setIsPlaying(false);
     setMediaRetryKey(k => k + 1);
     mediaErrorCountRef.current = 0;
+    savedTimeRef.current = 0;
     const type = isImage(f) ? "photo" : isVideo(f) ? "video" : isAudio(f) ? "audio" : isPdf(f) ? "pdf" : isHtml(f) ? "html" : isText(f) ? "text" : "file";
     notifyFileOpen(f, type);
     if (isImage(f)) { setViewerType("image"); setViewerIndex(imgIdx ?? 0); setViewerOpen(true); return; }
@@ -653,7 +661,7 @@ export default function FolderView() {
             {/* ── Video Player ── */}
             {viewerType === 'video' && (
               <div className="flex-1 flex flex-col" style={{ background:'#000' }}>
-                {/* Native browser video — fullscreen enabled, no extra overlay */}
+                {/* Native video with browser controls — fullscreen, range-resume enabled */}
                 <video
                   key={`v-${viewerFile.id}-${mediaRetryKey}`}
                   ref={videoRef}
@@ -666,56 +674,51 @@ export default function FolderView() {
                   style={{ width:'100%', height:'100%', flex:1, objectFit:'contain', display:'block', background:'#000' }}
                   onContextMenu={e => e.preventDefault()}
                   onTimeUpdate={e => {
-                    setMediaCurTime((e.target as HTMLVideoElement).currentTime);
-                    // Clear any stall timer when playback is progressing
-                    if (stallTimerRef.current) { clearTimeout(stallTimerRef.current); stallTimerRef.current = null; }
+                    const t = (e.target as HTMLVideoElement).currentTime;
+                    setMediaCurTime(t);
+                    savedTimeRef.current = t;
                   }}
-                  onLoadedMetadata={e => setMediaDuration((e.target as HTMLVideoElement).duration)}
-                  onWaiting={() => {
-                    setMediaBuffering(true);
-                    // If still buffering after 18s without progress → force reload
-                    if (stallTimerRef.current) clearTimeout(stallTimerRef.current);
-                    stallTimerRef.current = setTimeout(() => {
-                      if (mediaErrorCountRef.current < 3) {
-                        mediaErrorCountRef.current += 1;
-                        setMediaRetryKey(k => k + 1);
-                      }
-                      stallTimerRef.current = null;
-                    }, 18000);
+                  onLoadedMetadata={e => {
+                    const el = e.target as HTMLVideoElement;
+                    setMediaDuration(el.duration);
+                    // Restore seek position after error-retry remount
+                    if (savedTimeRef.current > 0 && savedTimeRef.current < el.duration) {
+                      el.currentTime = savedTimeRef.current;
+                      savedTimeRef.current = 0;
+                    }
                   }}
-                  onPlaying={() => {
-                    setMediaBuffering(false);
-                    if (stallTimerRef.current) { clearTimeout(stallTimerRef.current); stallTimerRef.current = null; }
-                  }}
+                  onWaiting={() => setMediaBuffering(true)}
+                  onPlaying={() => setMediaBuffering(false)}
                   onCanPlay={() => {
                     setMediaBuffering(false);
-                    if (stallTimerRef.current) { clearTimeout(stallTimerRef.current); stallTimerRef.current = null; }
                     videoRef.current?.play().catch(() => {});
                   }}
                   onError={() => {
-                    if (stallTimerRef.current) { clearTimeout(stallTimerRef.current); stallTimerRef.current = null; }
-                    // Retry on ANY error — progressive delay: 2s → 4s → 8s; then show download option
+                    // Retry with position restore — progressive delay: 2s → 4s → 8s
                     if (mediaErrorCountRef.current < 3) {
                       const delay = [2000, 4000, 8000][mediaErrorCountRef.current] ?? 8000;
+                      const saved = mediaCurTime;
                       mediaErrorCountRef.current += 1;
-                      setTimeout(() => setMediaRetryKey(k => k + 1), delay);
+                      setTimeout(() => { savedTimeRef.current = saved; setMediaRetryKey(k => k + 1); }, delay);
                     } else {
                       setMediaError(true);
                     }
                   }}
                 />
-                {/* Download fallback when video fails after all retries */}
+                {/* Error state — retry button, no download */}
                 {mediaError && (
-                  <div className="flex-shrink-0 flex flex-col items-center justify-center gap-2 py-4" style={{ background: 'rgba(0,0,0,0.9)', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
-                    <p className="text-red-400/80 text-xs">ভিডিওটি প্লে হচ্ছে না</p>
-                    <a href={streamUrl(viewerFile.id)} download={viewerFile.name}
-                      className="text-xs px-4 py-2 rounded-xl"
-                      style={{ background: 'rgba(0,212,170,0.15)', border: '1px solid rgba(0,212,170,0.3)', color: '#00d4aa' }}>
-                      ⬇️ ডাউনলোড করুন
-                    </a>
+                  <div className="flex-shrink-0 flex flex-col items-center justify-center gap-3 py-5"
+                    style={{ background:'rgba(0,0,0,0.92)', borderTop:'1px solid rgba(255,255,255,0.07)' }}>
+                    <p className="text-red-400/70 text-xs" style={{ fontFamily:"'Hind Siliguri',sans-serif" }}>ভিডিওটি লোড হচ্ছে না</p>
+                    <button
+                      onClick={() => { setMediaError(false); mediaErrorCountRef.current = 0; savedTimeRef.current = mediaCurTime; setMediaRetryKey(k => k + 1); }}
+                      className="text-xs px-5 py-2 rounded-xl active:scale-95 transition-transform"
+                      style={{ background:'rgba(0,212,170,0.12)', border:'1px solid rgba(0,212,170,0.3)', color:'#00d4aa' }}>
+                      🔄 আবার চেষ্টা করুন
+                    </button>
                   </div>
                 )}
-                {/* Prev / Next — only shown when multiple videos */}
+                {/* Prev / Next — shown when multiple videos */}
                 {videoFiles.length > 1 && (
                   <div className="flex-shrink-0 flex items-center justify-center gap-6 py-2" style={{ background:'rgba(0,0,0,0.85)' }}>
                     <button onClick={prevVideo} disabled={currentVideoIdx <= 0}
@@ -730,116 +733,213 @@ export default function FolderView() {
 
             {/* ── Audio Player ── */}
             {viewerType === 'audio' && (
-              <div className="flex-1 flex items-center justify-center p-4">
-                <div className="w-full max-w-md" style={{ background:'linear-gradient(145deg,rgba(20,10,40,0.95),rgba(10,5,25,0.98))', border:'1px solid rgba(180,100,255,0.25)', borderRadius:24, padding:'28px 20px', boxShadow:'0 20px 60px rgba(0,0,0,0.6), 0 0 40px rgba(140,80,255,0.08)', position:'relative' }}>
+              <div className="flex-1 flex items-center justify-center p-4" style={{ overflowY:'auto' }}>
 
-                  {/* Back button — top-left corner of card */}
-                  <button onClick={closeViewer}
-                    className="w-9 h-9 rounded-xl flex items-center justify-center text-white/70 hover:text-white transition-colors"
-                    style={{ position:'absolute', top:14, left:14, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)' }}>
-                    <ArrowLeft className="w-5 h-5" />
-                  </button>
+                {/* Hidden audio element — custom UI controls it entirely */}
+                <audio
+                  key={`a-${viewerFile.id}-${mediaRetryKey}`}
+                  ref={audioRef}
+                  src={streamUrl(viewerFile.id)}
+                  autoPlay
+                  preload="auto"
+                  muted={isMuted}
+                  onContextMenu={e => e.preventDefault()}
+                  onPlay={() => setIsPlaying(true)}
+                  onPause={() => setIsPlaying(false)}
+                  onEnded={() => { setIsPlaying(false); nextAudio(); }}
+                  onTimeUpdate={e => {
+                    const t = (e.target as HTMLAudioElement).currentTime;
+                    setMediaCurTime(t);
+                    savedTimeRef.current = t;
+                  }}
+                  onLoadedMetadata={e => {
+                    const el = e.target as HTMLAudioElement;
+                    setMediaDuration(el.duration);
+                    el.volume = audioVolume;
+                    el.muted = isMuted;
+                    if (savedTimeRef.current > 0 && savedTimeRef.current < el.duration) {
+                      el.currentTime = savedTimeRef.current;
+                      savedTimeRef.current = 0;
+                    }
+                  }}
+                  onWaiting={() => setMediaBuffering(true)}
+                  onPlaying={() => { setMediaBuffering(false); setIsPlaying(true); }}
+                  onCanPlay={() => {
+                    setMediaBuffering(false);
+                    audioRef.current?.play().catch(() => {});
+                  }}
+                  onError={() => {
+                    if (mediaErrorCountRef.current < 3) {
+                      const delay = [2000, 4000, 8000][mediaErrorCountRef.current] ?? 8000;
+                      const saved = mediaCurTime;
+                      mediaErrorCountRef.current += 1;
+                      setTimeout(() => { savedTimeRef.current = saved; setMediaRetryKey(k => k + 1); }, delay);
+                    } else {
+                      setMediaError(true);
+                    }
+                  }}
+                  style={{ display:'none' }}
+                />
 
-                  {/* Waveform animation */}
-                  <div style={{ display:'flex', alignItems:'flex-end', justifyContent:'center', gap:3, height:48, marginBottom:20 }}>
-                    {Array.from({ length: 24 }).map((_, i) => (
+                {/* Premium Audio Card */}
+                <div className="w-full max-w-sm" style={{
+                  background:'linear-gradient(145deg,rgba(18,8,38,0.98),rgba(8,4,22,0.99))',
+                  border:'1px solid rgba(168,85,247,0.22)',
+                  borderRadius:28,
+                  padding:'22px 20px 20px',
+                  boxShadow:'0 28px 70px rgba(0,0,0,0.75), 0 0 60px rgba(120,60,220,0.07)',
+                }}>
+
+                  {/* Top row: Back | track count | Mute */}
+                  <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:18 }}>
+                    <button onClick={closeViewer}
+                      className="w-9 h-9 rounded-xl flex items-center justify-center text-white/70 hover:text-white transition-colors"
+                      style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)' }}>
+                      <ArrowLeft className="w-5 h-5" />
+                    </button>
+                    <span style={{ color:'rgba(255,255,255,0.28)', fontSize:11 }}>
+                      {audioFiles.length > 1 ? `${currentAudioIdx + 1} / ${audioFiles.length}` : '🎵 AUDIO'}
+                    </span>
+                    <button
+                      onClick={() => { const m = !isMuted; setIsMuted(m); if (audioRef.current) audioRef.current.muted = m; }}
+                      className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors"
+                      style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', fontSize:16 }}>
+                      {isMuted ? '🔇' : audioVolume < 0.4 ? '🔉' : '🔊'}
+                    </button>
+                  </div>
+
+                  {/* Waveform — animates only when playing */}
+                  <div style={{ display:'flex', alignItems:'flex-end', justifyContent:'center', gap:2.5, height:46, marginBottom:18 }}>
+                    {Array.from({ length: 30 }).map((_, i) => (
                       <motion.div key={i}
-                        animate={{ height: [`${10 + Math.random() * 30}px`, `${18 + Math.random() * 28}px`, `${8 + Math.random() * 34}px`] }}
-                        transition={{ duration: 0.5 + Math.random() * 0.7, repeat: Infinity, repeatType:'mirror', delay: i * 0.05 }}
-                        style={{ width:3, borderRadius:2, background:`linear-gradient(180deg,rgba(200,120,255,0.9),rgba(100,60,200,0.5))`, minHeight:6 }}
+                        animate={isPlaying
+                          ? { height:[`${7+(i%7)*4}px`,`${18+(i%5)*5}px`,`${5+(i%9)*3}px`,`${14+(i%6)*4}px`] }
+                          : { height:'4px' }}
+                        transition={{ duration:0.5+(i%4)*0.15, repeat:isPlaying?Infinity:0, repeatType:'mirror', delay:i*0.035 }}
+                        style={{ width:2.5, borderRadius:2, minHeight:4,
+                          background:`linear-gradient(180deg,rgba(200,120,255,${isPlaying?0.9:0.25}),rgba(100,50,200,${isPlaying?0.5:0.1}))`,
+                          transition:'background 0.4s ease' }}
                       />
                     ))}
                   </div>
 
-                  {/* Icon */}
-                  <div style={{ display:'flex', alignItems:'center', justifyContent:'center', marginBottom:14 }}>
-                    <div style={{ width:64, height:64, borderRadius:16, background:'linear-gradient(135deg,rgba(160,80,255,0.4),rgba(80,40,160,0.6))', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 0 24px rgba(160,80,255,0.3)', border:'1px solid rgba(200,120,255,0.2)' }}>
+                  {/* Album icon — glows when playing */}
+                  <div style={{ display:'flex', justifyContent:'center', marginBottom:14 }}>
+                    <div style={{
+                      width:70, height:70, borderRadius:18,
+                      background:isPlaying
+                        ?'linear-gradient(135deg,rgba(168,85,247,0.65),rgba(109,40,217,0.85))'
+                        :'linear-gradient(135deg,rgba(100,50,180,0.35),rgba(50,20,100,0.55))',
+                      display:'flex', alignItems:'center', justifyContent:'center',
+                      boxShadow:isPlaying?'0 0 36px rgba(168,85,247,0.45)':'0 0 14px rgba(80,40,140,0.2)',
+                      border:'1px solid rgba(200,120,255,0.2)',
+                      transition:'all 0.45s ease',
+                    }}>
                       <span style={{ fontSize:32 }}>🎵</span>
                     </div>
                   </div>
 
                   {/* Title */}
-                  <p style={{ color:'rgba(255,255,255,0.9)', textAlign:'center', fontWeight:600, fontSize:13, marginBottom:16, fontFamily:"'Hind Siliguri',sans-serif", overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                  <p style={{
+                    color:'rgba(255,255,255,0.88)', textAlign:'center', fontWeight:600, fontSize:14,
+                    marginBottom:18, fontFamily:"'Hind Siliguri',sans-serif",
+                    overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', padding:'0 6px',
+                  }}>
                     {viewerFile.name.replace(/\.[^.]+$/, '')}
                   </p>
 
-                  {/* Audio element */}
-                  <audio
-                    key={`a-${viewerFile.id}-${mediaRetryKey}`}
-                    ref={audioRef}
-                    src={streamUrl(viewerFile.id)}
-                    controls
-                    autoPlay
-                    preload="auto"
-                    controlsList="nodownload noplaybackrate"
-                    style={{ width:'100%', borderRadius:10, accentColor:'#a855f7', marginBottom:12 }}
-                    onContextMenu={e => e.preventDefault()}
-                    onTimeUpdate={e => {
-                      setMediaCurTime((e.target as HTMLAudioElement).currentTime);
-                      if (stallTimerRef.current) { clearTimeout(stallTimerRef.current); stallTimerRef.current = null; }
+                  {/* Progress bar — clickable to seek */}
+                  <div
+                    onClick={e => {
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                      const t = ratio * mediaDuration;
+                      if (audioRef.current) { audioRef.current.currentTime = t; setMediaCurTime(t); }
                     }}
-                    onLoadedMetadata={e => setMediaDuration((e.target as HTMLAudioElement).duration)}
-                    onWaiting={() => {
-                      setMediaBuffering(true);
-                      if (stallTimerRef.current) clearTimeout(stallTimerRef.current);
-                      stallTimerRef.current = setTimeout(() => {
-                        if (mediaErrorCountRef.current < 3) { mediaErrorCountRef.current += 1; setMediaRetryKey(k => k + 1); }
-                        stallTimerRef.current = null;
-                      }, 18000);
-                    }}
-                    onPlaying={() => {
-                      setMediaBuffering(false);
-                      if (stallTimerRef.current) { clearTimeout(stallTimerRef.current); stallTimerRef.current = null; }
-                    }}
-                    onCanPlay={() => {
-                      setMediaBuffering(false);
-                      if (stallTimerRef.current) { clearTimeout(stallTimerRef.current); stallTimerRef.current = null; }
-                      audioRef.current?.play().catch(() => {});
-                    }}
-                    onError={() => {
-                      if (stallTimerRef.current) { clearTimeout(stallTimerRef.current); stallTimerRef.current = null; }
-                      // Retry on ANY error — progressive delay: 2s → 4s → 8s; then show download option
-                      if (mediaErrorCountRef.current < 3) {
-                        const delay = [2000, 4000, 8000][mediaErrorCountRef.current] ?? 8000;
-                        mediaErrorCountRef.current += 1;
-                        setTimeout(() => setMediaRetryKey(k => k + 1), delay);
-                      } else {
-                        setMediaError(true);
-                      }
-                    }}
-                  />
+                    style={{ width:'100%', height:5, borderRadius:3, background:'rgba(255,255,255,0.08)', cursor:'pointer', marginBottom:7, overflow:'hidden' }}>
+                    <div style={{
+                      height:'100%', borderRadius:3,
+                      width:mediaDuration>0?`${(mediaCurTime/mediaDuration)*100}%`:'0%',
+                      background:'linear-gradient(90deg,#a855f7,#c084fc)',
+                      transition:'width 0.25s linear',
+                    }}/>
+                  </div>
 
-                  {/* Download fallback when audio fails after all retries */}
+                  {/* Time */}
+                  <div style={{ display:'flex', justifyContent:'space-between', marginBottom:20 }}>
+                    <span style={{ color:'rgba(255,255,255,0.32)', fontSize:11 }}>{fmtTime(mediaCurTime)}</span>
+                    <span style={{ color:'rgba(255,255,255,0.32)', fontSize:11 }}>{fmtTime(mediaDuration)}</span>
+                  </div>
+
+                  {/* Controls: Prev | Play/Pause | Next */}
+                  <div style={{ display:'flex', alignItems:'center', justifyContent:'center', gap:30, marginBottom:20 }}>
+                    <button onClick={prevAudio} disabled={currentAudioIdx <= 0}
+                      className="active:scale-90 transition-transform"
+                      style={{ color:currentAudioIdx<=0?'rgba(255,255,255,0.13)':'rgba(192,100,255,0.85)', fontSize:28, lineHeight:1, background:'none', border:'none', cursor:'pointer', padding:0 }}>⏮</button>
+
+                    {/* Big Play/Pause */}
+                    <button
+                      onClick={() => { if (!audioRef.current) return; isPlaying?audioRef.current.pause():audioRef.current.play().catch(()=>{}); }}
+                      className="active:scale-95 transition-transform"
+                      style={{
+                        width:68, height:68, borderRadius:'50%', flexShrink:0,
+                        background:'linear-gradient(135deg,#a855f7,#7c3aed)',
+                        border:'none', cursor:'pointer',
+                        display:'flex', alignItems:'center', justifyContent:'center',
+                        boxShadow:isPlaying?'0 0 40px rgba(168,85,247,0.6)':'0 0 22px rgba(109,40,217,0.4)',
+                        transition:'box-shadow 0.3s ease',
+                      }}>
+                      {mediaBuffering ? (
+                        <div className="w-6 h-6 rounded-full border-2 border-white/30 border-t-white animate-spin"/>
+                      ) : isPlaying ? (
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
+                          <rect x="6" y="4" width="4" height="16" rx="1.5"/>
+                          <rect x="14" y="4" width="4" height="16" rx="1.5"/>
+                        </svg>
+                      ) : (
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="white" style={{ marginLeft:3 }}>
+                          <polygon points="5,3 20,12 5,21"/>
+                        </svg>
+                      )}
+                    </button>
+
+                    <button onClick={nextAudio} disabled={currentAudioIdx>=audioFiles.length-1}
+                      className="active:scale-90 transition-transform"
+                      style={{ color:currentAudioIdx>=audioFiles.length-1?'rgba(255,255,255,0.13)':'rgba(192,100,255,0.85)', fontSize:28, lineHeight:1, background:'none', border:'none', cursor:'pointer', padding:0 }}>⏭</button>
+                  </div>
+
+                  {/* Volume slider */}
+                  <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                    <span style={{ color:'rgba(255,255,255,0.3)', fontSize:15, flexShrink:0, lineHeight:1 }}>
+                      {isMuted||audioVolume===0?'🔇':audioVolume<0.4?'🔉':'🔊'}
+                    </span>
+                    <input
+                      type="range" min="0" max="1" step="0.05"
+                      value={isMuted?0:audioVolume}
+                      onChange={e => {
+                        const v = parseFloat(e.target.value);
+                        setAudioVolume(v);
+                        if (audioRef.current) {
+                          audioRef.current.volume = v;
+                          if (v>0&&isMuted) { setIsMuted(false); audioRef.current.muted=false; }
+                          if (v===0) { setIsMuted(true); audioRef.current.muted=true; }
+                        }
+                      }}
+                      style={{ flex:1, accentColor:'#a855f7', height:4, cursor:'pointer' }}
+                    />
+                  </div>
+
+                  {/* Error state */}
                   {mediaError && (
-                    <div className="flex flex-col items-center gap-2 py-3 mb-2">
-                      <p style={{ color: 'rgba(255,80,80,0.8)', fontSize: 11, textAlign: 'center', fontFamily:"'Hind Siliguri',sans-serif" }}>অডিওটি প্লে হচ্ছে না</p>
-                      <a href={streamUrl(viewerFile.id)} download={viewerFile.name}
-                        style={{ fontSize: 11, color: '#00d4aa', padding: '6px 16px', borderRadius: 10, background: 'rgba(0,212,170,0.15)', border: '1px solid rgba(0,212,170,0.3)' }}>
-                        ⬇️ ডাউনলোড করুন
-                      </a>
+                    <div style={{ marginTop:16, textAlign:'center' }}>
+                      <p style={{ color:'rgba(255,80,80,0.75)', fontSize:11, fontFamily:"'Hind Siliguri',sans-serif", marginBottom:8 }}>অডিওটি লোড হচ্ছে না</p>
+                      <button
+                        onClick={() => { setMediaError(false); mediaErrorCountRef.current=0; savedTimeRef.current=0; setMediaRetryKey(k=>k+1); }}
+                        style={{ fontSize:11, color:'#00d4aa', padding:'7px 18px', borderRadius:10, background:'rgba(0,212,170,0.13)', border:'1px solid rgba(0,212,170,0.3)', cursor:'pointer' }}>
+                        🔄 আবার চেষ্টা করুন
+                      </button>
                     </div>
                   )}
-
-                  {/* Progress bar */}
-                  <div className="w-full h-1 rounded-full mb-2 overflow-hidden" style={{ background:'rgba(255,255,255,0.1)' }}>
-                    <div className="h-full rounded-full transition-all duration-300"
-                      style={{ width: mediaDuration > 0 ? `${(mediaCurTime / mediaDuration) * 100}%` : '0%', background:'linear-gradient(90deg,#a855f7,#c084fc)' }} />
-                  </div>
-
-                  {/* Timestamp + prev/next */}
-                  <div className="flex items-center justify-between mt-1">
-                    <span style={{ color:'rgba(255,255,255,0.4)', fontSize:11 }}>{fmtTime(mediaCurTime)} / {fmtTime(mediaDuration)}</span>
-                    {audioFiles.length > 1 && (
-                      <div className="flex gap-2">
-                        <button onClick={prevAudio} disabled={currentAudioIdx <= 0}
-                          className="active:scale-90 transition-transform"
-                          style={{ color: currentAudioIdx <= 0 ? 'rgba(255,255,255,0.15)' : 'rgba(200,120,255,0.8)', fontSize:20, padding:'0 8px' }}>⏮</button>
-                        <button onClick={nextAudio} disabled={currentAudioIdx >= audioFiles.length - 1}
-                          className="active:scale-90 transition-transform"
-                          style={{ color: currentAudioIdx >= audioFiles.length - 1 ? 'rgba(255,255,255,0.15)' : 'rgba(200,120,255,0.8)', fontSize:20, padding:'0 8px' }}>⏭</button>
-                      </div>
-                    )}
-                  </div>
                 </div>
               </div>
             )}
