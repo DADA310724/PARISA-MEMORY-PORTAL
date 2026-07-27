@@ -275,6 +275,21 @@ export default function FolderView() {
   // Reset zoom when image changes
   useEffect(() => { setImgScale(1); setImgOffset({ x: 0, y: 0 }); }, [viewerIndex]);
 
+  // Auto-play trigger: attempt play 350ms after viewer opens.
+  // Handles cases where autoPlay is blocked by browser policy or onCanPlay fires before ref is ready.
+  useEffect(() => {
+    if (!viewerOpen) return;
+    if (viewerType !== 'audio' && viewerType !== 'video') return;
+    const timer = setTimeout(() => {
+      if (viewerType === 'audio' && audioRef.current && audioRef.current.paused && !mediaError) {
+        audioRef.current.play().catch(() => {});
+      } else if (viewerType === 'video' && videoRef.current && videoRef.current.paused && !mediaError) {
+        videoRef.current.play().catch(() => {});
+      }
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [viewerFile?.id, mediaRetryKey, viewerType, viewerOpen, mediaError]);
+
   const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 2) {
       panRef.current.active = false;
@@ -670,7 +685,8 @@ export default function FolderView() {
                   playsInline
                   autoPlay
                   preload="auto"
-                  controlsList="nodownload noremoteplayback"
+                  controlsList="nodownload noremoteplayback nofullscreen"
+                  disablePictureInPicture
                   style={{ width:'100%', height:'100%', flex:1, objectFit:'contain', display:'block', background:'#000' }}
                   onContextMenu={e => e.preventDefault()}
                   onTimeUpdate={e => {

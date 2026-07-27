@@ -229,7 +229,14 @@ driveRouter.get("/prefetch/:id", async (req: Request, res: Response) => {
 driveRouter.get("/stream/:id", async (req: Request, res: Response) => {
   const id = String(req.params["id"]);
   try {
-    const token = await getAccessToken();
+    // Cold-start resilience: if token not ready yet (secrets injecting), wait 2s and retry once
+    let token: string;
+    try {
+      token = await getAccessToken();
+    } catch {
+      await new Promise(r => setTimeout(r, 2000));
+      token = await getAccessToken();
+    }
     const driveUrl = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(id)}?alt=media&acknowledgeAbuse=true`;
 
     const reqHeaders: Record<string, string> = {

@@ -112,15 +112,30 @@ export async function generateFirebaseCustomToken(uid: string): Promise<string> 
   return `${signingInput}.${signature}`;
 }
 
-/** Pre-warm both tokens so first requests are instant */
+/**
+ * Pre-warm both tokens so first requests are instant.
+ * Retries up to 5 times (2s → 4s → 6s → 8s → 10s) to handle
+ * Replit's cold-start delay where secrets inject after the process starts.
+ */
 export async function prewarmTokens(): Promise<void> {
-  try {
-    await Promise.all([
-      getOAuthToken(SCOPE_DRIVE),
-      getOAuthToken(SCOPE_FIREBASE_DB),
-    ]);
-    console.log("✅ Google OAuth tokens pre-warmed (Drive + Firebase DB)");
-  } catch (e) {
-    console.warn("⚠️  Token pre-warm failed (will retry on first request):", String(e));
-  }
+  let attempt = 0;
+  const tryWarm = async (): Promise<void> => {
+    attempt++;
+    try {
+      await Promise.all([
+        getOAuthToken(SCOPE_DRIVE),
+        getOAuthToken(SCOPE_FIREBASE_DB),
+      ]);
+      console.log(`✅ Google OAuth tokens pre-warmed (attempt ${attempt})`);
+    } catch (e) {
+      if (attempt < 5) {
+        const delayMs = attempt * 2000;
+        console.warn(`⚠️  Token pre-warm attempt ${attempt} failed, retrying in ${delayMs / 1000}s:`, String(e));
+        setTimeout(() => { void tryWarm(); }, delayMs);
+      } else {
+        console.warn("⚠️  Token pre-warm gave up after 5 attempts. Will retry on first API request.");
+      }
+    }
+  };
+  void tryWarm();
 }

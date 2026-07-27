@@ -369,6 +369,11 @@ export default function AdminSettings() {
   const [editingFolder, setEditingFolder] = useState<string | null>(null);
   const [pwInput, setPwInput] = useState("");
   const [hintInput, setHintInput] = useState("");
+  // Custom folder lock (for sub-folders and any future folder by ID)
+  const [customLockId, setCustomLockId] = useState("");
+  const [customLockName, setCustomLockName] = useState("");
+  const [customLockPw, setCustomLockPw] = useState("");
+  const [customLockHint, setCustomLockHint] = useState("");
 
   const [driveReady, setDriveReady] = useState<boolean | null>(null);
   const [driveChecking, setDriveChecking] = useState(false);
