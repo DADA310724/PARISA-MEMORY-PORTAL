@@ -369,11 +369,9 @@ export default function AdminSettings() {
   const [editingFolder, setEditingFolder] = useState<string | null>(null);
   const [pwInput, setPwInput] = useState("");
   const [hintInput, setHintInput] = useState("");
-  // Custom folder lock (for sub-folders and any future folder by ID)
-  const [customLockId, setCustomLockId] = useState("");
-  const [customLockName, setCustomLockName] = useState("");
-  const [customLockPw, setCustomLockPw] = useState("");
-  const [customLockHint, setCustomLockHint] = useState("");
+  // Sub-folder passwords — auto-loaded when passwords tab opens
+  const [pwSubFolders, setPwSubFolders] = useState<Array<{fid: string; label: string}>>([]);
+  const [pwSubLoading, setPwSubLoading] = useState(false);
 
   const [driveReady, setDriveReady] = useState<boolean | null>(null);
   const [driveChecking, setDriveChecking] = useState(false);
@@ -419,6 +417,25 @@ export default function AdminSettings() {
       if (cfgResp.driveParentFolderId) setParentFolderId(cfgResp.driveParentFolderId);
     }).finally(() => setDriveChecking(false));
   }, [tab]);
+
+  // Passwords tab: load sub-folder buttons for all drive folders automatically
+  useEffect(() => {
+    if (tab !== "passwords") return;
+    const driveFolderBtns = buttons.filter(b => b.link_type === "drive_folder" && b.drive_folder_id && b.id);
+    if (driveFolderBtns.length === 0) { setPwSubFolders([]); return; }
+    setPwSubLoading(true);
+    Promise.all(
+      driveFolderBtns.map(async (btn) => {
+        try {
+          const subs = await getSubButtons(btn.id);
+          return subs
+            .filter(s => s.link_type === "drive_folder" && s.drive_folder_id)
+            .map(s => ({ fid: s.drive_folder_id!, label: `${btn.label} › ${s.label}` }));
+        } catch { return []; }
+      })
+    ).then(results => setPwSubFolders(results.flat()))
+     .finally(() => setPwSubLoading(false));
+  }, [tab, buttons]);
 
   const loadAll = async () => {
     setLoading(true);
@@ -1133,11 +1150,16 @@ export default function AdminSettings() {
             {/* Passwords Tab */}
             {tab === "passwords" && (
               <div className="space-y-3">
-                <p className="text-white/40 text-xs px-1 mb-3" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>যেকোনো ফোল্ডারে পাসওয়ার্ড সেট করুন।</p>
-                {buttons
-                  .filter(b => b.link_type === "drive_folder" && b.drive_folder_id)
-                  .map(folder => {
-                    const fid = folder.drive_folder_id!;
+                <p className="text-white/40 text-xs px-1 mb-3" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
+                  {pwSubLoading ? "সাব-ফোল্ডার লোড হচ্ছে..." : "যেকোনো ফোল্ডারে পাসওয়ার্ড সেট করুন।"}
+                </p>
+                {/* Combined list: main drive folders + sub-folders that have drive_folder_id */}
+                {[
+                  ...buttons
+                    .filter(b => b.link_type === "drive_folder" && b.drive_folder_id)
+                    .map(b => ({ fid: b.drive_folder_id!, label: b.label })),
+                  ...pwSubFolders,
+                ].map(({ fid, label }) => {
                     const hasPw = !!folderPasswords[fid];
                     const isEditing = editingFolder === fid;
                     return (
@@ -1146,7 +1168,7 @@ export default function AdminSettings() {
                         <div className="flex items-center gap-3 mb-1">
                           <span className="text-xl">{hasPw ? '🔒' : '🔓'}</span>
                           <div className="flex-1 min-w-0">
-                            <p className="text-white text-sm font-semibold">{folder.label}</p>
+                            <p className="text-white text-sm font-semibold">{label}</p>
                             <p className="text-white/30 text-xs truncate">{hasPw ? `পাসওয়ার্ড সেট · Hint: ${folderPasswords[fid]?.hint || '—'}` : 'পাসওয়ার্ড নেই'}</p>
                           </div>
                           <button onClick={() => {
@@ -1173,7 +1195,7 @@ export default function AdminSettings() {
                                   className="flex-1 py-2 rounded-lg text-xs text-red-400"
                                   style={{ background: 'rgba(255,80,80,0.08)', border: '1px solid rgba(255,80,80,0.2)' }}>🗑️ সরান</button>
                               )}
-                              <button onClick={() => saveFolderPassword(fid, folder.label)} disabled={saving}
+                              <button onClick={() => saveFolderPassword(fid, label)} disabled={saving}
                                 className="flex-1 py-2 rounded-lg text-xs font-bold btn-cyan disabled:opacity-50">
                                 {saving ? "..." : "✅ সেভ"}
                               </button>
