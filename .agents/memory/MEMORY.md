@@ -1,3 +1,4 @@
-- [Parisa Portal setup](parisa-portal-setup.md) — structure, deployment, a legacy unused `artifacts/portal` folder, and the risk of cross-app pushes wrongly triggering deletion of the real frontend.
-- [Parisa Portal features done](parisa-portal-features.md) — session 2 fixes: PARISA/RUBEL voice, no confirm dialogs, folder_files Firebase AI context, saveAiConfig fix, dynamic redirect URI, passwords tab uses live buttons, audio nodownload, Glass theme, .env.example.
-- [Mandatory pre-push rules](mandatory-pre-push-rules.md) — ⛔ REQUIRED before every git push: live-check drive/lock/stream, build check, changed-files audit, version bump. User-mandated, no exceptions.
+- [Parisa Portal setup](parisa-portal-setup.md) — structure, Render/Railway deployment, legacy portal folder risk, cross-app push risk.
+- [Parisa Portal features done](parisa-portal-features.md) — session 2-6 fixes: audio player, video no-download, lock system, passwords tab sub-folders, V-23.
+- [Mandatory pre-push rules](mandatory-pre-push-rules.md) — ⛔ REQUIRED before every git push: drive/lock/stream live-check, both builds clean, changed-files audit, version bump, workflow restart rule, Render/Railway secret rule.
+- [Do-No-Harm Rules](do-no-harm-rules.md) — ⛔ CRITICAL: what NEVER to break (audio UI, video no-download, lock logic, Firebase auth), how to diagnose audio/video failure WITHOUT touching code first, Render/Railway deployment facts.

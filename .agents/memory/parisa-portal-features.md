@@ -1,6 +1,6 @@
 ---
 name: Parisa Portal features done
-description: Session 2-4 fixes — what was done and what to watch out for
+description: Session 2-6 fixes — what was done and what to watch out for
 ---
 
 ## Session 2 fixes (from prior summary)
@@ -77,11 +77,6 @@ openFolder, navigateBreadcrumb, goBack now ALL do:
 ### Version
 V-20 → V-21
 
-### GitHub state
-Latest commits on `DADA310724/PARISA-MEMORY` main:
-- `26efec9` — SubFolderView lock removed
-- `7c2112d` — V-21: audio player + video fix + passwords tab fix
-
 ## Session 5 (2026-07-25) — V-22
 
 ### Root cause of both reported bugs (lock + audio/video)
@@ -99,3 +94,20 @@ After restart: `✅ Google OAuth tokens pre-warmed (Drive + Firebase DB)` — bo
 
 ### Version
 V-21 → V-22
+
+## Session 6 (2026-07-27) — V-23
+
+### Passwords tab: sub-folders now show automatically
+- **Problem:** Passwords tab filter `buttons.filter(b => b.link_type === "drive_folder" && b.drive_folder_id)` only showed main dashboard buttons. Sub-folders (e.g. "Videos › MARRIED VIDEO") were invisible — impossible to lock them from UI.
+- **Fix:** Added `pwSubFolders` state + useEffect that loads `getSubButtons()` for ALL drive folder buttons when passwords tab opens. Combined list = main folders + all sub-folders with drive_folder_id.
+- **UI:** ZERO design change. Same card style, same lock/unlock/set/change/remove flow. Just more rows automatically appear.
+- **Future-proof:** Any new sub-folder added via Admin → Folders → sub-buttons will automatically appear in Passwords tab after navigating to that folder once.
+
+### TypeScript fix: AppContext.tsx
+- `error.code` → `(error as {code?: string}).code` — pre-existing TS strict error, not a runtime issue.
+
+### Removed dead states
+- Removed `customLockId`, `customLockName`, `customLockPw`, `customLockHint` states from AdminSettings.tsx — added by previous agent but never wired to any UI (agent ran out of credits before finishing).
+
+### Version
+V-22 → V-23

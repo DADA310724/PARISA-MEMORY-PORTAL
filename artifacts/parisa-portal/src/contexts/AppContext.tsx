@@ -191,7 +191,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           }
         }, (error) => {
           // Firebase permission denied (e.g. Anonymous Auth disabled or rules too strict)
-          console.error("Firebase buttons read failed:", error.code, error.message);
+          console.error("Firebase buttons read failed:", (error as {code?: string}).code, (error as Error).message);
           setLoading(false);
         });
       } catch (e) {
