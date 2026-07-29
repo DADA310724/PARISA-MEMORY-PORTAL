@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { ArrowLeft, Folder, ChevronRight } from "lucide-react";
 import { useApp, type SubButton } from "@/contexts/AppContext";
 import { AppLogo } from "@/components/AppLogo";
+import { api } from "@/lib/api";
 
 const BTN_COLOR: Record<string, string> = {
   whatsapp:  "#25d366",
@@ -38,6 +39,55 @@ export default function SubFolderView() {
 
   const parentBtn = buttons.find((b) => b.id === buttonId);
   const parentColor = BTN_COLOR[parentBtn?.logo_key ?? parentBtn?.icon ?? "default"] ?? BTN_COLOR.default;
+
+  // ── Folder lock state ────────────────────────────────────────────────────────
+  const [locked, setLocked] = useState(true);
+  const [lockChecking, setLockChecking] = useState(true);
+  const [lockHint, setLockHint] = useState<string | null>(null);
+  const [lockInput, setLockInput] = useState("");
+  const [lockError, setLockError] = useState("");
+
+  const checkLock = useCallback(async (folderId: string) => {
+    setLockChecking(true);
+    const ctrl = new AbortController();
+    const tid = setTimeout(() => ctrl.abort(), 5000);
+    try {
+      const r = await api<{ locked: boolean; hint?: string | null }>(
+        `/folder-lock/${encodeURIComponent(folderId)}`,
+        { signal: ctrl.signal },
+      );
+      if (r?.locked) { setLockHint(r.hint ?? null); setLocked(true); }
+      else { setLocked(false); }
+    } catch {
+      setLocked(false); // if server unreachable, show content (admin is always authed)
+    } finally {
+      clearTimeout(tid);
+      setLockChecking(false);
+    }
+  }, []);
+
+  const unlockFolder = async () => {
+    const folderId = parentBtn?.drive_folder_id;
+    if (!folderId || !lockInput.trim()) return;
+    try {
+      const r = await api<{ ok: boolean }>(`/folder-lock/${encodeURIComponent(folderId)}/verify`, {
+        method: "POST",
+        body: { password: lockInput.trim() },
+      });
+      if (r?.ok) { setLocked(false); setLockInput(""); setLockError(""); }
+      else setLockError("পাসওয়ার্ড ভুল! আবার চেষ্টা করুন।");
+    } catch {
+      setLockError("সংযোগ সমস্যা। আবার চেষ্টা করুন।");
+    }
+  };
+
+  // Check lock as soon as parentBtn is available
+  useEffect(() => {
+    if (appLoading) return;
+    const fid = parentBtn?.drive_folder_id;
+    if (fid) { checkLock(fid); }
+    else { setLocked(false); setLockChecking(false); }
+  }, [appLoading, parentBtn?.drive_folder_id, checkLock]);
 
   // ── Load sub-buttons once app is ready ─────────────────────────────────────
   useEffect(() => {
@@ -84,6 +134,41 @@ export default function SubFolderView() {
     }
   }
 
+  // ── Lock screen ─────────────────────────────────────────────────────────────
+  if (!lockChecking && locked) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <div className="sticky top-0 z-20" style={{ background:'rgba(10,14,31,0.92)', backdropFilter:'blur(20px)', borderBottom:'1px solid rgba(255,255,255,0.05)' }}>
+          <div className="flex items-center gap-2 px-3 py-3">
+            <button onClick={() => window.history.back()}
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-white/70 hover:text-white transition-colors flex-shrink-0"
+              style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <span className="flex-1 text-center text-sm font-bold neon-cyan" style={{ fontFamily:"'Exo 2',sans-serif" }}>{parentBtn?.label ?? "Folder"}</span>
+            <div className="w-9" />
+          </div>
+        </div>
+        <div className="flex-1 flex items-center justify-center p-6">
+          <motion.div initial={{ opacity:0, scale:0.9 }} animate={{ opacity:1, scale:1 }} className="w-full max-w-sm">
+            <div className="text-center mb-6">
+              <div className="text-5xl mb-3">🔒</div>
+              <h2 className="text-white font-bold text-lg" style={{ fontFamily:"'Exo 2',sans-serif" }}>পাসওয়ার্ড সুরক্ষিত</h2>
+              {lockHint && <p className="text-white/40 text-xs mt-2">Hint: {lockHint}</p>}
+            </div>
+            <input type="password" value={lockInput} onChange={e => setLockInput(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && unlockFolder()}
+              placeholder="পাসওয়ার্ড দিন"
+              className="w-full bg-white/5 border border-cyan-500/25 rounded-xl px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-cyan-400/70 mb-3 text-center text-lg tracking-widest"
+            />
+            {lockError && <p className="text-red-400 text-xs text-center mb-3">{lockError}</p>}
+            <button onClick={unlockFolder} className="w-full py-3 rounded-xl btn-cyan font-bold uppercase" style={{ fontFamily:"'Exo 2',sans-serif" }}>UNLOCK 🔓</button>
+          </motion.div>
+        </div>
+      </div>
+    );
+  }
+
   // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <div className="min-h-screen flex flex-col relative">
@@ -111,7 +196,7 @@ export default function SubFolderView() {
       </div>
 
       {/* Loading spinner overlay */}
-      {(appLoading || loading) && (
+      {(appLoading || loading || lockChecking) && (
         <div className="fixed inset-0 flex items-center justify-center"
           style={{ background: "rgba(10,14,31,0.97)", zIndex: 50 }}>
           <div className="flex flex-col items-center gap-3">
