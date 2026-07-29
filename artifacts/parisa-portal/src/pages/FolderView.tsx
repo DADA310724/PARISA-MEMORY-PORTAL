@@ -236,7 +236,7 @@ export default function FolderView() {
     setViewerFile(f);
     setMediaCurTime(0);
     setMediaDuration(0);
-    setMediaBuffering(false);
+    setMediaBuffering(true);   // show spinner immediately on tap — cleared by onCanPlay/onPlaying
     setIsPlaying(false);
     setMediaRetryKey(k => k + 1);
     mediaErrorCountRef.current = 0;
@@ -710,9 +710,13 @@ export default function FolderView() {
                     videoRef.current?.play().catch(() => {});
                   }}
                   onError={() => {
-                    // Auto-retry forever with exponential backoff (2s → 4s → 8s → 15s → 15s…)
+                    // Show spinner immediately — user always sees feedback, never a frozen screen
+                    setMediaBuffering(true);
+                    // Retry with fast first attempt (500ms) then gradual backoff
+                    // Server has its own 4-retry cold-start loop, so most streams succeed by 2nd client attempt
                     const count = mediaErrorCountRef.current;
-                    const delay = Math.min(2000 * Math.pow(2, count), 15000);
+                    const retryDelays = [500, 1500, 3000, 6000, 15000];
+                    const delay = retryDelays[Math.min(count, retryDelays.length - 1)];
                     const saved = mediaCurTime;
                     mediaErrorCountRef.current = count + 1;
                     setTimeout(() => { savedTimeRef.current = saved; setMediaRetryKey(k => k + 1); }, delay);
@@ -770,9 +774,12 @@ export default function FolderView() {
                     audioRef.current?.play().catch(() => {});
                   }}
                   onError={() => {
-                    // Auto-retry forever with exponential backoff (2s → 4s → 8s → 15s → 15s…)
+                    // Show spinner immediately — user always sees feedback, never a frozen screen
+                    setMediaBuffering(true);
+                    // Retry with fast first attempt (500ms) then gradual backoff
                     const count = mediaErrorCountRef.current;
-                    const delay = Math.min(2000 * Math.pow(2, count), 15000);
+                    const retryDelays = [500, 1500, 3000, 6000, 15000];
+                    const delay = retryDelays[Math.min(count, retryDelays.length - 1)];
                     const saved = mediaCurTime;
                     mediaErrorCountRef.current = count + 1;
                     setTimeout(() => { savedTimeRef.current = saved; setMediaRetryKey(k => k + 1); }, delay);
