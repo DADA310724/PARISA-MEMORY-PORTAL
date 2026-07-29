@@ -1153,13 +1153,9 @@ export default function AdminSettings() {
                 <p className="text-white/40 text-xs px-1 mb-3" style={{ fontFamily: "'Hind Siliguri', sans-serif" }}>
                   {pwSubLoading ? "সাব-ফোল্ডার লোড হচ্ছে..." : "যেকোনো ফোল্ডারে পাসওয়ার্ড সেট করুন।"}
                 </p>
-                {/* Combined list: main drive folders + sub-folders that have drive_folder_id */}
-                {[
-                  ...buttons
-                    .filter(b => b.link_type === "drive_folder" && b.drive_folder_id)
-                    .map(b => ({ fid: b.drive_folder_id!, label: b.label })),
-                  ...pwSubFolders,
-                ].map(({ fid, label }) => {
+                {/* Helper to render a single folder password card */}
+                {(() => {
+                  const renderCard = ({ fid, label }: { fid: string; label: string }) => {
                     const hasPw = !!folderPasswords[fid];
                     const isEditing = editingFolder === fid;
                     return (
@@ -1204,7 +1200,34 @@ export default function AdminSettings() {
                         )}
                       </div>
                     );
-                  })}
+                  };
+
+                  const mainFolders = buttons
+                    .filter(b => b.link_type === "drive_folder" && b.drive_folder_id)
+                    .map(b => ({ fid: b.drive_folder_id!, label: b.label }));
+
+                  return (
+                    <>
+                      {/* ── Main Folders Section ── */}
+                      <p className="text-white/50 text-xs font-semibold px-1 pt-1 pb-1" style={{ fontFamily: "'Hind Siliguri', sans-serif", letterSpacing: '0.03em' }}>
+                        📁 মেইন ফোল্ডার
+                      </p>
+                      {mainFolders.map(renderCard)}
+
+                      {/* ── Sub-folders Section ── */}
+                      {pwSubFolders.length > 0 && (
+                        <>
+                          <div className="pt-2">
+                            <p className="text-white/50 text-xs font-semibold px-1 pb-1" style={{ fontFamily: "'Hind Siliguri', sans-serif", letterSpacing: '0.03em' }}>
+                              📂 সাব-ফোল্ডার
+                            </p>
+                          </div>
+                          {pwSubFolders.map(renderCard)}
+                        </>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             )}
 

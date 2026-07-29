@@ -31,6 +31,8 @@ folderLockRouter.get("/", async (_req: Request, res: Response): Promise<void> =>
 folderLockRouter.get("/:folderId", async (req: Request, res: Response): Promise<void> => {
   const folderId = req.params["folderId"] as string;
   const dbUrl = DB_URL();
+  // Prevent browser from caching lock state — new locks must always be seen immediately
+  res.setHeader("Cache-Control", "no-store");
   if (!dbUrl) { res.json({ locked: false }); return; }
   try {
     const r = await fetch(fbUrl(dbUrl, `folder_passwords/${encodeURIComponent(folderId)}`));

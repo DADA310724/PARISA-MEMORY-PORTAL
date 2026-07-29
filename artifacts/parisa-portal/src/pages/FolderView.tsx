@@ -50,7 +50,7 @@ export default function FolderView() {
   const [viewerType, setViewerType] = useState<"image"|"video"|"audio"|"html"|"pdf"|"text"|"generic">("image");
   const [viewerFile, setViewerFile] = useState<DriveFile | null>(null);
   const [mediaRetryKey, setMediaRetryKey] = useState(0);
-  const [mediaError, setMediaError] = useState(false);
+  const [mediaError] = useState(false); // kept for legacy ref safety — never set to true; errors auto-retry
   const [mediaCurTime, setMediaCurTime] = useState(0);
   const [mediaDuration, setMediaDuration] = useState(0);
   const [mediaBuffering, setMediaBuffering] = useState(false);
@@ -178,7 +178,6 @@ export default function FolderView() {
     setMediaCurTime(0);
     setMediaDuration(0);
     setMediaBuffering(false);
-    setMediaError(false);
     setIsPlaying(false);
     savedTimeRef.current = 0;
   }, [viewerFile, currentFolder.name]);
@@ -236,7 +235,6 @@ export default function FolderView() {
     setMediaCurTime(0);
     setMediaDuration(0);
     setMediaBuffering(false);
-    setMediaError(false);
     setIsPlaying(false);
     setMediaRetryKey(k => k + 1);
     mediaErrorCountRef.current = 0;
@@ -685,7 +683,7 @@ export default function FolderView() {
                   playsInline
                   autoPlay
                   preload="auto"
-                  controlsList="nodownload noremoteplayback nofullscreen"
+                  controlsList="nodownload noremoteplayback"
                   disablePictureInPicture
                   style={{ width:'100%', height:'100%', flex:1, objectFit:'contain', display:'block', background:'#000' }}
                   onContextMenu={e => e.preventDefault()}
@@ -710,33 +708,18 @@ export default function FolderView() {
                     videoRef.current?.play().catch(() => {});
                   }}
                   onError={() => {
-                    // Retry with position restore — progressive delay: 2s → 4s → 8s
-                    if (mediaErrorCountRef.current < 3) {
-                      const delay = [2000, 4000, 8000][mediaErrorCountRef.current] ?? 8000;
-                      const saved = mediaCurTime;
-                      mediaErrorCountRef.current += 1;
-                      setTimeout(() => { savedTimeRef.current = saved; setMediaRetryKey(k => k + 1); }, delay);
-                    } else {
-                      setMediaError(true);
-                    }
+                    // Auto-retry forever with exponential backoff (2s → 4s → 8s → 15s → 15s…)
+                    const count = mediaErrorCountRef.current;
+                    const delay = Math.min(2000 * Math.pow(2, count), 15000);
+                    const saved = mediaCurTime;
+                    mediaErrorCountRef.current = count + 1;
+                    setTimeout(() => { savedTimeRef.current = saved; setMediaRetryKey(k => k + 1); }, delay);
                   }}
                 />
-                {/* Error state — retry button, no download */}
-                {mediaError && (
-                  <div className="flex-shrink-0 flex flex-col items-center justify-center gap-3 py-5"
-                    style={{ background:'rgba(0,0,0,0.92)', borderTop:'1px solid rgba(255,255,255,0.07)' }}>
-                    <p className="text-red-400/70 text-xs" style={{ fontFamily:"'Hind Siliguri',sans-serif" }}>ভিডিওটি লোড হচ্ছে না</p>
-                    <button
-                      onClick={() => { setMediaError(false); mediaErrorCountRef.current = 0; savedTimeRef.current = mediaCurTime; setMediaRetryKey(k => k + 1); }}
-                      className="text-xs px-5 py-2 rounded-xl active:scale-95 transition-transform"
-                      style={{ background:'rgba(0,212,170,0.12)', border:'1px solid rgba(0,212,170,0.3)', color:'#00d4aa' }}>
-                      🔄 আবার চেষ্টা করুন
-                    </button>
-                  </div>
-                )}
                 {/* Prev / Next — shown when multiple videos */}
                 {videoFiles.length > 1 && (
-                  <div className="flex-shrink-0 flex items-center justify-center gap-6 py-2" style={{ background:'rgba(0,0,0,0.85)' }}>
+                  <div className="flex-shrink-0 flex items-center justify-center gap-6 py-2"
+                    style={{ background:'rgba(0,0,0,0.85)', paddingBottom:'calc(8px + env(safe-area-inset-bottom, 0px))' }}>
                     <button onClick={prevVideo} disabled={currentVideoIdx <= 0}
                       className="text-white/60 disabled:text-white/20 text-2xl px-3 active:scale-90 transition-transform">⏮</button>
                     <span className="text-white/40 text-xs">{currentVideoIdx + 1} / {videoFiles.length}</span>
@@ -785,14 +768,12 @@ export default function FolderView() {
                     audioRef.current?.play().catch(() => {});
                   }}
                   onError={() => {
-                    if (mediaErrorCountRef.current < 3) {
-                      const delay = [2000, 4000, 8000][mediaErrorCountRef.current] ?? 8000;
-                      const saved = mediaCurTime;
-                      mediaErrorCountRef.current += 1;
-                      setTimeout(() => { savedTimeRef.current = saved; setMediaRetryKey(k => k + 1); }, delay);
-                    } else {
-                      setMediaError(true);
-                    }
+                    // Auto-retry forever with exponential backoff (2s → 4s → 8s → 15s → 15s…)
+                    const count = mediaErrorCountRef.current;
+                    const delay = Math.min(2000 * Math.pow(2, count), 15000);
+                    const saved = mediaCurTime;
+                    mediaErrorCountRef.current = count + 1;
+                    setTimeout(() => { savedTimeRef.current = saved; setMediaRetryKey(k => k + 1); }, delay);
                   }}
                   style={{ display:'none' }}
                 />
@@ -945,17 +926,6 @@ export default function FolderView() {
                     />
                   </div>
 
-                  {/* Error state */}
-                  {mediaError && (
-                    <div style={{ marginTop:16, textAlign:'center' }}>
-                      <p style={{ color:'rgba(255,80,80,0.75)', fontSize:11, fontFamily:"'Hind Siliguri',sans-serif", marginBottom:8 }}>অডিওটি লোড হচ্ছে না</p>
-                      <button
-                        onClick={() => { setMediaError(false); mediaErrorCountRef.current=0; savedTimeRef.current=0; setMediaRetryKey(k=>k+1); }}
-                        style={{ fontSize:11, color:'#00d4aa', padding:'7px 18px', borderRadius:10, background:'rgba(0,212,170,0.13)', border:'1px solid rgba(0,212,170,0.3)', cursor:'pointer' }}>
-                        🔄 আবার চেষ্টা করুন
-                      </button>
-                    </div>
-                  )}
                 </div>
               </div>
             )}
