@@ -229,13 +229,21 @@ driveRouter.get("/prefetch/:id", async (req: Request, res: Response) => {
 driveRouter.get("/stream/:id", async (req: Request, res: Response) => {
   const id = String(req.params["id"]);
   try {
-    // Cold-start resilience: if token not ready yet (secrets injecting), wait 2s and retry once
-    let token: string;
-    try {
-      token = await getAccessToken();
-    } catch {
-      await new Promise(r => setTimeout(r, 2000));
-      token = await getAccessToken();
+    // Cold-start resilience: retry up to 4 times (500ms→1s→2s→3s) to cover Render/Railway wake-up.
+    // On free-tier hosts the process restarts and secrets may inject a few seconds after start.
+    let token!: string;
+    const delays = [500, 1000, 2000, 3000];
+    for (let attempt = 0; attempt <= delays.length; attempt++) {
+      try {
+        token = await getAccessToken();
+        break; // success
+      } catch (e) {
+        if (attempt < delays.length) {
+          await new Promise(r => setTimeout(r, delays[attempt]));
+        } else {
+          throw e; // give up after 5th attempt
+        }
+      }
     }
     const driveUrl = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(id)}?alt=media&acknowledgeAbuse=true`;
 

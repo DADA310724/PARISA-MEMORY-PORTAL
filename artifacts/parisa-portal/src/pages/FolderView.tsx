@@ -215,7 +215,9 @@ export default function FolderView() {
       window.scrollTo({ top: 0, behavior: "instant" });
       setBreadcrumbs(b => b.slice(0, -1));
     } else {
-      navigate("/");
+      // Use browser history so we go back to SubFolderView or Dashboard,
+      // NOT to home — navigate("/") was wrong here.
+      window.history.back();
     }
   };
 
