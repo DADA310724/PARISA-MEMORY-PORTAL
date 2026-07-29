@@ -95,6 +95,24 @@ After restart: `✅ Google OAuth tokens pre-warmed (Drive + Firebase DB)` — bo
 ### Version
 V-21 → V-22
 
+## Session 7 (2026-07-29) — V-26
+
+### Audio/Video permanent fix
+- **Root cause of "not playing" UX:** `onError` fired but `mediaBuffering` was NOT set → user saw static play icon with no feedback, and first retry waited 2000ms silently.
+- **Fix 1:** `openViewer` now sets `setMediaBuffering(true)` immediately on click → spinner shows from the first tap, before any stream attempt.
+- **Fix 2:** `onError` now calls `setMediaBuffering(true)` immediately → spinner stays visible during retry gap (user always sees loading indicator).
+- **Fix 3:** First retry delay: `2000ms → 500ms`. Retry schedule: `[500, 1500, 3000, 6000, 15000]ms`.
+- **Why this is permanent:** Server already has 4-retry cold-start loop (500ms→1s→2s→3s). Client now retries fast and always shows spinner. User sees loading animation continuously until stream succeeds — no more "appears frozen."
+- **Do NOT change retry delays** back to 2000ms or exponential from 0 — the 500ms first retry is critical.
+
+### Back button fix
+- `goBack()` in FolderView already correctly uses `window.history.back()` when at root breadcrumb.
+- SubFolderView back button also correctly uses `window.history.back()`.
+- Both were in local commits since V-25 but were not pushed — pushed together with V-26.
+
+### Version
+V-25 → V-26
+
 ## Session 6 (2026-07-27) — V-23
 
 ### Passwords tab: sub-folders now show automatically
