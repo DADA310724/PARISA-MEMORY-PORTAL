@@ -95,6 +95,16 @@ After restart: `✅ Google OAuth tokens pre-warmed (Drive + Firebase DB)` — bo
 ### Version
 V-21 → V-22
 
+## Session 9 (2026-07-29) — V-28
+
+### Deployment fix: commit full api-server dist to git
+- **Root cause:** `artifacts/api-server/dist/routes/` and `dist/lib/` were NOT in git (only `index.js` was). Replit's deployment build runs `pnpm --filter @workspace/api-server run build` but the output wasn't reliably captured before the image was pushed. Result: server started, immediately crashed with "Cannot find module './routes/drive.js'", health check failed → "Creating Autoscale service" failed 3 times → `hasSuccessfulBuild: false`.
+- **Fix:** Force-added ALL `artifacts/api-server/dist/` files AND `artifacts/parisa-portal/dist/public/` files to git. Now the deployment can start the server even without running the build step.
+- **Going forward:** Every session that changes api-server code MUST rebuild (`pnpm --filter @workspace/api-server run build`) AND re-commit all dist files with `git add -f artifacts/api-server/dist/`. Same for frontend: `pnpm --filter @workspace/parisa-portal run build` + `git add -f artifacts/parisa-portal/dist/`.
+
+### Version
+V-27 → V-28
+
 ## Session 8 (2026-07-29) — V-27
 
 ### Audio/Video root cause: Service Worker was intercepting stream requests

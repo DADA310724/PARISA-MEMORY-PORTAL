@@ -1,4 +1,4 @@
 - [Parisa Portal setup](parisa-portal-setup.md) — structure, Render/Railway deployment, legacy portal folder risk, cross-app push risk.
-- [Parisa Portal features done](parisa-portal-features.md) — session 2-6 fixes: audio player, video no-download, lock system, passwords tab sub-folders, V-23.
+- [Parisa Portal features done](parisa-portal-features.md) — session 2-9 fixes: audio player, video no-download, lock system, passwords tab sub-folders, SW stream bypass, deployment dist commit rule.
 - [Mandatory pre-push rules](mandatory-pre-push-rules.md) — ⛔ REQUIRED before every git push: drive/lock/stream live-check, both builds clean, changed-files audit, version bump, workflow restart rule, Render/Railway secret rule.
 - [Do-No-Harm Rules](do-no-harm-rules.md) — ⛔ CRITICAL: what NEVER to break (audio UI, video no-download, lock logic, Firebase auth), how to diagnose audio/video failure WITHOUT touching code first, Render/Railway deployment facts.
