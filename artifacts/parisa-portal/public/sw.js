@@ -104,6 +104,13 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+    // ── Drive stream — NEVER intercept: let browser handle range requests natively ──
+  // SW interception of range requests breaks video/audio streaming in production.
+  // Browser's native fetch correctly handles 206 Partial Content, seek, and resume.
+  if (url.pathname.startsWith("/api/drive/stream/")) {
+    return; // intentionally no event.respondWith() — browser fetches directly
+  }
+
   // ── Other API calls — never cache ─────────────────────────────────────────
   if (url.pathname.startsWith("/api/")) {
     event.respondWith(
