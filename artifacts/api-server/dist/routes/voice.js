@@ -1,0 +1,54 @@
+import { Router } from "express";
+import { MsEdgeTTS, OUTPUT_FORMAT } from "msedge-tts";
+const router = Router();
+const FEMALE_VOICE = "bn-BD-NabanitaNeural";
+const MALE_VOICE = "bn-BD-PradeepNeural";
+function cleanText(text) {
+    return text
+        .replace(/[\u{1F300}-\u{1FAFF}]/gu, " ")
+        .replace(/[\u{2600}-\u{26FF}]/gu, " ")
+        .replace(/[\u{2700}-\u{27BF}]/gu, " ")
+        .replace(/[*_#~`|\\[\]{}^<>=@+]/g, " ")
+        .replace(/\[IMAGE:[^\]]*\]/g, " ")
+        .replace(/\.{2,}/g, " ")
+        .replace(/\n{2,}/g, "। ")
+        .replace(/\n/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+router.post("/voice", async (req, res) => {
+    try {
+        const { text, gender } = req.body;
+        if (!text || !text.trim()) {
+            res.status(204).end();
+            return;
+        }
+        const voiceName = gender === "male" ? MALE_VOICE : FEMALE_VOICE;
+        const cleaned = cleanText(text).slice(0, 2000);
+        if (!cleaned.trim()) {
+            res.status(204).end();
+            return;
+        }
+        const tts = new MsEdgeTTS();
+        await tts.setMetadata(voiceName, OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3);
+        res.setHeader("Content-Type", "audio/mpeg");
+        res.setHeader("Cache-Control", "no-cache");
+        const { audioStream } = tts.toStream(cleaned);
+        audioStream.on("error", (err) => {
+            console.error("TTS stream error:", err.message);
+            if (!res.headersSent)
+                res.status(500).end();
+            else
+                res.end();
+        });
+        audioStream.pipe(res);
+    }
+    catch (err) {
+        const e = err;
+        console.error("Voice route error:", e.message);
+        if (!res.headersSent)
+            res.status(500).end();
+    }
+});
+export default router;
+//# sourceMappingURL=voice.js.map
