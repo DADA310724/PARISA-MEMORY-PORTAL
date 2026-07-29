@@ -95,6 +95,17 @@ After restart: `✅ Google OAuth tokens pre-warmed (Drive + Firebase DB)` — bo
 ### Version
 V-21 → V-22
 
+## Session 8 (2026-07-29) — V-27
+
+### Audio/Video root cause: Service Worker was intercepting stream requests
+- **Root cause:** `sw.js` had a generic `/api/` catch-all that intercepted ALL API requests including `/api/drive/stream/`. In production (published/deployed), the SW is fully active. When `<video>`/`<audio>` elements send Range requests for `/api/drive/stream/ID`, the SW intercepted them and called `fetch(event.request)` inside the SW context — this breaks range/streaming in production environments (Replit published, Render).
+- **Why dev worked:** In Vite dev mode, service workers have limited activation scope, so stream requests went directly to the network. That's why dev preview "sort of" played but published app totally didn't.
+- **Fix:** Added a specific bypass in `sw.js` BEFORE the generic `/api/` handler: `if (url.pathname.startsWith("/api/drive/stream/")) return;` — NOT calling `event.respondWith()` means the browser handles the request natively. Native browser fetch handles range requests, 206 responses, seek, and resume correctly without SW interference.
+- **Do NOT add SW interception back for stream routes** — this was the silent killer for 2+ sessions.
+
+### Version
+V-26 → V-27
+
 ## Session 7 (2026-07-29) — V-26
 
 ### Audio/Video permanent fix
