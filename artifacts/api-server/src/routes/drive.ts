@@ -228,6 +228,13 @@ driveRouter.get("/prefetch/:id", async (req: Request, res: Response) => {
 // piped back — no double-hop, no access_token in URL, no redirect chasing.
 driveRouter.get("/stream/:id", async (req: Request, res: Response) => {
   const id = String(req.params["id"]);
+
+  // AbortController: cancels Google Drive fetch immediately when browser
+  // disconnects (seek, close, tab switch). Prevents resource exhaustion
+  // that caused stream failures on autoscale/published deployments.
+  const abortCtrl = new AbortController();
+  req.on("close", () => { abortCtrl.abort(); });
+
   try {
     // Cold-start resilience: retry up to 4 times (500ms→1s→2s→3s) to cover Render/Railway wake-up.
     // On free-tier hosts the process restarts and secrets may inject a few seconds after start.
@@ -254,11 +261,14 @@ driveRouter.get("/stream/:id", async (req: Request, res: Response) => {
     const range = req.headers["range"];
     if (range) reqHeaders["Range"] = range;
 
-    const driveResp = await fetch(driveUrl, { headers: reqHeaders });
+    const driveResp = await fetch(driveUrl, {
+      headers: reqHeaders,
+      signal: abortCtrl.signal,
+    });
 
     // Only reject true errors — 206 Partial Content is valid for range requests
     if (!driveResp.ok && driveResp.status !== 206) {
-      res.status(driveResp.status).send("Google Drive error");
+      if (!res.headersSent) res.status(driveResp.status).send("Google Drive error");
       return;
     }
 
@@ -281,9 +291,14 @@ driveRouter.get("/stream/:id", async (req: Request, res: Response) => {
     if (!driveResp.body) { res.end(); return; }
     const readable = Readable.fromWeb(driveResp.body as import("stream/web").ReadableStream);
     readable.on("error", () => { if (!res.writableEnded) res.destroy(); });
+    // Destroy readable when client disconnects — prevents memory/connection leak
+    res.on("close", () => { readable.destroy(); });
     readable.pipe(res);
   } catch (err) {
-    if (!res.headersSent) res.status(500).send(String(err));
+    const msg = err instanceof Error ? err.message : String(err);
+    // AbortError is expected when browser disconnects — not a real error
+    if (msg.includes("abort") || msg.toLowerCase().includes("aborted")) return;
+    if (!res.headersSent) res.status(500).send(msg);
   }
 });
 
