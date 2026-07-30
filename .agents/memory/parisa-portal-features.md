@@ -95,6 +95,26 @@ After restart: `✅ Google OAuth tokens pre-warmed (Drive + Firebase DB)` — bo
 ### Version
 V-21 → V-22
 
+## Session 10 (2026-07-30) — V-29
+
+### Audio/Video fixes: stream abort + iOS autoplay + max retry
+
+#### drive.ts — stream endpoint hardening
+- **AbortController added:** `req.on("close")` now aborts the Google Drive fetch immediately when browser disconnects (seek, close, tab switch). Previously abandoned fetches piled up → resource exhaustion → next stream request failed. This was the primary cause of "tries several times then stops" on published/autoscale.
+- **`res.on("close")` added:** destroys the Node.js Readable when Express response closes — prevents memory leak from abandoned pipe.
+- **AbortError handled silently:** if fetch is aborted (client disconnected), no 500 is sent to an already-closed connection.
+
+#### FolderView.tsx — autoplay + retry improvements
+- **iOS Safari muted fallback:** `onCanPlay` and 350ms timer now try `el.play()` → if rejected (autoplay policy), set `el.muted=true`, play, then unmute after 300ms. Handles iOS Safari strict gesture policy where React async state update makes gesture appear stale.
+- **Max retry limit (5):** after 5 retries (`mediaErrorCountRef.current >= 5`), `mediaFailed` state is set to true instead of infinite looping at 15s intervals.
+- **Video `mediaFailed` overlay:** shows "লোড করা যায়নি + আবার চেষ্টা করুন" button overlay on video player — resets counter and retries on tap.
+- **Audio `mediaFailed` state:** play button turns into red 🔄 retry button — resets counter and retries on tap.
+- **`nofullscreen` added** to video `controlsList` (was missing per do-no-harm rules).
+- **`mediaFailed` reset** in both `openViewer()` and `closeViewer()`.
+
+### Version
+V-28 → V-29
+
 ## Session 9 (2026-07-29) — V-28
 
 ### Deployment fix: commit full api-server dist to git
