@@ -1,6 +1,6 @@
 ---
 name: Parisa Portal features done
-description: Session 2-6 fixes — what was done and what to watch out for
+description: Session 2-9 fixes — what was done and what to watch out for
 ---
 
 ## Session 2 fixes (from prior summary)
@@ -113,7 +113,6 @@ V-21 → V-22
 - Removed MAX_RETRIES limit — retry is now unlimited (stays at 15s interval after 5th attempt)
 - Simplified useEffect deps: removed `mediaError`, `isMuted`, `audioVolume` (no longer needed)
 - Kept ALL good parts: AbortController in drive.ts, sw.js respondWith for stream, custom audio UI, progress bars, buffering spinner, prev/next navigation, volume slider
-- Both builds clean, dist committed, pushed to GitHub (force push over conflicting V-30)
 
 **Current media behavior (correct):**
 - Click audio/video → spinner shows immediately
@@ -204,3 +203,21 @@ V-25 → V-26
 
 ### Version
 V-22 → V-23
+
+## Session 12 (2026-07-31) — V-32
+
+### Video player: removed custom progress bar
+- **User request:** Remove the extra custom progress bar below the video — use native browser controls only (like Google Drive), no download option.
+- **What was removed:** Custom `<div>` progress bar + timestamp row below `<video>` element (22 lines of JSX).
+- **What was kept:** Native `controls` attribute, `controlsList="nodownload noremoteplayback nofullscreen"`, `disablePictureInPicture`, `onContextMenu preventDefault`, buffering spinner overlay, Prev/Next buttons for multiple videos.
+- **State:** `mediaCurTime`/`mediaDuration` still updated via `onTimeUpdate`/`onLoadedMetadata` (used by audio player's onError for position restore).
+
+### Firebase config: retry on cold-start (firebase.ts)
+- **Bug:** `loadAppConfig()` called `/api/config` once, got empty values (cold-start race), fell back to baked-in FALLBACK_FIREBASE (also empty if Vite started before secrets injected) → Firebase `getDatabase()` received empty `databaseURL` → **FATAL non-recoverable crash** of entire Firebase SDK.
+- **Fix 1:** `loadAppConfig()` now retries `/api/config` up to 6 times with delays `[0, 1500, 2500, 3500, 5000, 7000]ms` — gives the server time to acquire secrets.
+- **Fix 2:** `_initFirebase()` now guards against empty `databaseURL` with an explicit check before calling `getDatabase()` — prevents the FATAL Firebase crash entirely.
+- **Fix 3:** `ensureFirebase()` clears `initPromise` on failure — next caller can retry instead of being permanently blocked by a failed promise.
+- **Why this matters:** Without the guard, an empty databaseURL causes Firebase SDK to throw a FATAL error that permanently disables the SDK for the entire page lifetime — even if the config later becomes available.
+
+### Version
+V-31 → V-32
