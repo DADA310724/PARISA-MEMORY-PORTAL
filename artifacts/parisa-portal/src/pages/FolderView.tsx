@@ -723,28 +723,6 @@ export default function FolderView() {
                     setTimeout(() => { savedTimeRef.current = saved; setMediaRetryKey(k => k + 1); }, delay);
                   }}
                 />
-                {/* Custom progress bar + timestamp */}
-                <div className="flex-shrink-0" style={{ background:'rgba(0,0,0,0.92)', padding:'6px 16px 8px' }}>
-                  <div
-                    onClick={e => {
-                      if (!videoRef.current || !mediaDuration) return;
-                      const rect = e.currentTarget.getBoundingClientRect();
-                      const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-                      videoRef.current.currentTime = ratio * mediaDuration;
-                    }}
-                    style={{ width:'100%', height:4, borderRadius:2, background:'rgba(255,255,255,0.1)', cursor:'pointer', marginBottom:5, overflow:'hidden' }}>
-                    <div style={{
-                      height:'100%', borderRadius:2,
-                      width: mediaDuration > 0 ? `${(mediaCurTime / mediaDuration) * 100}%` : '0%',
-                      background:'linear-gradient(90deg,#3b82f6,#60a5fa)',
-                      transition:'width 0.25s linear',
-                    }}/>
-                  </div>
-                  <div style={{ display:'flex', justifyContent:'space-between' }}>
-                    <span style={{ color:'rgba(255,255,255,0.35)', fontSize:10 }}>{fmtTime(mediaCurTime)}</span>
-                    <span style={{ color:'rgba(255,255,255,0.35)', fontSize:10 }}>{fmtTime(mediaDuration)}</span>
-                  </div>
-                </div>
                 {/* Prev / Next — shown when multiple videos */}
                 {videoFiles.length > 1 && (
                   <div className="flex-shrink-0 flex items-center justify-center gap-6 py-2"
