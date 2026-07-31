@@ -21,7 +21,7 @@ function cleanText(text: string): string {
     .trim();
 }
 
-router.post("/voice", async (req: Request, res: Response) => {
+router.post("/", async (req: Request, res: Response) => {
   try {
     const { text, gender } = req.body as { text?: string; gender?: string };
     if (!text || !text.trim()) {

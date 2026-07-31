@@ -16,7 +16,7 @@ function cleanText(text) {
         .replace(/\s+/g, " ")
         .trim();
 }
-router.post("/voice", async (req, res) => {
+router.post("/", async (req, res) => {
     try {
         const { text, gender } = req.body;
         if (!text || !text.trim()) {
