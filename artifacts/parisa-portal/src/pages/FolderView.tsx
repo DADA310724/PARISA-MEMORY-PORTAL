@@ -689,8 +689,7 @@ export default function FolderView() {
                   playsInline
                   autoPlay
                   preload="auto"
-                  controlsList="nodownload noremoteplayback nofullscreen"
-                  disablePictureInPicture
+                  controlsList="nodownload"
                   style={{ width:'100%', flex:1, objectFit:'contain', display:'block', background:'#000', minHeight:0 }}
                   onContextMenu={e => e.preventDefault()}
                   onTimeUpdate={e => {
@@ -723,17 +722,6 @@ export default function FolderView() {
                     setTimeout(() => { savedTimeRef.current = saved; setMediaRetryKey(k => k + 1); }, delay);
                   }}
                 />
-                {/* Prev / Next — shown when multiple videos */}
-                {videoFiles.length > 1 && (
-                  <div className="flex-shrink-0 flex items-center justify-center gap-6 py-2"
-                    style={{ background:'rgba(0,0,0,0.85)', paddingBottom:'calc(8px + env(safe-area-inset-bottom, 0px))' }}>
-                    <button onClick={prevVideo} disabled={currentVideoIdx <= 0}
-                      className="text-white/60 disabled:text-white/20 text-2xl px-3 active:scale-90 transition-transform">⏮</button>
-                    <span className="text-white/40 text-xs">{currentVideoIdx + 1} / {videoFiles.length}</span>
-                    <button onClick={nextVideo} disabled={currentVideoIdx >= videoFiles.length - 1}
-                      className="text-white/60 disabled:text-white/20 text-2xl px-3 active:scale-90 transition-transform">⏭</button>
-                  </div>
-                )}
               </div>
             )}
 
