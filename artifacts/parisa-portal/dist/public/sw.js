@@ -1,7 +1,7 @@
-// PARISA MEMORY PORTAL — Service Worker v3.1
+// PARISA MEMORY PORTAL — Service Worker v3.4
 // Offline-first with Range support: full files cached, seekable offline
-const CACHE_NAME  = "parisa-v3.1";
-const MEDIA_CACHE = "parisa-media-v3.1";
+const CACHE_NAME  = "parisa-v3.4";
+const MEDIA_CACHE = "parisa-media-v3.4";
 
 const STATIC_ASSETS = [
   "/",
