@@ -325,6 +325,7 @@ driveRouter.get("/proxy/:id", async (req: Request, res: Response) => {
     }
     const ct = driveResp.headers.get("content-type") ?? "application/octet-stream";
     res.setHeader("Content-Type", ct);
+    res.setHeader("Accept-Ranges", "bytes");   // tell browser/SW that Range is supported
     res.setHeader("Cache-Control", "no-store, no-cache");
     // Allow embedding in iframes — remove any restrictive framing headers
     res.setHeader("X-Frame-Options", "SAMEORIGIN");
