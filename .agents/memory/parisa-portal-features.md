@@ -204,6 +204,23 @@ V-25 → V-26
 ### Version
 V-22 → V-23
 
+## Session 13 (2026-07-31) — V-33
+
+### Deployment PORT fix (.replit)
+- **Bug:** `.replit` `[deployment]` section had `run = ["bash", "-c", "PORT=8080 node ..."]` — Replit Autoscale injects its own PORT env var, but `PORT=8080` in the run command overrode it → server started on 8080, health check went to Replit's injected port → FAIL → "Creating Autoscale service" failed 3 times → published app broken.
+- **Fix:** Removed `PORT=8080` from deployment `run` command only. Dev workflow (`Start application`) still uses `PORT=8080` unchanged.
+- **Server code:** already uses `process.env.PORT ?? 8080` — correct. Only the deployment override was wrong.
+- **Render/Railway:** NOT affected by this — they inject their own PORT and the server code handles it correctly.
+
+### Video player: removed extra Prev/Next navigation bar
+- **User complaint:** "extra player" below video player they didn't want.
+- **What was removed:** The `{videoFiles.length > 1 && <div>⏮ N/Total ⏭</div>}` navigation bar below `<video>` element.
+- **What was changed:** `controlsList="nodownload noremoteplayback nofullscreen"` + `disablePictureInPicture` → now just `controlsList="nodownload"`. Allows fullscreen and PiP like Google Drive player. Right-click still blocked.
+- **Result:** Video player is now exactly like Google Drive — native browser controls, no download button, no extra bar below.
+
+### Version
+V-32 → V-33
+
 ## Session 12 (2026-07-31) — V-32
 
 ### Video player: removed custom progress bar
