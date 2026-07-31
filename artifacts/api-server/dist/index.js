@@ -46,8 +46,31 @@ app.use((err, _req, res, _next) => {
 });
 const staticDir = path.resolve(__dirname, "../../parisa-portal/dist/public");
 if (existsSync(staticDir)) {
-    app.use(express.static(staticDir));
+    // sw.js and manifest must never be cached — browsers must always get the latest version
+    // so new Service Worker versions activate and old PWA caches are busted.
+    app.get("/sw.js", (_req, res) => {
+        res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        res.setHeader("Pragma", "no-cache");
+        res.setHeader("Expires", "0");
+        res.sendFile(path.join(staticDir, "sw.js"));
+    });
+    app.get("/manifest.webmanifest", (_req, res) => {
+        res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        res.sendFile(path.join(staticDir, "manifest.webmanifest"));
+    });
+    // Static assets with content-hash in filename (e.g. index-C5ywwH2A.js) can be cached long-term.
+    // index.html itself must never be cached — it references the latest hashed assets.
+    app.use(express.static(staticDir, {
+        setHeaders(res, filePath) {
+            if (filePath.endsWith("index.html")) {
+                res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+                res.setHeader("Pragma", "no-cache");
+                res.setHeader("Expires", "0");
+            }
+        },
+    }));
     app.get("/{*splat}", (_req, res) => {
+        res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
         res.sendFile(path.join(staticDir, "index.html"));
     });
     console.log(`Serving static files from ${staticDir}`);
