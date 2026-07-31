@@ -1,7 +1,7 @@
-// PARISA MEMORY PORTAL — Service Worker v3.4
+// PARISA MEMORY PORTAL — Service Worker v3.5
 // Offline-first with Range support: full files cached, seekable offline
-const CACHE_NAME  = "parisa-v3.4";
-const MEDIA_CACHE = "parisa-media-v3.4";
+const CACHE_NAME  = "parisa-v3.5";
+const MEDIA_CACHE = "parisa-media-v3.5";
 
 const STATIC_ASSETS = [
   "/",
@@ -61,10 +61,10 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 
   // ── Drive media proxy — stale-while-revalidate + Range-from-cache ─────────
-  if (
-    url.pathname.startsWith("/api/drive/proxy/") ||
-    url.pathname.startsWith("/api/drive/prefetch/")
-  ) {
+  // NOTE: /api/drive/prefetch/ is intentionally excluded here — it returns
+  // {ok:true} JSON (not media) and must always reach the server to warm the
+  // server-side chunk cache. It falls through to the generic API handler below.
+  if (url.pathname.startsWith("/api/drive/proxy/")) {
     event.respondWith(
       caches.open(MEDIA_CACHE).then(async (cache) => {
         // Canonical key without Range header (so all Range requests hit same entry)

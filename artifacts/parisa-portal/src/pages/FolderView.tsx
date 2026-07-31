@@ -112,10 +112,22 @@ export default function FolderView() {
     try {
       const { files: f } = await listFolder(folderId);
       setFiles(f);
-      // Background prefetch first 25 audio/video → warms server cache for fast first-play
-      f.filter(file => isVideo(file) || isAudio(file)).slice(0, 25).forEach(file => {
-        fetch(`/api/drive/prefetch/${file.id}`, { priority: "low" } as RequestInit).catch(() => {});
-      });
+      // Background prefetch first 5 audio/video → warms server-side 5MB chunk cache for fast first-play.
+      // Staggered in batches of 3 to avoid exhausting the server's connection pool.
+      // Each prefetch returns immediately ({ok:true}) while the server fetches 5MB from Drive in background.
+      const mediaFiles = f.filter(file => isVideo(file) || isAudio(file)).slice(0, 5);
+      const prefetchBatch = async () => {
+        for (let i = 0; i < mediaFiles.length; i += 3) {
+          const batch = mediaFiles.slice(i, i + 3);
+          await Promise.allSettled(
+            batch.map(file =>
+              fetch(`/api/drive/prefetch/${file.id}`, { priority: "low", cache: "no-store" } as RequestInit).catch(() => {})
+            )
+          );
+          if (i + 3 < mediaFiles.length) await new Promise(r => setTimeout(r, 1000));
+        }
+      };
+      void prefetchBatch();
       void api("/telegram/notify", {
         method: "POST",
         body: { event: "folder_opened", folder: folderName || folderId, files: f.length },
