@@ -23,8 +23,17 @@ description: ⛔ CRITICAL — rules every agent MUST follow to avoid breaking wo
 ### যা কখনো করবে না:
 - **অন্য feature নষ্ট করবে না** — একটা কাজ ঠিক করতে গিয়ে অন্য কিছু ভেঙে দেওয়া মানে দুটো সমস্যা
 - **Design পরিবর্তন করবে না** — user ডিজাইন অনুমোদন করেছে, নিজে থেকে কিছু বদলানো যাবে না
+
+- **⛔ CRITICAL: Audio/Video src URL পরিবর্তন করবে না**
+  - `<video>` এবং `<audio>` উভয়ই **অবশ্যই** `src={proxyUrl(viewerFile.id)}` ব্যবহার করবে
+  - `streamUrl` ব্যবহার করলে published app-এ play হয় না (Chrome media pipeline + SW conflict)
+  - এই ভুল V-18 থেকে V-38 পর্যন্ত ২ সপ্তাহ সমস্যা তৈরি করেছে
+  - কারণ: `proxyUrl` → SW পুরো file cache করে → Range request SW দেয় → সব browser-এ চলে
+  - কারণ: `streamUrl` → SW শুধু pass-through → Chrome published PWA-তে ভেঙে যায়
+  - **User অর্ডার ছাড়া এই line কখনো পরিবর্তন করবে না**
+
 - **Audio player-এর custom UI নষ্ট করবে না** — purple card, waveform, progress bar, volume slider — এগুলো ইচ্ছে করে তৈরি করা হয়েছে
-- **Video-তে download option যোগ করবে না** — `controlsList="nodownload noremoteplayback nofullscreen"` + `onContextMenu={e => e.preventDefault()}` এগুলো রাখতে হবে
+- **Video-তে download option যোগ করবে না** — `controlsList="nodownload"` + `onContextMenu={e => e.preventDefault()}` এগুলো রাখতে হবে
 - **FolderView-এর lock logic সরাবে না** — checkFolderLock, locked state, lockChecking state — এগুলো critical security feature
 - **SubFolderView-এ lock logic যোগ করবে না** — SubFolderView শুধু navigation menu, lock শুধু FolderView-এ
 - **Firebase auth logic বদলাবে না** — initPromise singleton, anonymous auth — এগুলো ঠিকমতো কাজ করছে
