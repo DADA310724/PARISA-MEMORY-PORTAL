@@ -206,11 +206,12 @@ V-22 → V-23
 
 ## Session 13 (2026-07-31) — V-33
 
-### Deployment PORT fix (.replit)
-- **Bug:** `.replit` `[deployment]` section had `run = ["bash", "-c", "PORT=8080 node ..."]` — Replit Autoscale injects its own PORT env var, but `PORT=8080` in the run command overrode it → server started on 8080, health check went to Replit's injected port → FAIL → "Creating Autoscale service" failed 3 times → published app broken.
-- **Fix:** Removed `PORT=8080` from deployment `run` command only. Dev workflow (`Start application`) still uses `PORT=8080` unchanged.
-- **Server code:** already uses `process.env.PORT ?? 8080` — correct. Only the deployment override was wrong.
-- **Render/Railway:** NOT affected by this — they inject their own PORT and the server code handles it correctly.
+### Deployment PORT fix (.replit) + serve script root-cause fix (package.json)
+- **Bug 1 (.replit):** `[deployment]` had `run = ["bash", "-c", "PORT=8080 node ..."]` — minor issue, fixed by removing PORT=8080.
+- **Bug 2 (package.json) — THE REAL BUG:** The `serve` script was: `PORT=8080 node ../api-server/dist/index.js & vite preview`. Replit artifact deployment runs THIS serve script on port=23236. Result: vite preview (port 23236) proxied `/api` to Express (port 8080). BUT vite preview's proxy cannot handle HTTP streaming/Range requests for `/api/drive/stream/` → audio/video completely broken on published app.
+- **Fix:** Changed serve script to: `node --enable-source-maps ../api-server/dist/index.js`. Express runs on Replit-injected PORT (23236), serves BOTH static files (dist/public) AND all API routes on the same port. No proxy layer → Range requests work → audio/video streams correctly.
+- **Key lesson:** NEVER use `vite preview + proxy` for deployment. Express already serves static files; it must be the only server on the published port.
+- **Render/Railway:** NOT affected — they have their own start command that runs Express directly.
 
 ### Video player: removed extra Prev/Next navigation bar
 - **User complaint:** "extra player" below video player they didn't want.
