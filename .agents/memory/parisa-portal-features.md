@@ -230,6 +230,31 @@ After each publish, the browser used its CACHED old `sw.js` (old cache name `par
 ### Version
 V-34 → V-35
 
+## Session 16 (2026-07-31) — V-36
+
+### Voice route bug fixed — Microsoft TTS was broken since a past session
+
+**Root cause:** `voice.ts` had `router.post("/voice", ...)` mounted under `app.use("/api/voice", voiceRouter)` → full Express path = `/api/voice/voice`. Client calls `/api/voice` → 404 every time → fallback to browser `window.speechSynthesis` (generic browser voice). Microsoft Nabanita/Pradeep Neural voices were never heard.
+
+**Fix:** Changed `router.post("/voice", ...)` → `router.post("/", ...)` in `artifacts/api-server/src/routes/voice.ts`. Verified: POST `/api/voice` now returns 200 + 22 KB MP3.
+
+**Why this explains user's complaint:** "Microsoft voice changed to browser voice" — it was silently failing and falling back all along. The msedge-tts package itself is fine; only the route path was wrong.
+
+**Rule going forward:** When mounting a router with `app.use("/api/X", router)`, the handler inside must be `router.post("/", ...)` not `router.post("/X", ...)`.
+
+### Root cause of 2-week problem (full picture)
+
+User changed Firebase rules from public → private. This caused:
+1. Old page/project (no anonymous auth code): `PERMISSION_DENIED` reading `buttons` → empty dashboard
+2. New code: anonymous auth added (Session 3) to fix this — works with private rules
+3. Audio/video: separate issue — SW intercepting streams (V-27/V-31 fixed), serve script using vite preview (V-33 fixed), stale dist (V-34 fixed), no-cache headers (V-35 fixed)
+4. Secrets not in new imported Replit project: caused `GOOGLE_SERVICE_ACCOUNT_JSON not set` on published app → streams 500 → audio/video failed
+
+**Old page will remain broken:** No anonymous auth code → cannot read private Firebase rules. Only V-35+ code works with private rules.
+
+### Version
+V-35 → V-36
+
 ## Session 14 (2026-07-31) — V-34
 
 ### Stale dist bug — root cause of "2 weeks of problems"
