@@ -204,6 +204,32 @@ V-25 → V-26
 ### Version
 V-22 → V-23
 
+## Session 15 (2026-07-31) — V-35
+
+### Permanent fix: stale PWA cache — no-cache headers for critical files
+
+**Root cause of "changes never visible after publish":**
+Express served `sw.js`, `index.html`, and `manifest.webmanifest` without `Cache-Control` headers.
+Browsers and PWAs cached these files aggressively (default browser cache, CDN, or HTTP cache).
+After each publish, the browser used its CACHED old `sw.js` (old cache name `parisa-v3.1`) — never detected the new version, never installed new SW, old JS kept running forever.
+
+**Fix (api-server/src/index.ts — before express.static):**
+- `/sw.js` → explicit route: `Cache-Control: no-cache, no-store, must-revalidate`
+- `/manifest.webmanifest` → explicit route: `no-cache, no-store, must-revalidate`
+- `index.html` via `express.static setHeaders` + catch-all: `no-cache, no-store, must-revalidate`
+- Hashed assets (e.g. `index-BSMlVGMi.js`) → left with default long-term cache (correct — content-addressed)
+
+**How this fixes the update flow:**
+1. Browser always fetches fresh `sw.js` from network
+2. New cache name detected → new SW installed → `skipWaiting()` activates immediately
+3. `activate` event deletes old caches (parisa-v3.1) → cleans up old JS
+4. Fresh `index.html` (no-cache) → references new hashed JS → loads new bundle
+
+**Rule going forward:** `sw.js`, `index.html`, `manifest.webmanifest` MUST always have `no-cache` headers in Express. Never let these files be cached. Hashed assets can be cached forever.
+
+### Version
+V-34 → V-35
+
 ## Session 14 (2026-07-31) — V-34
 
 ### Stale dist bug — root cause of "2 weeks of problems"
