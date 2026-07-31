@@ -95,6 +95,40 @@ After restart: `✅ Google OAuth tokens pre-warmed (Drive + Firebase DB)` — bo
 ### Version
 V-21 → V-22
 
+## Session 11 (2026-07-31) — V-31
+
+### Audio/Video clean fix — remove mediaFailed / retry-button bloat
+
+**Root cause analysis (from git history + chat history files):**
+- V-27 SW bypass (`return;`) broke Chrome Android media pipeline
+- V-29 fixed SW (respondWith) but added unwanted: MAX_RETRIES=5, mediaFailed state, retry buttons, muted fallback
+- V-30 (remote) removed `mediaFailed` declaration but kept ALL usages → build-breaking TypeScript bug + crashed component
+- Bottom line: none of the V-27→V-30 complexity was needed; V-26 style simple code was correct
+
+**What was done:**
+- Removed `mediaFailed` / `setMediaFailed` state entirely — was causing runtime crash in V-30
+- Removed all "আবার চেষ্টা করুন" retry buttons (user explicitly did not want these)
+- Removed video Failed overlay JSX block
+- Removed muted fallback from both useEffect timer AND onCanPlay (was causing double-play race)
+- Removed MAX_RETRIES limit — retry is now unlimited (stays at 15s interval after 5th attempt)
+- Simplified useEffect deps: removed `mediaError`, `isMuted`, `audioVolume` (no longer needed)
+- Kept ALL good parts: AbortController in drive.ts, sw.js respondWith for stream, custom audio UI, progress bars, buffering spinner, prev/next navigation, volume slider
+- Both builds clean, dist committed, pushed to GitHub (force push over conflicting V-30)
+
+**Current media behavior (correct):**
+- Click audio/video → spinner shows immediately
+- Stream loads → onCanPlay fires → play() called → plays
+- 350ms timer also tries play() as fallback if onCanPlay didn't fire yet
+- If error: spinner stays, retries at 500ms→1.5s→3s→6s→15s (then 15s forever)
+- No retry button, no overlay, no user interaction needed — fully automatic
+
+**Do NOT re-add:**
+- `mediaFailed` state or retry buttons — user explicitly does not want them
+- Muted fallback in onCanPlay — this was NOT needed and caused race conditions
+- MAX_RETRIES limit — always retry silently
+
+**Version:** V-29 (remote) → V-31
+
 ## Session 10 (2026-07-30) — V-29
 
 ### Audio/Video fixes: stream abort + iOS autoplay + max retry
