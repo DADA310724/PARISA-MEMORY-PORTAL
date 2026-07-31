@@ -204,6 +204,30 @@ V-25 → V-26
 ### Version
 V-22 → V-23
 
+## Session 14 (2026-07-31) — V-34
+
+### Stale dist bug — root cause of "2 weeks of problems"
+
+**Root cause:** V-33 source changes (video extra nav bar removal + serve script fix) were never rebuilt into dist. The committed dist file (`index-BPr_-r7h.js`) was from a pre-V-33 session. Published app was serving OLD JS even though source was correct.
+
+**Evidence:** `grep -c "prevVideo\|nextVideo\|videoFiles.length > 1" dist/assets/index-BPr_-r7h.js` returned 1 — old nav bar code confirmed in dist.
+
+**Fix:**
+- Bumped SW cache: `parisa-v3.1` → `parisa-v3.4` (forces browser to bust ALL cached assets on every device)
+- Rebuilt frontend: `pnpm --filter @workspace/parisa-portal run build` → new hash `index-C5ywwH2A.js`
+- Rebuilt api-server: `pnpm --filter @workspace/api-server run build`
+- Force-added all dist files to git, committed as V-34, pushed to origin
+
+**Rule going forward:** After EVERY source change, ALWAYS rebuild dist AND verify with `grep` that old artifacts are gone before committing. Never trust "source is fixed = published app is fixed."
+
+### GOOGLE_SERVICE_ACCOUNT_JSON cold-start timing
+- Pre-warm gives up after 5 attempts in dev when secrets are injected slightly late
+- **Fix:** workflow restart → `✅ Google OAuth tokens pre-warmed (attempt 1)` immediately
+- This does NOT affect published app (Replit autoscale injects secrets before process start)
+
+### Version
+V-33 → V-34
+
 ## Session 13 (2026-07-31) — V-33
 
 ### Deployment PORT fix (.replit) + serve script root-cause fix (package.json)
