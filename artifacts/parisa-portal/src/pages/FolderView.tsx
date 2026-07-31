@@ -675,12 +675,6 @@ export default function FolderView() {
             {/* ── Video Player ── */}
             {viewerType === 'video' && (
               <div className="flex-1 flex flex-col" style={{ background:'#000', position:'relative', minHeight:0 }}>
-                {/* Buffering spinner overlay */}
-                {mediaBuffering && (
-                  <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', zIndex:3, pointerEvents:'none', background:'rgba(0,0,0,0.30)' }}>
-                    <div className="w-11 h-11 rounded-full border-2 border-blue-400/30 border-t-blue-400 animate-spin"/>
-                  </div>
-                )}
                 <video
                   key={`v-${viewerFile.id}-${mediaRetryKey}`}
                   ref={videoRef}
@@ -705,15 +699,10 @@ export default function FolderView() {
                       savedTimeRef.current = 0;
                     }
                   }}
-                  onWaiting={() => setMediaBuffering(true)}
-                  onPlaying={() => { setMediaBuffering(false); setIsPlaying(true); }}
+                  onPlaying={() => setIsPlaying(true)}
                   onPause={() => setIsPlaying(false)}
-                  onCanPlay={() => {
-                    setMediaBuffering(false);
-                    videoRef.current?.play().catch(() => {});
-                  }}
+                  onCanPlay={() => { videoRef.current?.play().catch(() => {}); }}
                   onError={() => {
-                    setMediaBuffering(true);
                     const count = mediaErrorCountRef.current;
                     const retryDelays = [500, 1500, 3000, 6000, 15000];
                     const delay = retryDelays[Math.min(count, retryDelays.length - 1)];
@@ -722,6 +711,23 @@ export default function FolderView() {
                     setTimeout(() => { savedTimeRef.current = saved; setMediaRetryKey(k => k + 1); }, delay);
                   }}
                 />
+                {/* Prev/Next video navigation — Google Drive style side arrows */}
+                {currentVideoIdx > 0 && (
+                  <button
+                    onClick={prevVideo}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center text-white text-2xl"
+                    style={{ background:'rgba(0,0,0,0.55)', zIndex:4 }}
+                    title="আগের ভিডিও"
+                  >‹</button>
+                )}
+                {currentVideoIdx < videoFiles.length - 1 && (
+                  <button
+                    onClick={nextVideo}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full flex items-center justify-center text-white text-2xl"
+                    style={{ background:'rgba(0,0,0,0.55)', zIndex:4 }}
+                    title="পরের ভিডিও"
+                  >›</button>
+                )}
               </div>
             )}
 
