@@ -3,6 +3,25 @@ name: Parisa Portal features done
 description: Session 2-9 fixes — what was done and what to watch out for
 ---
 
+## Session 17 (2026-07-31) — V-39
+
+### Audio/Video root cause — DEFINITIVE
+
+**Root cause confirmed by git archaeology (June 20 working commit vs current):**
+- Old (June 20, working): `<video src={proxyUrl(id)}>` and `<audio src={proxyUrl(id)}>` → `/api/drive/proxy/`
+- New (broken): `<video src={streamUrl(id)}>` → `/api/drive/stream/` (changed by some agent)
+- SW caches `/api/drive/proxy/` responses (full file) and serves Range requests from cache internally
+- SW only passes through `/api/drive/stream/` — Chrome's media pipeline conflicts with SW passthrough in published PWA mode
+
+**Fix (V-39):** Reverted FolderView audio/video src from `streamUrl` → `proxyUrl`. Added `Accept-Ranges: bytes` header to proxy endpoint. SW cache bumped to `parisa-v3.6`.
+
+**Rule going forward:** Audio and video `<audio>`/`<video>` elements MUST use `proxyUrl()` NOT `streamUrl()`. The stream endpoint is for backward-compat only. The proxy endpoint + SW cache is the proven working approach since June 2026.
+
+### Version
+V-38 → V-39
+
+---
+
 ## Session 2 fixes (from prior summary)
 - PARISA/RUBEL voice, no confirm dialogs, folder_files Firebase AI context
 - saveAiConfig fix, dynamic redirect URI, passwords tab uses live buttons
