@@ -674,8 +674,13 @@ export default function FolderView() {
 
             {/* ── Video Player ── */}
             {viewerType === 'video' && (
-              <div className="flex-1 flex flex-col" style={{ background:'#000' }}>
-                {/* Native video with browser controls — fullscreen, range-resume enabled */}
+              <div className="flex-1 flex flex-col" style={{ background:'#000', position:'relative', minHeight:0 }}>
+                {/* Buffering spinner overlay */}
+                {mediaBuffering && (
+                  <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center', zIndex:3, pointerEvents:'none', background:'rgba(0,0,0,0.30)' }}>
+                    <div className="w-11 h-11 rounded-full border-2 border-blue-400/30 border-t-blue-400 animate-spin"/>
+                  </div>
+                )}
                 <video
                   key={`v-${viewerFile.id}-${mediaRetryKey}`}
                   ref={videoRef}
@@ -684,9 +689,9 @@ export default function FolderView() {
                   playsInline
                   autoPlay
                   preload="auto"
-                  controlsList="nodownload noremoteplayback"
+                  controlsList="nodownload noremoteplayback nofullscreen"
                   disablePictureInPicture
-                  style={{ width:'100%', height:'100%', flex:1, objectFit:'contain', display:'block', background:'#000' }}
+                  style={{ width:'100%', flex:1, objectFit:'contain', display:'block', background:'#000', minHeight:0 }}
                   onContextMenu={e => e.preventDefault()}
                   onTimeUpdate={e => {
                     const t = (e.target as HTMLVideoElement).currentTime;
@@ -696,22 +701,20 @@ export default function FolderView() {
                   onLoadedMetadata={e => {
                     const el = e.target as HTMLVideoElement;
                     setMediaDuration(el.duration);
-                    // Restore seek position after error-retry remount
                     if (savedTimeRef.current > 0 && savedTimeRef.current < el.duration) {
                       el.currentTime = savedTimeRef.current;
                       savedTimeRef.current = 0;
                     }
                   }}
                   onWaiting={() => setMediaBuffering(true)}
-                  onPlaying={() => setMediaBuffering(false)}
+                  onPlaying={() => { setMediaBuffering(false); setIsPlaying(true); }}
+                  onPause={() => setIsPlaying(false)}
                   onCanPlay={() => {
                     setMediaBuffering(false);
                     videoRef.current?.play().catch(() => {});
                   }}
                   onError={() => {
-                    // Show spinner immediately — user always sees feedback, never a frozen screen
                     setMediaBuffering(true);
-                    // Retry with fast first attempt (500ms) then gradual backoff
                     const count = mediaErrorCountRef.current;
                     const retryDelays = [500, 1500, 3000, 6000, 15000];
                     const delay = retryDelays[Math.min(count, retryDelays.length - 1)];
@@ -720,6 +723,28 @@ export default function FolderView() {
                     setTimeout(() => { savedTimeRef.current = saved; setMediaRetryKey(k => k + 1); }, delay);
                   }}
                 />
+                {/* Custom progress bar + timestamp */}
+                <div className="flex-shrink-0" style={{ background:'rgba(0,0,0,0.92)', padding:'6px 16px 8px' }}>
+                  <div
+                    onClick={e => {
+                      if (!videoRef.current || !mediaDuration) return;
+                      const rect = e.currentTarget.getBoundingClientRect();
+                      const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                      videoRef.current.currentTime = ratio * mediaDuration;
+                    }}
+                    style={{ width:'100%', height:4, borderRadius:2, background:'rgba(255,255,255,0.1)', cursor:'pointer', marginBottom:5, overflow:'hidden' }}>
+                    <div style={{
+                      height:'100%', borderRadius:2,
+                      width: mediaDuration > 0 ? `${(mediaCurTime / mediaDuration) * 100}%` : '0%',
+                      background:'linear-gradient(90deg,#3b82f6,#60a5fa)',
+                      transition:'width 0.25s linear',
+                    }}/>
+                  </div>
+                  <div style={{ display:'flex', justifyContent:'space-between' }}>
+                    <span style={{ color:'rgba(255,255,255,0.35)', fontSize:10 }}>{fmtTime(mediaCurTime)}</span>
+                    <span style={{ color:'rgba(255,255,255,0.35)', fontSize:10 }}>{fmtTime(mediaDuration)}</span>
+                  </div>
+                </div>
                 {/* Prev / Next — shown when multiple videos */}
                 {videoFiles.length > 1 && (
                   <div className="flex-shrink-0 flex items-center justify-center gap-6 py-2"
