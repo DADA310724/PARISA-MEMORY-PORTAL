@@ -51,7 +51,6 @@ export default function FolderView() {
   const [viewerFile, setViewerFile] = useState<DriveFile | null>(null);
   const [mediaRetryKey, setMediaRetryKey] = useState(0);
   const [mediaError] = useState(false); // kept for legacy ref safety — never set to true; errors auto-retry
-  const [mediaFailed, setMediaFailed] = useState(false); // true after MAX_RETRIES — shows manual retry button
   const [mediaCurTime, setMediaCurTime] = useState(0);
   const [mediaDuration, setMediaDuration] = useState(0);
   const [mediaBuffering, setMediaBuffering] = useState(false);
@@ -240,7 +239,6 @@ export default function FolderView() {
     setMediaDuration(0);
     setMediaBuffering(true);   // show spinner immediately on tap — cleared by onCanPlay/onPlaying
     setIsPlaying(false);
-    setMediaFailed(false);
     setMediaRetryKey(k => k + 1);
     mediaErrorCountRef.current = 0;
     savedTimeRef.current = 0;
@@ -703,7 +701,7 @@ export default function FolderView() {
                   playsInline
                   autoPlay
                   preload="auto"
-                  controlsList="nodownload noremoteplayback nofullscreen"
+                  controlsList="nodownload noremoteplayback"
                   disablePictureInPicture
                   style={{ width:'100%', height:'100%', flex:1, objectFit:'contain', display:'block', background:'#000' }}
                   onContextMenu={e => e.preventDefault()}

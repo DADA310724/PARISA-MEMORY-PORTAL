@@ -104,11 +104,14 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-    // ── Drive stream — NEVER intercept: let browser handle range requests natively ──
-  // SW interception of range requests breaks video/audio streaming in production.
-  // Browser's native fetch correctly handles 206 Partial Content, seek, and resume.
+  // ── Drive stream — MUST use respondWith for Chrome Android media pipeline ────
+  // When a SW is active, Chrome's media element ignores range requests unless the
+  // SW explicitly calls event.respondWith(). Plain "return;" (passthrough) breaks
+  // Chrome's internal media fetch codepath — audio/video fires onerror immediately.
+  // Fix: pass the full request (including Range header) through fetch and respond.
   if (url.pathname.startsWith("/api/drive/stream/")) {
-    return; // intentionally no event.respondWith() — browser fetches directly
+    event.respondWith(fetch(event.request));
+    return;
   }
 
   // ── Other API calls — never cache ─────────────────────────────────────────
