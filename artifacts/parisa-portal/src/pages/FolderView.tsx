@@ -50,7 +50,6 @@ export default function FolderView() {
   const [viewerType, setViewerType] = useState<"image"|"video"|"audio"|"html"|"pdf"|"text"|"generic">("image");
   const [viewerFile, setViewerFile] = useState<DriveFile | null>(null);
   const [mediaRetryKey, setMediaRetryKey] = useState(0);
-  const [mediaError] = useState(false); // kept for legacy ref safety — never set to true; errors auto-retry
   const [mediaCurTime, setMediaCurTime] = useState(0);
   const [mediaDuration, setMediaDuration] = useState(0);
   const [mediaBuffering, setMediaBuffering] = useState(false);
@@ -179,7 +178,6 @@ export default function FolderView() {
     setMediaDuration(0);
     setMediaBuffering(false);
     setIsPlaying(false);
-    setMediaFailed(false);
     savedTimeRef.current = 0;
   }, [viewerFile, currentFolder.name]);
 
@@ -278,33 +276,18 @@ export default function FolderView() {
 
   // Auto-play trigger: attempt play 350ms after viewer opens.
   // Handles cases where autoPlay is blocked by browser policy or onCanPlay fires before ref is ready.
-  // Muted fallback: iOS Safari / strict browsers block unmuted autoplay even with user gesture
-  // (because React state update delays make the gesture appear "stale"). Try unmuted first,
-  // if rejected try muted — then quietly unmute after play starts.
   useEffect(() => {
     if (!viewerOpen) return;
     if (viewerType !== 'audio' && viewerType !== 'video') return;
     const timer = setTimeout(() => {
-      if (viewerType === 'audio' && audioRef.current && audioRef.current.paused && !mediaError) {
-        const el = audioRef.current;
-        el.play().catch(() => {
-          el.muted = true;
-          el.play()
-            .then(() => setTimeout(() => { if (el) { el.muted = isMuted; el.volume = audioVolume; } }, 300))
-            .catch(() => {});
-        });
-      } else if (viewerType === 'video' && videoRef.current && videoRef.current.paused && !mediaError) {
-        const el = videoRef.current;
-        el.play().catch(() => {
-          el.muted = true;
-          el.play()
-            .then(() => setTimeout(() => { if (el) el.muted = false; }, 300))
-            .catch(() => {});
-        });
+      if (viewerType === 'audio' && audioRef.current && audioRef.current.paused) {
+        audioRef.current.play().catch(() => {});
+      } else if (viewerType === 'video' && videoRef.current && videoRef.current.paused) {
+        videoRef.current.play().catch(() => {});
       }
     }, 350);
     return () => clearTimeout(timer);
-  }, [viewerFile?.id, mediaRetryKey, viewerType, viewerOpen, mediaError, isMuted, audioVolume]);
+  }, [viewerFile?.id, mediaRetryKey, viewerType, viewerOpen]);
 
   const handleTouchStart = (e: React.TouchEvent) => {
     if (e.touches.length === 2) {
@@ -720,32 +703,16 @@ export default function FolderView() {
                     }
                   }}
                   onWaiting={() => setMediaBuffering(true)}
-                  onPlaying={() => { setMediaBuffering(false); setMediaFailed(false); }}
+                  onPlaying={() => setMediaBuffering(false)}
                   onCanPlay={() => {
                     setMediaBuffering(false);
-                    const el = videoRef.current;
-                    if (!el) return;
-                    // Try normal unmuted play first; if browser blocks (iOS Safari strict policy),
-                    // fall back to muted play then quietly unmute once playback is running.
-                    el.play().catch(() => {
-                      el.muted = true;
-                      el.play()
-                        .then(() => setTimeout(() => { if (el) el.muted = false; }, 300))
-                        .catch(() => {});
-                    });
+                    videoRef.current?.play().catch(() => {});
                   }}
                   onError={() => {
-                    const count = mediaErrorCountRef.current;
-                    const MAX_RETRIES = 5;
-                    if (count >= MAX_RETRIES) {
-                      // Retries exhausted — show manual retry button instead of infinite spinner
-                      setMediaBuffering(false);
-                      setMediaFailed(true);
-                      return;
-                    }
                     // Show spinner immediately — user always sees feedback, never a frozen screen
                     setMediaBuffering(true);
                     // Retry with fast first attempt (500ms) then gradual backoff
+                    const count = mediaErrorCountRef.current;
                     const retryDelays = [500, 1500, 3000, 6000, 15000];
                     const delay = retryDelays[Math.min(count, retryDelays.length - 1)];
                     const saved = mediaCurTime;
@@ -753,20 +720,6 @@ export default function FolderView() {
                     setTimeout(() => { savedTimeRef.current = saved; setMediaRetryKey(k => k + 1); }, delay);
                   }}
                 />
-                {/* Failed overlay — shown after 5 retries exhausted */}
-                {mediaFailed && (
-                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-4 z-10"
-                    style={{ background:'rgba(0,0,0,0.85)' }}>
-                    <p className="text-4xl">⚠️</p>
-                    <p className="text-white/70 text-sm text-center px-6">লোড করা যায়নি।<br/>নেটওয়ার্ক চেক করে আবার চেষ্টা করুন।</p>
-                    <button
-                      onClick={() => { setMediaFailed(false); setMediaBuffering(true); mediaErrorCountRef.current = 0; setMediaRetryKey(k => k + 1); }}
-                      className="px-6 py-2.5 rounded-xl text-sm font-bold text-white active:scale-95 transition-transform"
-                      style={{ background:'linear-gradient(135deg,#3b82f6,#2563eb)', boxShadow:'0 0 20px rgba(59,130,246,0.4)' }}>
-                      🔄 আবার চেষ্টা করুন
-                    </button>
-                  </div>
-                )}
                 {/* Prev / Next — shown when multiple videos */}
                 {videoFiles.length > 1 && (
                   <div className="flex-shrink-0 flex items-center justify-center gap-6 py-2"
@@ -813,30 +766,15 @@ export default function FolderView() {
                     }
                   }}
                   onWaiting={() => setMediaBuffering(true)}
-                  onPlaying={() => { setMediaBuffering(false); setIsPlaying(true); setMediaFailed(false); }}
+                  onPlaying={() => { setMediaBuffering(false); setIsPlaying(true); }}
                   onCanPlay={() => {
                     setMediaBuffering(false);
-                    const el = audioRef.current;
-                    if (!el) return;
-                    // Try normal unmuted play; muted fallback for iOS Safari strict autoplay policy
-                    el.play().catch(() => {
-                      el.muted = true;
-                      el.play()
-                        .then(() => setTimeout(() => { if (el) { el.muted = isMuted; el.volume = audioVolume; } }, 300))
-                        .catch(() => {});
-                    });
+                    audioRef.current?.play().catch(() => {});
                   }}
                   onError={() => {
-                    const count = mediaErrorCountRef.current;
-                    const MAX_RETRIES = 5;
-                    if (count >= MAX_RETRIES) {
-                      // Retries exhausted — show manual retry button
-                      setMediaBuffering(false);
-                      setMediaFailed(true);
-                      return;
-                    }
                     // Show spinner immediately — user always sees feedback
                     setMediaBuffering(true);
+                    const count = mediaErrorCountRef.current;
                     const retryDelays = [500, 1500, 3000, 6000, 15000];
                     const delay = retryDelays[Math.min(count, retryDelays.length - 1)];
                     const saved = mediaCurTime;
@@ -942,46 +880,31 @@ export default function FolderView() {
                       className="active:scale-90 transition-transform"
                       style={{ color:currentAudioIdx<=0?'rgba(255,255,255,0.13)':'rgba(192,100,255,0.85)', fontSize:28, lineHeight:1, background:'none', border:'none', cursor:'pointer', padding:0 }}>⏮</button>
 
-                    {/* Big Play/Pause — or Retry button after max retries */}
-                    {mediaFailed ? (
-                      <button
-                        onClick={() => { setMediaFailed(false); setMediaBuffering(true); mediaErrorCountRef.current = 0; setMediaRetryKey(k => k + 1); }}
-                        className="active:scale-95 transition-transform"
-                        style={{
-                          width:68, height:68, borderRadius:'50%', flexShrink:0,
-                          background:'linear-gradient(135deg,#ef4444,#dc2626)',
-                          border:'none', cursor:'pointer',
-                          display:'flex', alignItems:'center', justifyContent:'center',
-                          boxShadow:'0 0 22px rgba(239,68,68,0.4)',
-                        }}>
-                        <span style={{ fontSize:26 }}>🔄</span>
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => { if (!audioRef.current) return; isPlaying?audioRef.current.pause():audioRef.current.play().catch(()=>{}); }}
-                        className="active:scale-95 transition-transform"
-                        style={{
-                          width:68, height:68, borderRadius:'50%', flexShrink:0,
-                          background:'linear-gradient(135deg,#a855f7,#7c3aed)',
-                          border:'none', cursor:'pointer',
-                          display:'flex', alignItems:'center', justifyContent:'center',
-                          boxShadow:isPlaying?'0 0 40px rgba(168,85,247,0.6)':'0 0 22px rgba(109,40,217,0.4)',
-                          transition:'box-shadow 0.3s ease',
-                        }}>
-                        {mediaBuffering ? (
-                          <div className="w-6 h-6 rounded-full border-2 border-white/30 border-t-white animate-spin"/>
-                        ) : isPlaying ? (
-                          <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
-                            <rect x="6" y="4" width="4" height="16" rx="1.5"/>
-                            <rect x="14" y="4" width="4" height="16" rx="1.5"/>
-                          </svg>
-                        ) : (
-                          <svg width="22" height="22" viewBox="0 0 24 24" fill="white" style={{ marginLeft:3 }}>
-                            <polygon points="5,3 20,12 5,21"/>
-                          </svg>
-                        )}
-                      </button>
-                    )}
+                    {/* Big Play/Pause */}
+                    <button
+                      onClick={() => { if (!audioRef.current) return; isPlaying?audioRef.current.pause():audioRef.current.play().catch(()=>{}); }}
+                      className="active:scale-95 transition-transform"
+                      style={{
+                        width:68, height:68, borderRadius:'50%', flexShrink:0,
+                        background:'linear-gradient(135deg,#a855f7,#7c3aed)',
+                        border:'none', cursor:'pointer',
+                        display:'flex', alignItems:'center', justifyContent:'center',
+                        boxShadow:isPlaying?'0 0 40px rgba(168,85,247,0.6)':'0 0 22px rgba(109,40,217,0.4)',
+                        transition:'box-shadow 0.3s ease',
+                      }}>
+                      {mediaBuffering ? (
+                        <div className="w-6 h-6 rounded-full border-2 border-white/30 border-t-white animate-spin"/>
+                      ) : isPlaying ? (
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
+                          <rect x="6" y="4" width="4" height="16" rx="1.5"/>
+                          <rect x="14" y="4" width="4" height="16" rx="1.5"/>
+                        </svg>
+                      ) : (
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="white" style={{ marginLeft:3 }}>
+                          <polygon points="5,3 20,12 5,21"/>
+                        </svg>
+                      )}
+                    </button>
 
                     <button onClick={nextAudio} disabled={currentAudioIdx>=audioFiles.length-1}
                       className="active:scale-90 transition-transform"
