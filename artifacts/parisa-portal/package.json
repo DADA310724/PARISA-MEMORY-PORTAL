@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite --config vite.config.ts --host 0.0.0.0",
     "build": "vite build --config vite.config.ts",
-    "serve": "PORT=8080 node ../api-server/dist/index.js & vite preview --config vite.config.ts --host 0.0.0.0",
+    "serve": "node --enable-source-maps ../api-server/dist/index.js",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {
