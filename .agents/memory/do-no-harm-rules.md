@@ -26,11 +26,20 @@ description: ⛔ CRITICAL — rules every agent MUST follow to avoid breaking wo
 
 - **⛔ CRITICAL: Audio/Video src URL পরিবর্তন করবে না**
   - `<video>` এবং `<audio>` উভয়ই **অবশ্যই** `src={proxyUrl(viewerFile.id)}` ব্যবহার করবে
-  - `streamUrl` ব্যবহার করলে published app-এ play হয় না (Chrome media pipeline + SW conflict)
-  - এই ভুল V-18 থেকে V-38 পর্যন্ত ২ সপ্তাহ সমস্যা তৈরি করেছে
-  - কারণ: `proxyUrl` → SW পুরো file cache করে → Range request SW দেয় → সব browser-এ চলে
-  - কারণ: `streamUrl` → SW শুধু pass-through → Chrome published PWA-তে ভেঙে যায়
+  - `streamUrl` ব্যবহার করলে published app-এ play হয় না
+  - এই ভুল V-18 থেকে V-40 পর্যন্ত ২ সপ্তাহেরও বেশি সমস্যা তৈরি করেছে
   - **User অর্ডার ছাড়া এই line কখনো পরিবর্তন করবে না**
+
+- **⛔ CRITICAL: Proxy endpoint-এ Range forwarding সরাবে না**
+  - `/api/drive/proxy/:id` endpoint-এ `Range` header অবশ্যই Google Drive-এ forward করতে হবে
+  - Range forward না করলে: Chrome Range request পাঠায় → server পুরো file পাঠায় → browser connection বন্ধ করে → SW truncated file cache করে → পরের request-এ garbage data → `onError` → infinite retry
+  - `Content-Range` header-ও drive থেকে browser-এ forward করতে হবে
+  - proxy endpoint-এর `abort controller` এবং `res.on("close")` handler রাখতে হবে
+
+- **⛔ CRITICAL: SW-এ Range response cache করবে না**
+  - `sw.js`-এ proxy handler-এ condition: `resp.status === 200 && !rangeHdr` — এই দুটো শর্ত একসাথে থাকতে হবে
+  - Range request-এর response কখনো cache করবে না — connection early close হলে truncated file cache হয়
+  - MEDIA_CACHE-এ শুধু পুরো file (no-Range request, 200 response) cache হবে
 
 - **Audio player-এর custom UI নষ্ট করবে না** — purple card, waveform, progress bar, volume slider — এগুলো ইচ্ছে করে তৈরি করা হয়েছে
 - **Video-তে download option যোগ করবে না** — `controlsList="nodownload"` + `onContextMenu={e => e.preventDefault()}` এগুলো রাখতে হবে
