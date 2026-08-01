@@ -1,7 +1,7 @@
 // PARISA MEMORY PORTAL — Service Worker v3.5
 // Offline-first with Range support: full files cached, seekable offline
-const CACHE_NAME  = "parisa-v3.6";
-const MEDIA_CACHE = "parisa-media-v3.6";
+const CACHE_NAME  = "parisa-v3.7";
+const MEDIA_CACHE = "parisa-media-v3.7";
 
 const STATIC_ASSETS = [
   "/",
@@ -82,15 +82,16 @@ self.addEventListener("fetch", (event) => {
         }
 
         // ── Cache miss: forward ORIGINAL request to server ─────────────────
-        // IMPORTANT: pass event.request (not cacheKey) so Range headers reach server
-        // This allows the browser to start streaming immediately
+        // IMPORTANT: pass event.request so Range headers reach server (returns proper 206).
+        // Only cache FULL responses (200, no Range in request) — never cache partial (206)
+        // responses, because the connection closes early and the clone would be truncated.
         try {
           const resp = await fetch(event.request);
-          if (resp.ok && resp.status === 200) {
+          if (resp.ok && resp.status === 200 && !rangeHdr) {
             // Cache the full response for offline/seeking later
             cache.put(cacheKey, resp.clone());
           }
-          // 206 partial responses are forwarded as-is (not cached individually)
+          // 206 partial responses (and Range-requested 200s) forwarded as-is
           return resp;
         } catch {
           // Offline and nothing in cache

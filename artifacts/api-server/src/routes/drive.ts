@@ -309,15 +309,24 @@ driveRouter.get("/mediaurl/:id", async (req: Request, res: Response) => {
   res.json({ url: `/api/drive/stream/${encodeURIComponent(id)}` });
 });
 
-// Proxy route for images, PDFs, HTML — pipes content directly (no redirect)
+// Proxy route for images, PDFs, HTML, audio, video — pipes content directly (no redirect)
+// Supports Range requests so media seeking works correctly.
 // This avoids X-Frame-Options and CORS blocks from googleapis.com
 driveRouter.get("/proxy/:id", async (req: Request, res: Response) => {
   const id = String(req.params["id"]);
+  const rangeHeader = req.headers["range"] as string | undefined;
+  const abort = new AbortController();
+  res.on("close", () => abort.abort());
   try {
     const token = await getAccessToken();
     const driveUrl = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(id)}?alt=media&acknowledgeAbuse=true`;
     const driveResp = await fetch(driveUrl, {
-      headers: { Authorization: `Bearer ${token}` },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        // Forward Range header so Drive returns proper 206 for media seeking
+        ...(rangeHeader ? { Range: rangeHeader } : {}),
+      },
+      signal: abort.signal,
     });
     if (!driveResp.ok) {
       res.status(driveResp.status).send("Google Drive error");
@@ -325,17 +334,27 @@ driveRouter.get("/proxy/:id", async (req: Request, res: Response) => {
     }
     const ct = driveResp.headers.get("content-type") ?? "application/octet-stream";
     res.setHeader("Content-Type", ct);
-    res.setHeader("Accept-Ranges", "bytes");   // tell browser/SW that Range is supported
+    res.setHeader("Accept-Ranges", "bytes");
     res.setHeader("Cache-Control", "no-store, no-cache");
     // Allow embedding in iframes — remove any restrictive framing headers
     res.setHeader("X-Frame-Options", "SAMEORIGIN");
     res.removeHeader("Content-Security-Policy");
     const cl = driveResp.headers.get("content-length");
     if (cl) res.setHeader("Content-Length", cl);
+    // Forward Content-Range for 206 partial responses
+    const cr = driveResp.headers.get("content-range");
+    if (cr) res.setHeader("Content-Range", cr);
+    // Use the actual status from Drive (200 full or 206 partial)
+    res.status(driveResp.status);
     if (!driveResp.body) { res.end(); return; }
-    Readable.fromWeb(driveResp.body as import("stream/web").ReadableStream).pipe(res);
+    const readable = Readable.fromWeb(driveResp.body as import("stream/web").ReadableStream);
+    readable.on("error", () => { if (!res.writableEnded) res.destroy(); });
+    res.on("close", () => { readable.destroy(); });
+    readable.pipe(res);
   } catch (err) {
-    if (!res.headersSent) res.status(500).json({ error: String(err) });
+    const msg = err instanceof Error ? err.message : String(err);
+    if (msg.includes("abort") || msg.toLowerCase().includes("aborted")) return;
+    if (!res.headersSent) res.status(500).json({ error: msg });
   }
 });
 
