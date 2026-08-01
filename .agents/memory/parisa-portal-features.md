@@ -3,6 +3,28 @@ name: Parisa Portal features done
 description: Session 2-9 fixes — what was done and what to watch out for
 ---
 
+## Session 19 (2026-08-01) — V-41
+
+### SW media caching removed — performance fix
+
+**Root cause of Render slowness / stutter:**
+`serveRange()` called `await cachedResp.arrayBuffer()` on every 64 KB Range request — loading the entire file (e.g. 38 MB) into memory just to slice 64 KB out of it. For a large audio file this happened 500+ times per playback → browser stutter/freeze.
+
+**Fix:** Removed all media caching from SW entirely. Both `/api/drive/proxy/` and `/api/drive/stream/` now use `event.respondWith(fetch(event.request))` — direct pass-through, no caching, no memory bottleneck.
+
+**Why pass-through not bare return:** Must call `event.respondWith()` — bare `return;` breaks Chrome's media pipeline (fires onerror immediately on audio/video elements when SW is registered).
+
+**SW cache bumped:** `parisa-v3.7` → `parisa-v3.8` to clear old media cache on all devices.
+
+**Rule going forward:** Never cache media files in SW via `arrayBuffer()` — the memory cost is O(fileSize) per Range request. Media should always pass through to the server.
+
+**Remaining issue:** This Replit project's secrets (GOOGLE_SERVICE_ACCOUNT_JSON, FIREBASE_DATABASE_SECRET, FIREBASE_DATABASE_URL) have keys registered but **empty values** — user must fill them in Secrets tab for the Replit published app to work.
+
+### Version
+V-40 → V-41
+
+---
+
 ## Session 17-18 (2026-07-31 → 2026-08-01) — V-39 → V-40
 
 ### Audio/Video root cause — DEFINITIVE (confirmed after V-39 still failed)
