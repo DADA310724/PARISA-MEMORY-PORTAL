@@ -36,10 +36,20 @@ description: ⛔ CRITICAL — rules every agent MUST follow to avoid breaking wo
   - `Content-Range` header-ও drive থেকে browser-এ forward করতে হবে
   - proxy endpoint-এর `abort controller` এবং `res.on("close")` handler রাখতে হবে
 
-- **⛔ CRITICAL: SW-এ Range response cache করবে না**
-  - `sw.js`-এ proxy handler-এ condition: `resp.status === 200 && !rangeHdr` — এই দুটো শর্ত একসাথে থাকতে হবে
-  - Range request-এর response কখনো cache করবে না — connection early close হলে truncated file cache হয়
-  - MEDIA_CACHE-এ শুধু পুরো file (no-Range request, 200 response) cache হবে
+- **⛔ CRITICAL: SW-এ media caching একদম করবে না (v3.8+)**
+  - SW.js-এ proxy ও stream দুটোই `event.respondWith(fetch(event.request))` — pure pass-through
+  - `arrayBuffer()` দিয়ে কোনো SW media cache করবে না — 38MB file × 500+ Range requests = memory crash
+  - SW cache name এখন `parisa-v3.8` — এটা নামাবে না
+
+- **⛔ CRITICAL: Proxy endpoint-এ `mediaChunkCache` reading সরাবে না**
+  - `/api/drive/proxy/:id` route-এ Range request আসলে আগে `mediaChunkCache.get(id)` চেক করতে হবে
+  - Cached chunk-এ range পড়লে RAM থেকে serve — Drive request নেই → instant first-play
+  - `/prefetch/:id` populate করে, `/proxy/:id` read করে — এই দুটো connected থাকতে হবে
+
+- **⛔ CRITICAL: Proxy-তে audio/video Cache-Control `no-store` করবে না**
+  - Audio/video content type-এর জন্য: `Cache-Control: private, max-age=3600`
+  - Images/PDFs: `no-store, no-cache` (ঠিক আছে)
+  - `private, max-age=3600` ছাড়া browser chunk cache করে না → seek/replay-তে আবার Drive fetch
 
 - **Audio player-এর custom UI নষ্ট করবে না** — purple card, waveform, progress bar, volume slider — এগুলো ইচ্ছে করে তৈরি করা হয়েছে
 - **Video-তে download option যোগ করবে না** — `controlsList="nodownload"` + `onContextMenu={e => e.preventDefault()}` এগুলো রাখতে হবে

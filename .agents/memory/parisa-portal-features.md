@@ -3,6 +3,47 @@ name: Parisa Portal features done
 description: Session 2-9 fixes — what was done and what to watch out for
 ---
 
+## Session 20 (2026-08-01) — V-42
+
+### Proxy endpoint cache-reading restored + browser caching fixed
+
+**Root cause of V-42 work:**
+V-41 correctly removed SW media caching (arrayBuffer bottleneck). But in doing so, the proxy endpoint's server-side RAM cache usage was also lost — proxy was fetching from Drive on every request instead of reading from `mediaChunkCache`. Additionally `Cache-Control` was `no-store` instead of `private, max-age=3600`, so browser couldn't cache played chunks either.
+
+**Comparison with June 23 (last known good state):**
+June 23 had TWO caching layers:
+1. Server RAM cache (first 5MB per file) → proxy read from it → instant first-play ← **GOOD**
+2. SW full-file cache using arrayBuffer() → stutter/freeze on large files ← **BAD, removed in V-41**
+
+V-42 restores Layer 1 only (the good one). SW caching stays removed.
+
+**Fix 1 — Proxy reads from `mediaChunkCache`:**
+When a Range request falls within the cached 5MB chunk → serve from RAM, no Drive round-trip.
+Code: in `proxy/:id` route, check `mediaChunkCache.get(id)` before fetching from Drive.
+Result: first-play is instant when prefetch has warmed the cache.
+
+**Fix 2 — Browser caching for audio/video:**
+Changed `Cache-Control: no-store, no-cache` → `Cache-Control: private, max-age=3600` for audio/video content types on proxy endpoint.
+Result: once a chunk is played, browser keeps it — seek/replay within played portion = instant, no Drive refetch.
+Images/PDFs still use `no-store` (always fresh).
+
+**Live test confirmed:**
+- `GET /api/drive/proxy/:id` → HTTP 200, `Cache-Control: private, max-age=3600` ✅
+- `GET /api/drive/proxy/:id` with `Range: bytes=0-65535` → HTTP 206, `Cache-Control: private, max-age=3600` ✅
+
+**Replit published app (important discovery):**
+`parisa--portal-v30.replit.app` = DIFFERENT older Replit project. THIS project (`isDeployed: false`) has never been published. User must click Publish from this project to get a new working URL. Secrets are already set in this project — they will be available to the published app automatically.
+
+**Rule going forward:**
+- `mediaChunkCache` in drive.ts is used by BOTH `/prefetch/:id` (populate) AND `/proxy/:id` (read). Do NOT remove cache-reading from proxy endpoint.
+- Audio/video proxy MUST use `Cache-Control: private, max-age=3600` — not `no-store`.
+- SW media caching (arrayBuffer) must NEVER be re-added.
+
+### Version
+V-41 → V-42
+
+---
+
 ## Session 19 (2026-08-01) — V-41
 
 ### SW media caching removed — performance fix
