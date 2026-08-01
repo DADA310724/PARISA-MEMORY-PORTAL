@@ -202,53 +202,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     return () => { if (unsub) unsub(); };
   }, []);
 
-  // ── Global background media prefetch — runs on every page, not just Dashboard ──
-  useEffect(() => {
-    if (loading || buttons.length === 0) return;
-    const folderIds = buttons
-      .filter(b => b.link_type === "drive_folder" && b.drive_folder_id)
-      .map(b => b.drive_folder_id as string);
-    if (folderIds.length === 0) return;
-
-    // Only run once per session to avoid re-fetching on every navigation
-    if (sessionStorage.getItem("media_prefetch_done") === "1") return;
-
-    let cancelled = false;
-    const proxyUrls: string[] = [];
-
-    const prefetchFolder = async (folderId: string) => {
-      try {
-        const resp = await fetch(`/api/drive/list?folderId=${encodeURIComponent(folderId)}`);
-        if (!resp.ok || cancelled) return;
-        const data = await resp.json() as { files?: Array<{ id: string; mimeType?: string }> };
-        const mediaFiles = (data.files || []).filter(f =>
-          (f.mimeType || "").startsWith("video/") || (f.mimeType || "").startsWith("audio/")
-        ).slice(0, 8); // up to 8 per folder
-        for (const f of mediaFiles) {
-          if (cancelled) return;
-          const url = `/api/drive/proxy/${f.id}`;
-          proxyUrls.push(url);
-          try { await fetch(`/api/drive/prefetch/${f.id}`); } catch {}
-          await new Promise<void>(r => setTimeout(r, 300));
-        }
-      } catch {}
-    };
-
-    const run = async () => {
-      for (let i = 0; i < folderIds.length && !cancelled; i++) {
-        await prefetchFolder(folderIds[i]);
-        if (i < folderIds.length - 1 && !cancelled) await new Promise<void>(r => setTimeout(r, 600));
-      }
-      if (!cancelled && proxyUrls.length > 0 && navigator.serviceWorker?.controller) {
-        // Tell service worker to cache all proxy URLs for offline use
-        navigator.serviceWorker.controller.postMessage({ type: "PREFETCH_MEDIA", urls: proxyUrls });
-      }
-      sessionStorage.setItem("media_prefetch_done", "1");
-    };
-
-    const timer = setTimeout(run, 3000); // 3s delay so app loads first
-    return () => { cancelled = true; clearTimeout(timer); };
-  }, [buttons, loading]);
+  // Background media prefetch removed (V-43):
+  // The server-side RAM cache it warmed is no longer read by proxy/stream endpoints.
+  // All media streams directly from Google Drive with browser-level caching
+  // (Cache-Control: private, max-age=3600) — no background loading needed.
 
   async function saveButton(b: DashboardButton) {
     const db = await ensureFirebase();

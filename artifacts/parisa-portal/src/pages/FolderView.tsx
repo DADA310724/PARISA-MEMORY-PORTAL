@@ -112,22 +112,8 @@ export default function FolderView() {
     try {
       const { files: f } = await listFolder(folderId);
       setFiles(f);
-      // Background prefetch first 5 audio/video → warms server-side 5MB chunk cache for fast first-play.
-      // Staggered in batches of 3 to avoid exhausting the server's connection pool.
-      // Each prefetch returns immediately ({ok:true}) while the server fetches 5MB from Drive in background.
-      const mediaFiles = f.filter(file => isVideo(file) || isAudio(file)).slice(0, 5);
-      const prefetchBatch = async () => {
-        for (let i = 0; i < mediaFiles.length; i += 3) {
-          const batch = mediaFiles.slice(i, i + 3);
-          await Promise.allSettled(
-            batch.map(file =>
-              fetch(`/api/drive/prefetch/${file.id}`, { priority: "low", cache: "no-store" } as RequestInit).catch(() => {})
-            )
-          );
-          if (i + 3 < mediaFiles.length) await new Promise(r => setTimeout(r, 1000));
-        }
-      };
-      void prefetchBatch();
+      // Prefetch removed (V-43): server RAM cache no longer read by proxy/stream.
+      // Browser caches via Cache-Control: private, max-age=3600 — no server prefetch needed.
       void api("/telegram/notify", {
         method: "POST",
         body: { event: "folder_opened", folder: folderName || folderId, files: f.length },
