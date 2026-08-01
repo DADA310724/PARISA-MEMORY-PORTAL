@@ -315,6 +315,37 @@ driveRouter.get("/mediaurl/:id", async (req, res) => {
 driveRouter.get("/proxy/:id", async (req, res) => {
     const id = String(req.params["id"]);
     const rangeHeader = req.headers["range"];
+    // ── Serve audio/video initial chunk from server-side RAM cache ────────────
+    // /prefetch/:id pre-warms mediaChunkCache with the first 5 MB of each file.
+    // If the requested Range falls entirely within the cached chunk, serve from
+    // RAM — zero Google Drive round-trip → instant first-play on Render/published.
+    // Only activates when: (a) Range header present, (b) file is cached,
+    // (c) BOTH start and end are within the cached buffer.
+    if (rangeHeader) {
+        const cached = mediaChunkCache.get(id);
+        if (cached) {
+            const m = rangeHeader.match(/bytes=(\d+)-(\d+)?/);
+            if (m) {
+                const start = parseInt(m[1]);
+                // If no end specified, default to end of cached data
+                const endRequested = m[2] !== undefined ? parseInt(m[2]) : cached.data.length - 1;
+                const end = Math.min(endRequested, cached.data.length - 1);
+                if (start < cached.data.length) {
+                    const slice = cached.data.slice(start, end + 1);
+                    cached.ts = Date.now(); // refresh TTL on access
+                    res.status(206);
+                    res.setHeader("Content-Type", cached.contentType);
+                    res.setHeader("Content-Range", `bytes ${start}-${end}/${cached.totalSize}`);
+                    res.setHeader("Content-Length", String(slice.length));
+                    res.setHeader("Accept-Ranges", "bytes");
+                    // Allow browser to cache audio/video chunks — faster seeks & replay
+                    res.setHeader("Cache-Control", "private, max-age=3600");
+                    res.end(slice);
+                    return;
+                }
+            }
+        }
+    }
     const abort = new AbortController();
     res.on("close", () => abort.abort());
     try {
@@ -333,9 +364,12 @@ driveRouter.get("/proxy/:id", async (req, res) => {
             return;
         }
         const ct = driveResp.headers.get("content-type") ?? "application/octet-stream";
+        const isMedia = ct.startsWith("audio/") || ct.startsWith("video/");
         res.setHeader("Content-Type", ct);
         res.setHeader("Accept-Ranges", "bytes");
-        res.setHeader("Cache-Control", "no-store, no-cache");
+        // Audio/video: allow browser to cache chunks (faster seek, replay, no redundant Drive fetches)
+        // Images/PDFs/other: no-cache (always fresh)
+        res.setHeader("Cache-Control", isMedia ? "private, max-age=3600" : "no-store, no-cache");
         // Allow embedding in iframes — remove any restrictive framing headers
         res.setHeader("X-Frame-Options", "SAMEORIGIN");
         res.removeHeader("Content-Security-Policy");
