@@ -315,37 +315,11 @@ driveRouter.get("/mediaurl/:id", async (req, res) => {
 driveRouter.get("/proxy/:id", async (req, res) => {
     const id = String(req.params["id"]);
     const rangeHeader = req.headers["range"];
-    // ── Serve audio/video initial chunk from server-side RAM cache ────────────
-    // /prefetch/:id pre-warms mediaChunkCache with the first 5 MB of each file.
-    // If the requested Range falls entirely within the cached chunk, serve from
-    // RAM — zero Google Drive round-trip → instant first-play on Render/published.
-    // Only activates when: (a) Range header present, (b) file is cached,
-    // (c) BOTH start and end are within the cached buffer.
-    if (rangeHeader) {
-        const cached = mediaChunkCache.get(id);
-        if (cached) {
-            const m = rangeHeader.match(/bytes=(\d+)-(\d+)?/);
-            if (m) {
-                const start = parseInt(m[1]);
-                // If no end specified, default to end of cached data
-                const endRequested = m[2] !== undefined ? parseInt(m[2]) : cached.data.length - 1;
-                const end = Math.min(endRequested, cached.data.length - 1);
-                if (start < cached.data.length) {
-                    const slice = cached.data.slice(start, end + 1);
-                    cached.ts = Date.now(); // refresh TTL on access
-                    res.status(206);
-                    res.setHeader("Content-Type", cached.contentType);
-                    res.setHeader("Content-Range", `bytes ${start}-${end}/${cached.totalSize}`);
-                    res.setHeader("Content-Length", String(slice.length));
-                    res.setHeader("Accept-Ranges", "bytes");
-                    // Allow browser to cache audio/video chunks — faster seeks & replay
-                    res.setHeader("Cache-Control", "private, max-age=3600");
-                    res.end(slice);
-                    return;
-                }
-            }
-        }
-    }
+    // NOTE: Server-side RAM cache reading was tested in V-42 but caused stall/retry
+    // on large video files (40MB+): the first 5MB served from RAM plays through in
+    // 1-2 seconds, then the transition to Drive streaming caused buffering stalls.
+    // Fix: always stream directly from Drive for consistent playback speed.
+    // Browser-level caching (Cache-Control: private, max-age=3600) handles replay/seek.
     const abort = new AbortController();
     res.on("close", () => abort.abort());
     try {

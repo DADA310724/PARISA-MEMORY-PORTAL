@@ -34,10 +34,14 @@ Images/PDFs still use `no-store` (always fresh).
 **Replit published app (important discovery):**
 `parisa--portal-v30.replit.app` = DIFFERENT older Replit project. THIS project (`isDeployed: false`) has never been published. User must click Publish from this project to get a new working URL. Secrets are already set in this project — they will be available to the published app automatically.
 
+**V-42 fix corrected (same session):**
+RAM cache reading from proxy was causing stall on large videos (40MB+): first 5MB served from RAM played through in 1-2 sec, then Drive transition caused buffering stall + retry loop. Removed RAM cache serving from proxy. Result is identical to V-41 proxy behavior (always streams from Drive) but with `Cache-Control: private, max-age=3600` for audio/video.
+
 **Rule going forward:**
-- `mediaChunkCache` in drive.ts is used by BOTH `/prefetch/:id` (populate) AND `/proxy/:id` (read). Do NOT remove cache-reading from proxy endpoint.
-- Audio/video proxy MUST use `Cache-Control: private, max-age=3600` — not `no-store`.
-- SW media caching (arrayBuffer) must NEVER be re-added.
+- `/proxy/:id` MUST NOT read from `mediaChunkCache` — causes fast-start then stall on large files (40MB+)
+- `/prefetch/:id` still populates `mediaChunkCache` (used only as background warm-up, not served directly)
+- Audio/video proxy MUST use `Cache-Control: private, max-age=3600` — not `no-store`
+- SW media caching (arrayBuffer) must NEVER be re-added
 
 ### Version
 V-41 → V-42
