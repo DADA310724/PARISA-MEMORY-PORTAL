@@ -3,22 +3,38 @@ name: Parisa Portal features done
 description: Session 2-9 fixes — what was done and what to watch out for
 ---
 
-## Session 17 (2026-07-31) — V-39
+## Session 17-18 (2026-07-31 → 2026-08-01) — V-39 → V-40
 
-### Audio/Video root cause — DEFINITIVE
+### Audio/Video root cause — DEFINITIVE (confirmed after V-39 still failed)
 
-**Root cause confirmed by git archaeology (June 20 working commit vs current):**
-- Old (June 20, working): `<video src={proxyUrl(id)}>` and `<audio src={proxyUrl(id)}>` → `/api/drive/proxy/`
-- New (broken): `<video src={streamUrl(id)}>` → `/api/drive/stream/` (changed by some agent)
-- SW caches `/api/drive/proxy/` responses (full file) and serves Range requests from cache internally
-- SW only passes through `/api/drive/stream/` — Chrome's media pipeline conflicts with SW passthrough in published PWA mode
+**The actual bug (found V-40):**
+Chrome's media element sends `Range: bytes=0-65535` on first request (not a plain GET).
+The old proxy endpoint IGNORED the Range header — always fetched full file from Drive, returned 200.
+The SW saw status 200 → tried to cache the full response via `resp.clone()`.
+BUT: browser got the response, read only the first 64KB it wanted, then CLOSED the connection.
+The cloned response body was also cut short (shared underlying stream). SW cached a TRUNCATED file.
+Next Range request: SW had a "full file" in cache that was only 64KB → `serveRange()` sliced empty bytes → browser got garbage → `onError` fired → retry loop.
 
-**Fix (V-39):** Reverted FolderView audio/video src from `streamUrl` → `proxyUrl`. Added `Accept-Ranges: bytes` header to proxy endpoint. SW cache bumped to `parisa-v3.6`.
+**Why dev worked:** In Vite dev, the Vite proxy layer and SW interaction meant Chrome sometimes sent plain GET first (no Range), getting a full 200 that was fully cached. OR the files tested in dev were small enough that 1 Range request covered the whole file.
 
-**Rule going forward:** Audio and video `<audio>`/`<video>` elements MUST use `proxyUrl()` NOT `streamUrl()`. The stream endpoint is for backward-compat only. The proxy endpoint + SW cache is the proven working approach since June 2026.
+**Why 1 video worked on published:** That video was small enough that Chrome's initial Range request covered the full file — SW cached it correctly and it played.
+
+**V-39 was wrong:** Changing `streamUrl → proxyUrl` was partially correct (proxy is the right endpoint) but didn't fix the underlying bug because proxy still ignored Range headers.
+
+**V-40 fix (CORRECT):**
+1. `proxy/:id` endpoint now forwards Range header to Google Drive → Drive returns proper 206 → no truncation
+2. SW: only caches 200 responses AND only when the REQUEST had no Range header (`if (resp.ok && resp.status === 200 && !rangeHdr)`) — never caches partial 206 responses
+3. SW cache bumped to `parisa-v3.7` to clear all old truncated cached files
+4. Version V-40
+
+**Rule going forward:**
+- `<audio>` and `<video>` use `proxyUrl()` → `/api/drive/proxy/`
+- Proxy endpoint MUST forward Range header to Drive and forward Content-Range back
+- SW MUST NOT cache a response if the original request had a Range header (partial responses are always truncated)
+- The `streamUrl` endpoint also handles Range correctly and can be used too — but proxy has the offline caching benefit
 
 ### Version
-V-38 → V-39
+V-38 → V-39 (partial fix) → V-40 (full fix)
 
 ---
 
