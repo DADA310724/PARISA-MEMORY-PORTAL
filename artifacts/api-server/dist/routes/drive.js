@@ -323,7 +323,24 @@ driveRouter.get("/proxy/:id", async (req, res) => {
     const abort = new AbortController();
     res.on("close", () => abort.abort());
     try {
-        const token = await getAccessToken();
+        // Cold-start resilience: retry up to 4 times (500ms→1s→2s→3s) matching stream endpoint.
+        // On autoscale/published deployments the token might not be ready on first call.
+        let token;
+        const delays = [500, 1000, 2000, 3000];
+        for (let attempt = 0; attempt <= delays.length; attempt++) {
+            try {
+                token = await getAccessToken();
+                break;
+            }
+            catch (e) {
+                if (attempt < delays.length) {
+                    await new Promise(r => setTimeout(r, delays[attempt]));
+                }
+                else {
+                    throw e;
+                }
+            }
+        }
         const driveUrl = `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(id)}?alt=media&acknowledgeAbuse=true`;
         const driveResp = await fetch(driveUrl, {
             headers: {
