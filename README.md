@@ -36,6 +36,7 @@ PARISA MEMORY PORTAL একটি ব্যক্তিগত মেমোরি
 | 7 | **Scanshot** | সব স্ক্রিনশট | 693 |
 | 8 | **Analysis** | চ্যাট হিস্ট্রি বিশ্লেষণ | 9 |
 | 9 | **Personal** | ব্যক্তিগত ভিডিও ও ফাইল | 203 |
+| 10 | **BLACK MAGIC PROOF** | ব্ল্যাক ম্যাজিক এর প্রমাণ।| 
 
 নিচের ফুটারে `THIS APPS DEVELOPMENT BY DADA` লেখা থাকে এবং একটি Telegram বোতাম আছে।
 
